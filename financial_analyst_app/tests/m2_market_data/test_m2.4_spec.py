@@ -263,13 +263,26 @@ def test_identity_multi_instrument_isolated_builders() -> None:
 # --- Multi-interval support (1m,5m,15m,40m,1h,2h,4h,24h) ---
 
 def test_supported_intervals_accepted() -> None:
-    for iv in ("1m", "5m", "15m", "40m", "1h", "2h", "4h", "24h"):
+    for iv in ("1m", "5m", "15m", "30m", "40m", "1h", "2h", "4h", "24h"):
         CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval=iv)
 
 
 def test_unsupported_interval_raises_value_error() -> None:
     with pytest.raises(ValueError, match="unsupported interval"):
         CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="7m")
+
+
+def test_30m_interval_bucket_boundary_and_duration() -> None:
+    # Hand calc: exchange 01:45 → floor to 01:30 (minutes_into_day=105, 105//30=3, 3*30=90 → 01:30)
+    start = datetime(2026, 3, 22, 1, 45, 0, tzinfo=timezone.utc)
+    b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="30m")
+    b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.interval == "30m"
+    assert c.interval_start == datetime(2026, 3, 22, 1, 30, 0, tzinfo=timezone.utc)
+    assert c.interval_end == datetime(2026, 3, 22, 2, 0, 0, tzinfo=timezone.utc)
+    assert c.expected_duration_ms == 30 * 60 * 1000
 
 
 def test_40m_interval_bucket_boundary_and_duration() -> None:

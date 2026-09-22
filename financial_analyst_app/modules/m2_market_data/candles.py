@@ -2,7 +2,7 @@
 M2.4 — candles — Tick → Candle builder (pure, stateful, no clock).
 WHY: M2.3 emits validated ticks; M3/M8 need OHLC candles. Bucket from
 md.exchange_timestamp only — no wall clock, deterministic, replayable.
-Intervals: 1m,5m,15m,40m,1h,2h,4h,24h — floor to interval boundary (day-relative
+Intervals: 1m,5m,15m,30m,40m,1h,2h,4h,24h — floor to interval boundary (day-relative
 minutes // interval_minutes), NOT floor-to-minute (that would only be correct for 1m).
 Processing order (docs/specs/m2.4_transformation.spec.md):
   1 kind+Tick → 2 aware timestamps → 3 future defensive > received+5s →
@@ -26,6 +26,7 @@ _INTERVAL_MINUTES = {
     "1m": 1,
     "5m": 5,
     "15m": 15,
+    "30m": 30,
     "40m": 40,
     "1h": 60,
     "2h": 120,
