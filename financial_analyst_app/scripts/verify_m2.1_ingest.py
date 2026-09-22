@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 M2.1 Step 7 — Realistic tick replay verify.
-Usage: python scripts/verify_m21.py --input data/sample_ticks_realistic.jsonl --output /tmp/m21_out.txt
+Usage: python scripts/verify_m2.1_ingest.py --input data/sample_ticks_realistic.jsonl --output /tmp/m21_out.txt
 Reads JSONL frames (Deriv-shaped tick schema), runs TickIngestor, prints accept/drop summary + first accepts.
 """
 from __future__ import annotations

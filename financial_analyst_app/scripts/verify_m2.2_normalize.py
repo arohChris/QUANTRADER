@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 M2.2 Step 7 — Realistic tick replay verify (InternalTick → MarketData | Drop).
-Usage: python scripts/verify_m22.py --input data/sample_ticks_realistic.jsonl --output /tmp/m22_out.txt
+Usage: python scripts/verify_m2.2_normalize.py --input data/sample_ticks_realistic.jsonl --output /tmp/m22_out.txt
 Reads JSONL frames → M2.1 TickIngestor accepts → M2.2 Normalizer → prints accept/drop summary + first MarketData.
 """
 from __future__ import annotations
