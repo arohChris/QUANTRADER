@@ -5,7 +5,7 @@
 
 ## Current Gate: G0 — Edge Validation (entry 2026-09-22)
 
-## Last Updated: 2026-09-23 — **M2.4 Transformation `complete`** (impl LGTM @you Step 8). Suite **228/228** 0 skipped, verify sanity_ok, review nits applied @ `b8bbb4d`. Intervals: 1m/5m/15m/30m/40m/1h/2h/4h/24h (interval-boundary floor). **Next: Phase A — M2 P08 live Deriv WS spec** (`connection_manager`, `ingestion_manager`, `broker_feeds/deriv` — async, platform token, heartbeat+reconnect).
+## Last Updated: 2026-09-23 — **Phase A started:** P08 connection-layer spec written `docs/specs/m2.1_connection.spec.md` (DRAFT — heartbeat + reconnect gate, singleton WS, no vault). **Awaiting spec LGTM (Step 1).** Prior: M2.4 `complete` @ `04e2cd6`, suite **228/228**.
 
 ## Sub-Modules
 
