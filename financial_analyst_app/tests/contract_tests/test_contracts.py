@@ -201,7 +201,7 @@ def test_asset_class_from_yaml_value_valid() -> None:
 
 
 def test_drop_reason_vocabulary_locked_to_spec() -> None:
-    # docs/specs/m2.tick_ingest.md Drop vocabulary REV1 — exact eight reasons (M2.1+M2.2 shared)
+    # docs/specs/m2.tick_ingest.md + m2.3_validation.spec.md — Drop 1.5.0 exact eleven reasons (M2.1+M2.2+M2.3 shared)
     assert DropReason.empty == "empty"
     assert DropReason.invalid_json == "invalid_json"
     assert DropReason.missing_field == "missing_field"
@@ -210,7 +210,11 @@ def test_drop_reason_vocabulary_locked_to_spec() -> None:
     assert DropReason.timestamp_ahead == "timestamp_ahead"
     assert DropReason.duplicate_tick == "duplicate_tick"
     assert DropReason.unknown_symbol == "unknown_symbol"
-    assert len(DropReason) == 8
+    # Drop 1.5.0 additive (M2.3 bouncer — human LGTM 2026-09-22)
+    assert DropReason.future_timestamp == "future_timestamp"
+    assert DropReason.negative_price == "negative_price"
+    assert DropReason.inverted_quote == "inverted_quote"
+    assert len(DropReason) == 11
     with pytest.raises(ValueError):
         DropReason("invalid_schema")  # type: ignore[arg-type]
 
