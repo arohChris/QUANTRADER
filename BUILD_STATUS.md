@@ -5,7 +5,7 @@
 
 ## Current Gate: G0 — Edge Validation (entry 2026-09-22)
 
-## Last Updated: 2026-09-22 — M2.2 Normalization **complete** (tests LGTM ACTION 11 + Step 5 impl + 179/179 suite + verify identity_ok + human LGTM Step 7/8). M2.1 still uncommitted pending human commit. Next slice: per gate order (M2.3 quality gate spec when human opens it).
+## Last Updated: 2026-09-22 — M2.1+M2.2 committed `e75adac`/`afd90f9`. **M2.3 Validation spec DRAFT** `docs/specs/m2.validate.md` — awaiting human LGTM + DropReason 1.5 proposal (future_timestamp/negative_price/inverted_quote). No M2.3 tests/code until Step 4.
 
 ## Sub-Modules
 
@@ -15,8 +15,9 @@
 | M1 | M1.2 Core Runtime | ✓ `BaseEngine, Clock, Lifecycle` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
 | M1 | M1.3 Config & Env | ✓ `Settings, feature_flags SIGHUP` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
 | M1 | M1.4 Security & Isolation | ✓ `tenant_context, vault, permissions` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
-| M2 | M2.1 Ingestion | ✓ `docs/specs/m2.tick_ingest.md` **REV1** signed @you 2026-09-22 | ✓ `InternalTick` 1.1 + pkg 2.1.0 + `Drop` **1.4 frozen** (LGTM ACTION 10) | 50+contract | full suite **139/139** pre-M2.2-tests, 0 skipped | n/a (no money) | ✓ verify accepts=4 drops=6; human OK | ✓ LGTM @you (ACTION 10) | complete | (uncommitted — pending commit) |
-| M2 | M2.2 Normalization | ✓ `docs/specs/m2.normalize.md` REV1 **LGTM @you (ACTION 9)** | Drop **1.4 frozen**; MarketData 1.4 unchanged | 40 (`test_normalize_spec.py`) | full suite **179/179**, 0 skipped | ✓ hand-calcs in test comments (HALF_UP/tick/identity) | ✓ `scripts/verify_normalize.py` on `data/sample_ticks_realistic.jsonl` — accepts=4 drops=0, identity_ok FX.EURUSD — human OK 2026-09-22 | ✓ tests LGTM ACTION 11 + impl LGTM @you Step 7/8 | complete | (uncommitted — pending commit) |
+| M2 | M2.1 Ingestion | ✓ `docs/specs/m2.tick_ingest.md` **REV1** signed @you 2026-09-22 | ✓ `InternalTick` 1.1 + pkg 2.1.0 + `Drop` **1.4 frozen** (LGTM ACTION 10) | 50+contract | full suite **139/139** pre-M2.2-tests, 0 skipped | n/a (no money) | ✓ verify accepts=4 drops=6; human OK | ✓ LGTM @you (ACTION 10) | complete | afd90f9 |
+| M2 | M2.2 Normalization | ✓ `docs/specs/m2.normalize.md` REV1 **LGTM @you (ACTION 9)** | Drop **1.4 frozen**; MarketData 1.4 unchanged | 40 (`test_normalize_spec.py`) | full suite **179/179**, 0 skipped | ✓ hand-calcs in test comments (HALF_UP/tick/identity) | ✓ `scripts/verify_normalize.py` on `data/sample_ticks_realistic.jsonl` — accepts=4 drops=0, identity_ok FX.EURUSD — human OK 2026-09-22 | ✓ tests LGTM ACTION 11 + impl LGTM @you Step 7/8 | complete | e75adac |
+| M2 | M2.3 Validation | ✓ DRAFT `docs/specs/m2.validate.md` **awaiting LGTM** | proposal: Drop **1.5.0** +3 reasons | 0 | — | — | — | ✗ | spec | e75adac (status only) |
 | M2b | M2b.1 Instrument & Symbol | ✓ `docs/specs/m2b.instrument_symbol.md` | ✓ `AssetClass` **2.0.0** (major scope cut) + `ReferenceError` hierarchy 1.2.0 — pkg **2.1.0** | 36 (post-review F2/F4/F5/F7) | m2b file 36/36; full suite **139/139**, 0 skipped | n/a (no money) | ✓ fixtures only (`config/assets/*.yaml` + human OK 2026-09-22) — **no broker-tick replay log** (F9: downgraded vs M2.1 bar) | ✓ tests LGTM + verify OK @you; review F1–F11 applied | complete (review minors applied 2026-09-22; F6 deferred P06) | a6908c2 |
 | M3 | M3.1 RSI | — | — | 0 | — | — | — | — | not started | — |
 | M4 | M4.1 <strategy> | — | — | 0 | — | — | — | — | not started | — |
