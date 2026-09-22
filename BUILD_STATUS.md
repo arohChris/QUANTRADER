@@ -5,7 +5,7 @@
 
 ## Current Gate: G0 — Edge Validation (entry 2026-09-22)
 
-## Last Updated: 2026-09-23 — **Phase A started:** P08 connection-layer spec written `docs/specs/m2.1_connection.spec.md` (DRAFT — heartbeat + reconnect gate, singleton WS, no vault). **Awaiting spec LGTM (Step 1).** Prior: M2.4 `complete` @ `04e2cd6`, suite **228/228**.
+## Last Updated: 2026-09-23 — P08 connection **REV1 spec** applied human review CHANGES (reference.exists pre-WS, concurrent lock×100, vault-never explicit, P08 dual-spec split, hostile-frame adversarial). **Step 3 tests written:** `tests/m2_market_data/test_m2.1_connection_spec.py` (16 cases) — collection-RED until Step 5 (expected; no connection.py yet). Rest of suite **228/228** green when new file excluded. **Awaiting: (a) final LGTM on full spec REV1, (b) LGTM on tests (Step 4)** — no impl until both. Path clarification: `m2.1_ingestion` = pure parse (complete); `m2.1_connection` = P08 gate (this slice).
 
 ## Sub-Modules
 
