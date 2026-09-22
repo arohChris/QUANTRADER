@@ -5,7 +5,7 @@
 
 ## Current Gate: G0 — Edge Validation (entry 2026-09-22)
 
-## Last Updated: 2026-09-22  — ACTION 9+10 LGTM received; Drop 1.4 **frozen**; M2.1 REV1 signed; M2.2 Step 3 tests written (`test_normalize_spec.py`); suite currently collection-RED until Step 5 (expected). Next: human LGTM on M2.2 tests (ACTION 11).
+## Last Updated: 2026-09-22 — M2.2 Normalization **complete** (tests LGTM ACTION 11 + Step 5 impl + 179/179 suite + verify identity_ok + human LGTM Step 7/8). M2.1 still uncommitted pending human commit. Next slice: per gate order (M2.3 quality gate spec when human opens it).
 
 ## Sub-Modules
 
@@ -16,7 +16,7 @@
 | M1 | M1.3 Config & Env | ✓ `Settings, feature_flags SIGHUP` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
 | M1 | M1.4 Security & Isolation | ✓ `tenant_context, vault, permissions` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
 | M2 | M2.1 Ingestion | ✓ `docs/specs/m2.tick_ingest.md` **REV1** signed @you 2026-09-22 | ✓ `InternalTick` 1.1 + pkg 2.1.0 + `Drop` **1.4 frozen** (LGTM ACTION 10) | 50+contract | full suite **139/139** pre-M2.2-tests, 0 skipped | n/a (no money) | ✓ verify accepts=4 drops=6; human OK | ✓ LGTM @you (ACTION 10) | complete | (uncommitted — pending commit) |
-| M2 | M2.2 Normalization | ✓ `docs/specs/m2.normalize.md` REV1 **LGTM @you (ACTION 9)** | Drop **1.4 frozen**; MarketData 1.4 unchanged | Step 3 written: `tests/m2_market_data/test_normalize_spec.py` | collection-RED until Step 5 (expected) | — hand-calc cases in test comments | — | **awaiting tests LGTM (ACTION 11)** | tests | — |
+| M2 | M2.2 Normalization | ✓ `docs/specs/m2.normalize.md` REV1 **LGTM @you (ACTION 9)** | Drop **1.4 frozen**; MarketData 1.4 unchanged | 40 (`test_normalize_spec.py`) | full suite **179/179**, 0 skipped | ✓ hand-calcs in test comments (HALF_UP/tick/identity) | ✓ `scripts/verify_normalize.py` on `data/sample_ticks_realistic.jsonl` — accepts=4 drops=0, identity_ok FX.EURUSD — human OK 2026-09-22 | ✓ tests LGTM ACTION 11 + impl LGTM @you Step 7/8 | complete | (uncommitted — pending commit) |
 | M2b | M2b.1 Instrument & Symbol | ✓ `docs/specs/m2b.instrument_symbol.md` | ✓ `AssetClass` **2.0.0** (major scope cut) + `ReferenceError` hierarchy 1.2.0 — pkg **2.1.0** | 36 (post-review F2/F4/F5/F7) | m2b file 36/36; full suite **139/139**, 0 skipped | n/a (no money) | ✓ fixtures only (`config/assets/*.yaml` + human OK 2026-09-22) — **no broker-tick replay log** (F9: downgraded vs M2.1 bar) | ✓ tests LGTM + verify OK @you; review F1–F11 applied | complete (review minors applied 2026-09-22; F6 deferred P06) | a6908c2 |
 | M3 | M3.1 RSI | — | — | 0 | — | — | — | — | not started | — |
 | M4 | M4.1 <strategy> | — | — | 0 | — | — | — | — | not started | — |
@@ -40,7 +40,8 @@
 - **non-blocking:** import-linter config needed `include_external_packages=True` (fixed 2026-09-22); `check_structure.py` cp1252 Unicode crash fixed with ASCII output (fixed 2026-09-22).
 - ~~**non-blocking:** `tests/m2_market_data/test_tick_ingest_spec.py` disabled (pre-correction contract)~~ — **RESOLVED 2026-09-22:** rewritten against corrected `docs/specs/m2.tick_ingest.md` (InternalTick+Drop contracts, fingerprint dedup, no MarketData emit). Suite is intentionally collection-RED until Step 5 `TickIngestor` impl (only after human LGTM on tests).
 - ~~**non-blocking:** M2.1 REV1 (Deriv optional id/bid/ask etc.) applied to spec + Drop 1.4 code 2026-09-22 — existing M2.1 tests/impl may need a small sync pass once ACTION 10 LGTM lands; re-run full suite then. Drop 1.4 enum change needs human LGTM per AGENTS §5 before treated as frozen.~~ — **SYNCED 2026-09-22:** `tick_ingest.py` + tests rewritten to REV1; suite **133/133 green, 0 skipped**; verify re-run OK. Still awaiting human LGTM to freeze Drop 1.4 + sign ACTION 10 (AGENTS §5).
-- ~~**expected (not a bug):** full suite is RED while M2b.1 Step 5 impl is unwritten~~ — **RESOLVED 2026-09-22:** importorskip removed, impl written; current full suite **139/139 green, 0 skipped** (do not quote historical 76/76 as current — F10).
+- ~~**expected (not a bug):** full suite is RED while M2b.1 Step 5 impl is unwritten~~ — **RESOLVED 2026-09-22:** importorskip removed, impl written; suite was **139/139** then **179/179 after M2.2** (do not quote historical 76/76 as current — F10).
+- ~~**expected (not a bug):** suite collection-RED until M2.2 Step 5 `normalize.py`~~ — **RESOLVED 2026-09-22:** impl + watermark written; full suite **179/179 green, 0 skipped**; verify `identity_ok=True`.
 - **F6 deferred → P06 entry criteria (non-blocking for M2b.1):** `reference.py` silently continues on missing YAML / malformed `broker_native` / duplicate native last-wins / no `AssetClass` validation at load. Spec defers to P06 `reference_validator` (`FAIL STARTUP`); **P06 must land the load-time validator before `tick_size` becomes authoritative.**
 - **F9 verify honesty:** M2b.1 Real-Data cell is **fixtures only** — no `scripts/verify_*` broker-tick replay. Fine for pure mapping (no money); do not treat as M2.1-class evidence.
 - M1 `42/42` green. New bugs go here as `blocking` vs `non-blocking` with issue link.
