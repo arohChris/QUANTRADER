@@ -110,8 +110,8 @@ def main() -> int:
     if args.output == "-":
         sys.stdout.write(text)
     else:
+        # file only — no double stdout when writing to path
         Path(args.output).write_text(text, encoding="utf-8")
-        sys.stdout.write(text)
     return 0 if ok else 1
 
 

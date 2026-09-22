@@ -59,7 +59,10 @@ def _md(
         quality=quality,
         watermark=watermark,
         exchange_timestamp=exchange if exchange is not None else BASE,
-        received_at=received if received is not None else BASE + timedelta(seconds=1),
+        # WHY far received: default received must not trip defensive future gate
+        # (exchange can be BASE+50s in tests; received+5s must clear it).
+        # Explicit received= still used by the future adversarial test.
+        received_at=received if received is not None else BASE + timedelta(hours=1),
         provider=provider,
         provider_symbol="frxEURUSD" if symbol == "EURUSD" else symbol,
         reference_snapshot_id="REF-2026-09-22-VERIFY",
@@ -255,3 +258,33 @@ def test_identity_multi_instrument_isolated_builders() -> None:
     assert isinstance(c1, Candle) and isinstance(c2, Candle)
     assert c1.open == 1.08400
     assert c2.open == 64248.0
+
+
+# --- Spread stats (great addition from review — Candle contract fields) ---
+
+def test_spread_stats_present_when_bid_ask() -> None:
+    # Hand calc: spreads = ask-bid = 0.00010, 0.00020, 0.00030
+    # min=0.00010 max=0.00030 avg=(0.00010+0.00020+0.00030)/3=0.00020
+    b = _builder()
+    b.on_tick(_md(price=1.08400, bid=1.08395, ask=1.08405, exchange=BASE + timedelta(seconds=5)))  # spread 0.00010
+    b.on_tick(_md(price=1.08410, bid=1.08400, ask=1.08420, exchange=BASE + timedelta(seconds=15)))  # spread 0.00020
+    b.on_tick(_md(price=1.08420, bid=1.08400, ask=1.08430, exchange=BASE + timedelta(seconds=25)))  # spread 0.00030
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.min_spread is not None and abs(c.min_spread - 0.00010) < 1e-9
+    assert c.max_spread is not None and abs(c.max_spread - 0.00030) < 1e-9
+    assert c.average_spread is not None and abs(c.average_spread - 0.00020) < 1e-9
+    assert c.tick_count == 3
+
+
+def test_spread_stats_none_when_any_bid_or_ask_missing() -> None:
+    b = _builder()
+    b.on_tick(_md(price=1.08400, bid=1.08395, ask=1.08405, exchange=BASE + timedelta(seconds=5)))
+    # second tick missing bid → all-or-none → all three None
+    b.on_tick(_md(price=1.08410, bid=None, ask=1.08420, exchange=BASE + timedelta(seconds=15)))
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.average_spread is None
+    assert c.min_spread is None
+    assert c.max_spread is None
+    assert c.tick_count == 2
