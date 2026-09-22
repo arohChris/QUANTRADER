@@ -1,6 +1,6 @@
 """
 M2.1 Tick Ingest — Spec tests for REAL Deriv WS frames (WRITTEN BEFORE CODE).
-WHY: AGENTS.md §2 Step 3 — docs/specs/m2.tick_ingest.md (human format correction 2026-09-22).
+WHY: AGENTS.md §2 Step 3 — docs/specs/m2.1_ingestion.spec.md (human format correction 2026-09-22).
      Contracts from shared.contracts; only TickIngestor is impl import (collection RED until Step 5).
 
 Frame: msg_type=tick + nested tick{ask,bid,epoch,id?,pip_size,quote,symbol} — NOT flat schema.
@@ -21,7 +21,7 @@ from shared.contracts.internal_tick import InternalTick
 from shared.core.clock import SimulatedClock
 
 # Direct impl import ONLY — fails collection until Step 5 (honest RED).
-from modules.m2_market_data.ingest.tick_ingest import TickIngestor
+from modules.m2_market_data.ingest.ingest import TickIngestor
 
 # Human sample epochs (Deriv WS docs) — clock defaults a few seconds AFTER the 3
 # asset samples (EPOCH..EPOCH+2) so multi-asset accepts are not false timestamp_ahead.

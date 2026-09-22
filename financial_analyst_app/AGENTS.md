@@ -44,7 +44,7 @@
 
 A sub-module is `complete` only when **all** are true and recorded in `BUILD_STATUS.md`:
 
-- [ ] **Spec exists** — `docs/specs/<module>.<sub>.md` or inline in `modules/<M>.md`, with inputs/outputs/edges/correctness definition, reviewed.
+- [ ] **Spec exists** — `docs/specs/<m>.<sub>_<short>.spec.md` (e.g. `m2.3_validation.spec.md`) or inline in `modules/<M>.md`, with inputs/outputs/edges/correctness definition, reviewed.
 - [ ] **Contract exists & frozen** (if it touches a shared interface) — versioned in `shared/contracts/`, consumers listed.
 - [ ] **Tests exist BEFORE code** — written against spec, not code, including edge + adversarial + hand-calc (see §2.3). Tests reviewed by human.
 - [ ] **Implementation exists** — solely to satisfy approved tests, `Decimal` for money, `async` where I/O, `frozen` where schema.
@@ -107,7 +107,7 @@ No gate begins until the prior gate's exit criteria are met **and recorded in th
 ### Expanded — How Each Step Closes (with done definition)
 
 #### Step 1 — Spec (blocking)
-**Done when:** File `docs/specs/<module>.<sub>.md` exists with:
+**Done when:** File `docs/specs/<m>.<sub>_<short>.spec.md` exists with:
 - One-sentence purpose, inputs (types/units/currency), outputs (types/units), invariants
 - Bullet list of **every edge case** (empty input, single-tick, gap, holiday, lot size 0, max size, negative price, etc.) + expected behavior per edge
 - Definition of "correct" (formula reference, source paper, or hand-calc, with rounding rule)
@@ -359,7 +359,7 @@ Status values ONLY: `not started` | `spec` | `contract` | `tests` | `tests appro
 
 ```
 Gate: G0 (entry 2026-09-22)
-Built: M3.1 RSI (spec docs/specs/m3.rsi.md, contract n/a)
+Built: M3.1 RSI (spec docs/specs/m3.1_rsi.spec.md, contract n/a)
 Tests: 13 (8 edges + 1 adversarial + 4 hand-calc), 13/13 pass, log /tmp/pytest_rsi.log
 Hand-verified: 3 hand calcs (sheet docs/hand/rsi_2026-09-22.md: cases 1-3) vs TradingView ±0.01 — signed @you
 Real-data: verified on 2026-01-01 EURUSD 1m (1000 candles) — output /tmp/rsi_verify.csv, human eyeballed first 5
@@ -389,7 +389,7 @@ Human gates: **Risk/Execution/Ledger PRs need explicit human LGTM** — AI self-
 
 ## 9. Templates (Copy-Paste)
 
-### 9.1 Spec Template (`docs/specs/<m>.<sub>.md`)
+### 9.1 Spec Template (`docs/specs/<m>.<sub>_<short>.spec.md`)
 ```markdown
 # Spec: M3.1 RSI(14)
 
@@ -420,7 +420,7 @@ Signer: @you 2026-09-22
 ```
 Sub-module: M3.1 RSI
 Gate: G0
-Spec: docs/specs/m3.rsi.md (12 lines)
+Spec: docs/specs/m3.1_rsi.spec.md (12 lines)
 Tests: 13 (8+1 adv+4 hand), log /tmp/pytest.log
 Hand: docs/hand/rsi_2026-09-22.md 3 cases
 Real-data: /tmp/rsi_verify.csv (1000 candles, first 5 = 68.12, 67.90...)

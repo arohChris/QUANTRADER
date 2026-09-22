@@ -9,7 +9,7 @@ Version: 1.5.0 additive (minor) 2026-09-22: + future_timestamp, negative_price,
 inverted_quote (M2.3 bouncer — human LGTM with m2.3_validation.spec.md review).
 Prior 1.4.0: + invalid_timestamp, + unknown_symbol.
 Package stays 2.1.0 until next contracts-package cut.
-No ErrorCode import — own enum per docs/specs/m2.tick_ingest.md contracts note.
+No ErrorCode import — own enum per docs/specs/m2.1_ingestion.spec.md contracts note.
 Full set (11): empty, invalid_json, missing_field, invalid_price, invalid_timestamp,
 timestamp_ahead, duplicate_tick, unknown_symbol, future_timestamp, negative_price,
 inverted_quote.

@@ -1,6 +1,6 @@
 """
 P05 / M2b.1 — Instrument & Symbol Identity — Spec tests (WRITTEN BEFORE CODE).
-WHY: AGENTS.md §2 Step 3 — tests exist first against docs/specs/m2b.instrument_symbol.md.
+WHY: AGENTS.md §2 Step 3 — tests exist first against docs/specs/m2b.1_instrument_symbol.spec.md.
 Implementation imported only via the facade entry point.
 
 Review notes applied 2026-09-22:

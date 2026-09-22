@@ -4,7 +4,7 @@ WHY: M2.1 accepted raw frames; this slice canonicalizes identity (M2b), stamps
 reference lineage, rounds price once to instrument tick_size, and allocates the
 scoped processing watermark — all-or-drop, never partial MarketData.
 
-Processing order is the spec contract (docs/specs/m2.normalize.md):
+Processing order is the spec contract (docs/specs/m2.2_normalization.spec.md):
   1 aware timestamp → 2 to_canonical → 3 exists(broker) → 4 get_instrument
   → 5 snapshot once → 6 price round once → 7 watermark → 8 frozen MarketData.
 

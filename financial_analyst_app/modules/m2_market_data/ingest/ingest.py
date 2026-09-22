@@ -11,7 +11,7 @@ provider, symbol, epoch, quote, bid if present, ask if present, source_sequence
 if present (canonical serialization, never bare (symbol, epoch, seq) alone).
 Dedup runs BEFORE future-epoch / other business rules so reason is stable.
 
-Spec: docs/specs/m2.tick_ingest.md (REV1 2026-09-22 — id optional, invalid_timestamp)
+Spec: docs/specs/m2.1_ingestion.spec.md (REV1 2026-09-22 — id optional, invalid_timestamp)
 Consumes: shared.contracts.drop, shared.contracts.internal_tick, shared.core.clock
 """
 from __future__ import annotations

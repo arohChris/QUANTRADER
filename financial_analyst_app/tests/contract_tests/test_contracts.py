@@ -201,7 +201,7 @@ def test_asset_class_from_yaml_value_valid() -> None:
 
 
 def test_drop_reason_vocabulary_locked_to_spec() -> None:
-    # docs/specs/m2.tick_ingest.md + m2.3_validation.spec.md — Drop 1.5.0 exact eleven reasons (M2.1+M2.2+M2.3 shared)
+    # docs/specs/m2.1_ingestion.spec.md + m2.3_validation.spec.md — Drop 1.5.0 exact eleven reasons (M2.1+M2.2+M2.3 shared)
     assert DropReason.empty == "empty"
     assert DropReason.invalid_json == "invalid_json"
     assert DropReason.missing_field == "missing_field"

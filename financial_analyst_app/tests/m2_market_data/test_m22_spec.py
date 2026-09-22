@@ -1,6 +1,6 @@
 """
 P09 / M2.2 — Normalization (InternalTick → MarketData) — Spec tests (WRITTEN BEFORE CODE).
-WHY: AGENTS.md §2 Step 3 — tests exist first against docs/specs/m2.normalize.md (REV1 LGTM).
+WHY: AGENTS.md §2 Step 3 — tests exist first against docs/specs/m2.2_normalization.spec.md (REV1 LGTM).
 Implementation imported only via modules.m2_market_data.normalize — collection RED until Step 5.
 
 Contracts only until Step 5: InternalTick, MarketData, Drop/DropReason, reference facade,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 M2.1 Step 7 — Realistic tick replay verify.
-Usage: python scripts/verify_tick_ingest.py --input data/sample_ticks_realistic.jsonl --output /tmp/m21_out.txt
+Usage: python scripts/verify_m21.py --input data/sample_ticks_realistic.jsonl --output /tmp/m21_out.txt
 Reads JSONL frames (Deriv-shaped tick schema), runs TickIngestor, prints accept/drop summary + first accepts.
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from modules.m2_market_data.ingest.tick_ingest import TickIngestor  # noqa: E402
+from modules.m2_market_data.ingest.ingest import TickIngestor  # noqa: E402
 from shared.contracts.drop import Drop  # noqa: E402
 from shared.contracts.internal_tick import InternalTick  # noqa: E402
 from shared.core.clock import SimulatedClock  # noqa: E402
