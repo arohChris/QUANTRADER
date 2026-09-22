@@ -54,6 +54,7 @@ Bible ref: System_Development_Manual/modules/02b_M2b_Reference.md §1, §4, §5,
 
 ## Contract note
 - **`AssetClass` enum is a frozen shared contract** (`shared/contracts/instrument.py`, `version="1.0"`, `extra="forbid"`): vocabulary `forex|crypto|commodity|index|equity|synthetic`. Consumers: M2b (loader/validator), M2.2, M3 (`get_profile(asset_class)`), M5, M6, M7, M8.
+- **Typed reference errors** live in `shared/contracts/errors.py` (additive, package `1.2.0`): `ReferenceError` base → `UnknownBrokerError`, `UnknownInstrumentError`, `ReferenceValidationError`. Consumers: M2b facade, M2.2, tests.
 - Full frozen `Instrument` Pydantic model deferred — identity API returns `dict` per manual §4; enum alone locks vocabulary without over-freezing the facade.
 - `ReferenceService` remains a plain Python facade (module), not a shared contract.
-- Package bump: contracts `__version__` 1.0.0 → 1.1.0 (additive enum).
+- Package bump: contracts `__version__` 1.0.0 → 1.1.0 (AssetClass) → 1.2.0 (typed reference errors).

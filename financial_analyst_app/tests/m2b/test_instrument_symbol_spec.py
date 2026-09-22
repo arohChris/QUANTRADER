@@ -21,10 +21,10 @@ import yaml
 
 # Direct import ONLY — no importorskip. Before Step 5 impl exists this collection-fails
 # and the suite goes RED (honest "not implemented"); after impl, all tests must pass.
-import modules.reference.reference as reference
+from modules.reference import reference
 
 # Typed errors — frozen contract (M2b.1 review: assert exact type, not bare Exception)
-from shared.contracts.errors import (  # noqa: E402
+from shared.contracts.errors import (
     ReferenceValidationError,
     UnknownBrokerError,
     UnknownInstrumentError,
