@@ -1,11 +1,12 @@
 """
-M2.4 — candles — Tick → Candle 1m builder (pure, stateful, no clock).
+M2.4 — candles — Tick → Candle builder (pure, stateful, no clock).
 WHY: M2.3 emits validated ticks; M3/M8 need OHLC candles. Bucket from
 md.exchange_timestamp only — no wall clock, deterministic, replayable.
-
+Intervals: 1m,5m,15m,40m,1h,2h,4h,24h — floor to interval boundary (day-relative
+minutes // interval_minutes), NOT floor-to-minute (that would only be correct for 1m).
 Processing order (docs/specs/m2.4_transformation.spec.md):
   1 kind+Tick → 2 aware timestamps → 3 future defensive > received+5s →
-  4 price gate → 5 floor to minute → 6 late / boundary →
+  4 price gate → 5 floor to interval boundary → 6 late / boundary →
   7 OHLC update → 8 quality stamp → 9 return None (open) | Candle (closed).
 
 Spread stats all-or-none per bucket: any contributing tick missing bid/ask →
@@ -21,7 +22,16 @@ from shared.contracts.drop import Drop, DropReason
 from shared.contracts.market_data import Candle, DataQuality, MarketData, Tick
 
 _FUTURE_TOLERANCE = timedelta(seconds=5)
-_INTERVAL_MINUTES = {"1m": 1, "5m": 5, "15m": 15, "1h": 60}
+_INTERVAL_MINUTES = {
+    "1m": 1,
+    "5m": 5,
+    "15m": 15,
+    "40m": 40,
+    "1h": 60,
+    "2h": 120,
+    "4h": 240,
+    "24h": 1440,
+}
 
 
 class CandleBuilder:
@@ -66,8 +76,13 @@ class CandleBuilder:
         if not math.isfinite(price) or Decimal(str(price)) <= 0:
             return self._drop(md, DropReason.negative_price, f"price={price!r}")
 
-        # --- 5. floor to minute UTC ---
-        bucket_start = exchange.replace(second=0, microsecond=0, tzinfo=timezone.utc)
+        # --- 5. floor to interval boundary UTC (day-relative, not minute) ---
+        day_start = exchange.astimezone(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        minutes_into_day = int((exchange.astimezone(timezone.utc) - day_start).total_seconds() // 60)
+        bucket_idx = minutes_into_day // self._minutes
+        bucket_start = day_start + timedelta(minutes=bucket_idx * self._minutes)
 
         # --- 6a. late: prior closed bucket (open or already flushed) ---
         if bucket_start < self._open_start if self._open_start else False:

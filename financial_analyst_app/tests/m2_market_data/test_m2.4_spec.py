@@ -260,6 +260,82 @@ def test_identity_multi_instrument_isolated_builders() -> None:
     assert c2.open == 64248.0
 
 
+# --- Multi-interval support (1m,5m,15m,40m,1h,2h,4h,24h) ---
+
+def test_supported_intervals_accepted() -> None:
+    for iv in ("1m", "5m", "15m", "40m", "1h", "2h", "4h", "24h"):
+        CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval=iv)
+
+
+def test_unsupported_interval_raises_value_error() -> None:
+    with pytest.raises(ValueError, match="unsupported interval"):
+        CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="7m")
+
+
+def test_40m_interval_bucket_boundary_and_duration() -> None:
+    # 40m boundaries within a day: 00:00, 00:40, 01:20, ...
+    # Hand calc: exchange 01:30 → floor to 01:20 (minutes_into_day=90, 90//40=2, 2*40=80 → 01:20)
+    start = datetime(2026, 3, 22, 1, 30, 0, tzinfo=timezone.utc)
+    b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="40m")
+    b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.interval == "40m"
+    assert c.interval_start == datetime(2026, 3, 22, 1, 20, 0, tzinfo=timezone.utc)
+    assert c.interval_end == datetime(2026, 3, 22, 2, 0, 0, tzinfo=timezone.utc)
+    assert c.expected_duration_ms == 40 * 60 * 1000
+
+
+def test_2h_interval_bucket_boundary_and_duration() -> None:
+    # Hand calc: exchange 03:10 → floor to 02:00 (190//120=1 → 120 min = 02:00)
+    start = datetime(2026, 3, 22, 3, 10, 0, tzinfo=timezone.utc)
+    b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="2h")
+    b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.interval_start == datetime(2026, 3, 22, 2, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_end == datetime(2026, 3, 22, 4, 0, 0, tzinfo=timezone.utc)
+    assert c.expected_duration_ms == 120 * 60 * 1000
+
+
+def test_4h_interval_bucket_boundary_and_duration() -> None:
+    # Hand calc: exchange 05:00 → floor to 04:00 (300//240=1 → 240 min = 04:00)
+    start = datetime(2026, 3, 22, 5, 0, 30, tzinfo=timezone.utc)
+    b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="4h")
+    b.on_tick(_md(price=1.08400, exchange=start))
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.interval_start == datetime(2026, 3, 22, 4, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_end == datetime(2026, 3, 22, 8, 0, 0, tzinfo=timezone.utc)
+    assert c.expected_duration_ms == 240 * 60 * 1000
+
+
+def test_24h_interval_bucket_boundary_and_duration() -> None:
+    # Hand calc: exchange 13:00 on day → floor to 00:00 same day (780//1440=0 → 0 min)
+    start = datetime(2026, 3, 22, 13, 0, 0, tzinfo=timezone.utc)
+    b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="24h")
+    b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.interval_start == datetime(2026, 3, 22, 0, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_end == datetime(2026, 3, 23, 0, 0, 0, tzinfo=timezone.utc)
+    assert c.expected_duration_ms == 1440 * 60 * 1000
+
+
+def test_multi_minute_interval_stays_open_across_minute_boundary() -> None:
+    # 5m bucket: ticks at 19:46 and 19:47 must NOT close — same 5m bucket
+    # floor: 19:45 for both (minutes_into_day//5)
+    b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="5m")
+    r1 = b.on_tick(_md(price=1.08400, exchange=datetime(2026, 3, 22, 19, 46, 0, tzinfo=timezone.utc)))
+    r2 = b.on_tick(_md(price=1.08410, exchange=datetime(2026, 3, 22, 19, 47, 0, tzinfo=timezone.utc)))
+    assert r1 is None and r2 is None  # still open
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.tick_count == 2
+    assert c.interval_start == datetime(2026, 3, 22, 19, 45, 0, tzinfo=timezone.utc)
+    assert c.interval_end == datetime(2026, 3, 22, 19, 50, 0, tzinfo=timezone.utc)
+
+
 # --- Spread stats (great addition from review — Candle contract fields) ---
 
 def test_spread_stats_present_when_bid_ask() -> None:
