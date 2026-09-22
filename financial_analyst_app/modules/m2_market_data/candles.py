@@ -86,7 +86,8 @@ class CandleBuilder:
         bucket_start = day_start + timedelta(minutes=bucket_idx * self._minutes)
 
         # --- 6a. late: prior closed bucket (open or already flushed) ---
-        if bucket_start < self._open_start if self._open_start else False:
+        # WHY explicit None-check: prior `(a < b if b else False)` ternary is hard to scan on review.
+        if self._open_start is not None and bucket_start < self._open_start:
             return self._drop(md, DropReason.invalid_timestamp, "late tick prior open bucket")
         if self._open_start is None and self._last_closed_start is not None:
             if bucket_start <= self._last_closed_start:
@@ -123,6 +124,7 @@ class CandleBuilder:
                 self._gapped = True
 
         # spread stats — all-or-none
+        # WHY after if/else: first tick's spread must be counted too (all-or-none).
         tick = md.payload
         if tick.bid is not None and tick.ask is not None:
             self._open["spreads"].append(Decimal(str(tick.ask)) - Decimal(str(tick.bid)))
