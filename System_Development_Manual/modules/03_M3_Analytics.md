@@ -95,7 +95,7 @@ async def get_features(symbol, timeframe, user_id, broker):  # async: Redis + La
 **Connects:** Called by `M4` `strategy.generate` (one call, not 17). `M5` also calls for `vol` during sizing.
 
 ### `profiles/*.py`
-**Does:** `forex_profile → {rsi_period:14, vol_window:20}`, `crypto_profile → {rsi_period:14, vol_window:30}`, `synthetic_profile → {vol_window:50, no overnight gap handling}`. Thin wrappers around `config/assets/*.yaml`.
+**Does:** `forex_profile → {rsi_period:14, vol_window:20}`, `crypto_profile → {rsi_period:14, vol_window:30}`, `commodity_profile → {vol_window:30}`. Thin wrappers around `config/assets/*.yaml`.
 **Pseudocode:** `def get_profile(asset_class): return load_yaml(f"config/assets/{asset_class}.yaml")["analytics"]`
 **Connects:** `M3.2` reads params, not hard-coded. Adding `crypto` = new YAML + profile file, no code change in `per_asset`.
 
@@ -198,7 +198,7 @@ def correlation(candles_a, candles_b, window=20):
 #### `macro/rates.py`, `event/event_registry.py`
 **Does:** `rates` fetches FED 5.5%, `event_registry` knows `CPI 2026-09-21 14:30` is high impact.
 **Pseudocode:** `event = registry.get("CPI", date); impact = classifier(event)  # high/medium/low`
-**Connects:** `M4 systematic_macro` reads `macro_regime=risk_off → short indices`.
+**Connects:** `M4 systematic_macro` reads `macro_regime=risk_off → reduce crypto / commodity risk`.
 
 ---
 

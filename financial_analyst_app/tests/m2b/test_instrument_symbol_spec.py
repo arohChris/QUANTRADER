@@ -9,8 +9,11 @@ Review notes applied 2026-09-22:
   3) YAML source-of-truth: mappings loaded from config/assets/*.yaml, not hard-coded
   4) importorskip REMOVED — missing impl must FAIL collection (suite red), never skip to exit 0
      (AGENTS.md §2 Step 6 zero-skips, §10 anti-pattern; review 2026-09-22)
+  5) Review F2/F4/F5/F7 2026-09-22: named GBPUSD+BTCUSD/mt5 gates; to_native unlisted-broker +
+     unknown-id pins; exists() unknown-broker False; get_instrument deepcopy isolation.
 
-Gate: to_canonical("R_75","deriv") == "SYNTHETIC.VOLATILITY_75"
+Gate: to_canonical("frxEURUSD","deriv") == "FX.EURUSD"
+Scope 2026-09-22: forex|crypto|commodity only — synthetic removed from product.
 """
 from __future__ import annotations
 
@@ -33,7 +36,7 @@ from shared.contracts.errors import (
 # --- YAML fixtures (source of truth for I02 + source-of-truth test) ---
 
 _ASSETS_DIR = Path(__file__).resolve().parents[2] / "config" / "assets"
-_YAML_FILES = ("forex.yaml", "synthetic.yaml", "crypto.yaml", "commodities.yaml")
+_YAML_FILES = ("forex.yaml", "crypto.yaml", "commodities.yaml")
 
 
 def _iter_yaml_mappings():
@@ -64,12 +67,8 @@ def _iter_yaml_mappings():
 
 # --- Edges from spec ---
 
-def test_to_canonical_r75_deriv_gate() -> None:
-    # P05 gate (bible 02b line 340): R_75 -> SYNTHETIC.VOLATILITY_75
-    assert reference.to_canonical("R_75", "deriv") == "SYNTHETIC.VOLATILITY_75"
-
-
-def test_to_canonical_frxEURUSD_deriv() -> None:
+def test_to_canonical_frxEURUSD_deriv_gate() -> None:
+    # P05 gate (scope-corrected 2026-09-22): frxEURUSD -> FX.EURUSD
     assert reference.to_canonical("frxEURUSD", "deriv") == "FX.EURUSD"
 
 
@@ -77,10 +76,9 @@ def test_to_canonical_EURUSD_mt5() -> None:
     assert reference.to_canonical("EURUSD", "mt5") == "FX.EURUSD"
 
 
-def test_to_native_roundtrip_I02_synthetic() -> None:
-    canon = reference.to_native("SYNTHETIC.VOLATILITY_75", "deriv")
-    assert canon == "R_75"
-    assert reference.to_canonical(canon, "deriv") == "SYNTHETIC.VOLATILITY_75"
+def test_to_canonical_cryBTCUSD_deriv() -> None:
+    # REV1 2026-09-22: crypto instrument_id namespaced CRYPTO.* per human gate
+    assert reference.to_canonical("cryBTCUSD", "deriv") == "CRYPTO.BTCUSD"
 
 
 def test_to_native_roundtrip_I02_forex_deriv() -> None:
@@ -96,7 +94,7 @@ def test_unknown_native_passthrough() -> None:
 def test_unknown_broker_raises_typed_error() -> None:
     # Review #1: exact type, not bare Exception
     with pytest.raises(UnknownBrokerError) as exc:
-        reference.to_canonical("R_75", "coinbase")
+        reference.to_canonical("frxEURUSD", "coinbase")
     assert "coinbase" in str(exc.value).lower()
 
 
@@ -121,8 +119,8 @@ def test_exists_with_broker_true() -> None:
 
 
 def test_exists_broker_not_listed_false() -> None:
-    # SYNTHETIC only on deriv per synthetic.yaml brokers: [deriv]
-    assert reference.exists("SYNTHETIC.VOLATILITY_75", broker="mt5") is False
+    # headway not in commodities.yaml brokers for XAUUSD
+    assert reference.exists("COMMODITY.XAUUSD", broker="headway") is False
 
 
 def test_exists_without_broker() -> None:
@@ -130,20 +128,46 @@ def test_exists_without_broker() -> None:
     assert reference.exists("NOPE.MISSING") is False
 
 
+def test_exists_unknown_broker_string_returns_false() -> None:
+    # F5 (review 2026-09-22): exists() with unknown broker → False (not raise);
+    # to_canonical unknown broker still raises (spec:33) — asymmetry pinned.
+    assert reference.exists("FX.EURUSD", broker="coinbase") is False
+    assert reference.exists("FX.EURUSD", broker="") is False
+    assert reference.exists("FX.EURUSD", broker=None) is True
+
+
+def test_to_native_known_id_unlisted_broker_raises_reference_validation() -> None:
+    # F4 (review 2026-09-22): known id + broker with no mapping → ReferenceValidationError
+    # (distinct from UnknownInstrumentError for id missing entirely — pinned per review).
+    with pytest.raises(ReferenceValidationError) as exc:
+        reference.to_native("FX.GBPUSD", "headway")
+    assert "FX.GBPUSD" in str(exc.value)
+    assert "headway" in str(exc.value)
+
+
+def test_to_native_unknown_id_raises_unknown_instrument() -> None:
+    # F4: unknown id → UnknownInstrumentError (spec:34 path for reverse map)
+    with pytest.raises(UnknownInstrumentError) as exc:
+        reference.to_native("NOPE.MISSING", "deriv")
+    assert "NOPE.MISSING" in str(exc.value)
+
+
 def test_exists_broker_none_vs_listed() -> None:
-    assert reference.exists("SYNTHETIC.VOLATILITY_75") is True
-    assert reference.exists("SYNTHETIC.VOLATILITY_75", broker=None) is True
+    assert reference.exists("FX.GBPUSD") is True
+    assert reference.exists("FX.GBPUSD", broker=None) is True
+    # GBPUSD not listed for headway
+    assert reference.exists("FX.GBPUSD", broker="headway") is False
 
 
 def test_case_sensitive_no_silent_lower() -> None:
-    # Spec: case-sensitive — r_75 must NOT map
-    assert reference.to_canonical("r_75", "deriv") == "r_75"
+    # Spec: case-sensitive — frxeurusd must NOT map
+    assert reference.to_canonical("frxeurusd", "deriv") == "frxeurusd"
 
 
 def test_deterministic_same_input_same_output_I08() -> None:
-    a = reference.to_canonical("R_75", "deriv")
-    b = reference.to_canonical("R_75", "deriv")
-    assert a == b == "SYNTHETIC.VOLATILITY_75"
+    a = reference.to_canonical("frxEURUSD", "deriv")
+    b = reference.to_canonical("frxEURUSD", "deriv")
+    assert a == b == "FX.EURUSD"
 
 
 # --- Adversarial (not in spec edges) ---
@@ -163,15 +187,15 @@ def test_adversarial_empty_native_or_broker_raises() -> None:
     with pytest.raises(ReferenceValidationError):
         reference.to_canonical("", "deriv")
     with pytest.raises(ReferenceValidationError):
-        reference.to_canonical("R_75", "")
+        reference.to_canonical("frxEURUSD", "")
     with pytest.raises(UnknownBrokerError):
-        reference.to_canonical("R_75", "")  # empty broker → typed broker error (spec edge)
+        reference.to_canonical("frxEURUSD", "")  # empty broker → typed broker error (spec edge)
 
 
 def test_adversarial_mapped_id_not_in_master_detectable() -> None:
     # If a mapping pointed at unknown id, exists() must be False (detectable; P06 validates at publish)
-    assert reference.exists("SYNTHETIC.VOLATILITY_75") is True
-    assert reference.exists("SYNTHETIC.GHOST") is False
+    assert reference.exists("FX.EURUSD") is True
+    assert reference.exists("FX.GHOST") is False
 
 
 def test_no_user_id_in_cache_key_I06() -> None:
@@ -182,7 +206,28 @@ def test_no_user_id_in_cache_key_I06() -> None:
     assert "user_id" not in inspect.signature(reference.get_instrument).parameters
 
 
+def test_get_instrument_returns_deepcopy_isolation() -> None:
+    # F7 (review 2026-09-22): caller mutation must not corrupt shared _MASTER
+    a = reference.get_instrument("FX.EURUSD")
+    a["canonical_symbol"] = "HACKED"
+    a["brokers"] = []
+    b = reference.get_instrument("FX.EURUSD")
+    assert b["canonical_symbol"] == "EURUSD"
+    assert "deriv" in b["brokers"]
+    assert reference.to_canonical("frxEURUSD", "deriv") == "FX.EURUSD"
+
+
 # --- Commodity (asset class expansion — defaults 2026-09-22) ---
+
+def test_to_canonical_frxGBPUSD_deriv_gate() -> None:
+    # F2 (review 2026-09-22): named test for spec:46 gate pair
+    assert reference.to_canonical("frxGBPUSD", "deriv") == "FX.GBPUSD"
+
+
+def test_to_canonical_BTCUSD_mt5_gate() -> None:
+    # F2 (review 2026-09-22): named test for spec:48 gate pair (mt5 native == display)
+    assert reference.to_canonical("BTCUSD", "mt5") == "CRYPTO.BTCUSD"
+
 
 def test_to_canonical_frxXAUUSD_deriv() -> None:
     assert reference.to_canonical("frxXAUUSD", "deriv") == "COMMODITY.XAUUSD"
@@ -242,6 +287,9 @@ def test_I02_exhaustive_roundtrip_all_yaml_mappings() -> None:
     """
     mappings = list(_iter_yaml_mappings())
     assert len(mappings) >= 7, f"expected ≥7 YAML mappings, got {len(mappings)} — check config/assets/*.yaml"
+    # Scope guard: no synthetic/index/equity instruments in master after 2026-09-22 cut
+    for inst_id, _broker, _native in mappings:
+        assert not inst_id.startswith(("SYNTHETIC.", "INDEX.", "EQUITY.")), inst_id
     for inst_id, broker, native in mappings:
         got_native = reference.to_native(inst_id, broker)
         assert got_native == native, (

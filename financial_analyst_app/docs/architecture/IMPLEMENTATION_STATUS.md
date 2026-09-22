@@ -58,7 +58,7 @@ financial_analyst_app/
 │       ├── retry_policy.py # jitter + idempotency + dead-letter (async)
 │       └── broker_vault.py # Fernet per-tenant (never in logs)
 ├── config/                 # YAML truth — 9 files + 5 env overlays
-│   ├── assets/{forex,crypto,synthetic}.yaml
+│   ├── assets/{forex,crypto,commodities}.yaml
 │   ├── brokers/{deriv,mt5,headway}.yaml
 │   ├── strategies/trend_following.yaml
 │   ├── execution/routing.yaml
@@ -145,7 +145,7 @@ vault.get("42", "deriv")  # → decrypted, never logged
 ## 📖 Why This Order?
 
 1. **M1 first** — every other module `from shared.contracts import MarketData` and `from shared.core import BaseEngine`. Without M1, teams argue about schemas.
-2. **M2b before M2** — `M2 normalization` needs `symbol_mapping` to map `R_75→Volatility 75 Index`.
+2. **M2b before M2** — `M2 normalization` needs `symbol_mapping` to map `frxEURUSD→FX.EURUSD`.
 3. **M3.0 first in M3** — capability gate must disable `order_book_imbalance` on Deriv **before** anyone codes that indicator.
 4. **M4.5 inside M4** — `TradePlan` is atomic with Signal (no new process, `~0.3ms`), M5 validates `TradePlan` not raw `Signal`.
 

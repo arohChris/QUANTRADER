@@ -14,7 +14,7 @@
 ## 1. Purpose in One Sentence
 > **M2b answers "What is this instrument?" — its identity, specs, calendar, capabilities — as versioned reference facts. Never "What happened at 10:31:42.123?" (that's M2). Never trading decisions (that's M6).**
 
-M2b prevents `if symbol=="R_75"` scattered in code. One place knows `R_75 → SYNTHETIC.VOLATILITY_75` (`display: Volatility 75 Index`), `tick_size=0.001`, `deriv: market/limit supported, depth unavailable`, `trading hours 00:00-23:59`.
+M2b prevents `if symbol=="frxXAUUSD"` scattered in code. One place knows `frxXAUUSD → COMMODITY.XAUUSD` (`display: Gold`), `tick_size=0.01` (identity fixture — authoritative value in P06 `contract_specs`), `deriv: market/limit supported, depth unavailable`, `trading hours 00:00-23:59`.
 
 ### Canonical Identity — The Most Important Correction
 
@@ -22,10 +22,10 @@ M2b prevents `if symbol=="R_75"` scattered in code. One place knows `R_75 → SY
 
 | Term | Example | Used by | Meaning |
 |------|---------|---------|---------|
-| `canonical_instrument_id` | `FX.EURUSD`, `SYNTHETIC.VOLATILITY_75`, `INDEX.DE40`, `EQUITY.AAPL` | **All modules — primary key** | Unique, namespaced, immutable id. `FX.` = forex, `SYNTHETIC.` = synthetic, `INDEX.` = index |
+| `canonical_instrument_id` | `FX.EURUSD`, `COMMODITY.XAUUSD`, `COMMODITY.XAGUSD`, `CRYPTO.BTCUSD` | **All modules — primary key** | Unique, namespaced, immutable id. `FX.` = forex, `CRYPTO.` = crypto, `COMMODITY.` = commodity (bare `BTCUSD` is display/`canonical_symbol` only — REV1) |
 | `canonical_symbol` | `EURUSD` | API display, logs | Short display, derived from instrument_id suffix (not stored separately) |
-| `display_name` | `Volatility 75 Index`, `Apple Inc.` | UI only | Human-readable |
-| `broker_native_symbol` | `frxEURUSD`, `R_75` | Only inside M2.1/M6.4 | Never leaks beyond M2/M6 translators |
+| `display_name` | `Gold`, `Bitcoin` | UI only | Human-readable |
+| `broker_native_symbol` | `frxEURUSD`, `frxXAUUSD` | Only inside M2.1/M6.4 | Never leaks beyond M2/M6 translators |
 
 **Contract fields (after v1.4):**
 
@@ -41,7 +41,7 @@ get_spec(instrument="FX.EURUSD", broker="deriv", effective_at=None) # None → c
 |---------------|---------------------------|--------------------|----|
 | `frxEURUSD` (Deriv) | `FX.EURUSD` | `EURUSD` | `EURUSD` |
 | `EURUSD` (MT5) | `FX.EURUSD` | `EURUSD` | `EURUSD` |
-| `R_75` (Deriv) | `SYNTHETIC.VOLATILITY_75` | `VOLATILITY_75` | `Volatility 75 Index` |
+| `frxXAUUSD` (Deriv) | `COMMODITY.XAUUSD` | `XAUUSD` | `Gold` |
 
 No module may use `EURUSD` as instrument_id and `FX.EURUSD` interchangeably. `instrument_id` is the law; storage partition is `instrument=FX.EURUSD` (never `instrument=EURUSD` ambiguous).
 
@@ -67,7 +67,7 @@ No module may use `EURUSD` as instrument_id and `FX.EURUSD` interchangeably. `in
 | M2b — **Knows what EURUSD *is*** (identity, facts) | M2 — **Knows what *happened* to EURUSD at 10:31:42.123** (observations) |
 |-----------------------------------------------------|--------------------------------------------------------------------------|
 | Instrument identity (`FX.EURUSD`, asset class) | Tick, Quote, Trade, OrderBook update |
-| Symbol mappings (`R_75 → SYNTHETIC.VOLATILITY_75`) | Timestamp (`exchange_timestamp`, `received_at`, `processed_at`) |
+| Symbol mappings (`frxXAUUSD → COMMODITY.XAUUSD`) | Timestamp (`exchange_timestamp`, `received_at`, `processed_at`) |
 | Contract specs (`contract_size`, `tick_size`, `pip`, `min_qty`, `qty_step`, `margin rules`) — **versioned, effective-dated** | Source identifiers (`source_sequence`, `source_event_id`, `broker_native_symbol`) |
 | Trading calendar (`sessions, holidays, DST`) — **effective-dated** | Processing identity (`processing_sequence / watermark` — M2's internal ordering, not M2b) |
 | Broker capabilities (`market/limit/stop supported, has_depth`) | Processing quality (`pristine/gapped/suspect`), `quality_status` |
@@ -81,7 +81,7 @@ M2b REFERENCE (read-only truth, versioned snapshots)
    │   instrument_id, specs, calendar, capabilities, mapping, execution facts
    │   sync lookup <1µs, shared cache (instrument,broker)
    │
-   ├──► M2.2 Mapping (R_75 → SYNTHETIC.VOLATILITY_75) ──► canonical instrument_id
+   ├──► M2.2 Mapping (frxXAUUSD → COMMODITY.XAUUSD) ──► canonical instrument_id
    ├──► M2.3 Rules (min_qty/step validation) — reads spec via M2b
    ├──► M2.5 Book — reads has_depth via M2b before expecting depth
    │
@@ -114,8 +114,8 @@ from modules.reference import reference  # singleton ReferenceService
 
 # Identity
 reference.exists("FX.EURUSD", broker="deriv") -> bool
-reference.to_canonical("R_75", broker="deriv") -> "SYNTHETIC.VOLATILITY_75"
-reference.to_native("SYNTHETIC.VOLATILITY_75", broker="deriv") -> "R_75"
+reference.to_canonical("frxXAUUSD", broker="deriv") -> "COMMODITY.XAUUSD"
+reference.to_native("COMMODITY.XAUUSD", broker="deriv") -> "frxXAUUSD"
 reference.get_instrument("FX.EURUSD") -> {asset_class: "forex", display_name: "EURUSD"}
 
 # Specs — effective-dated (MUST support historical)
@@ -128,12 +128,12 @@ reference.is_open("FX.EURUSD", timestamp, broker="deriv") -> bool  # evaluates c
 reference.get_calendar("FX.EURUSD", broker="deriv", effective_at=ts)
 
 # Capabilities — facts only
-reference.get_capabilities("SYNTHETIC.VOLATILITY_75", broker="deriv") -> {order_types: [market,limit], has_depth: False}
+reference.get_capabilities("COMMODITY.XAUUSD", broker="deriv") -> {order_types: [market,limit], has_depth: False}
 reference.get_execution_profile("FX.EURUSD", broker="deriv", effective_at=ts) -> {commission, financing, slippage_params} # descriptive
 
 # Temporal events
-reference.get_corporate_actions("EQUITY.AAPL", effective_at=ts) -> [Action(split 4:1 @ 2024-08-31)]
-reference.get_rollover("INDEX.DE40", effective_at=ts) -> Rollover(...)
+reference.get_corporate_actions("CRYPTO.BTCUSD", effective_at=ts) -> [Action(split 4:1 @ 2024-08-31)]
+reference.get_rollover("COMMODITY.XAGUSD", effective_at=ts) -> Rollover(...)
 ```
 
 **Internally (not exposed):**
@@ -174,7 +174,7 @@ async def load_reference() -> None:  # async I/O at startup
 ## 5. Files (updated with effective dating, validation, facade)
 
 ### `instrument_master.py` — The List (now canonical)
-**Does:** `master = {"FX.EURUSD": {asset_class:"forex", canonical_symbol:"EURUSD", display_name:"EURUSD", brokers:[deriv,mt5], active:True}, "SYNTHETIC.VOLATILITY_75": {...}}` — keyed by `instrument_id`.
+**Does:** `master = {"FX.EURUSD": {asset_class:"forex", canonical_symbol:"EURUSD", display_name:"EURUSD", brokers:[deriv,mt5], active:True}, "COMMODITY.XAUUSD": {...}}` — keyed by `instrument_id`.
 **Pseudocode (sync):**
 ```python
 # sync, deterministic — no await
@@ -186,10 +186,10 @@ def exists(instrument_id: str, broker: str | None = None) -> bool:
 ```
 
 ### `symbol_mapping.py` — The Translator (now to instrument_id)
-**Does:** `to_canonical("frxEURUSD","mt5") → "FX.EURUSD"`, `to_canonical("R_75","deriv") → "SYNTHETIC.VOLATILITY_75"`.
+**Does:** `to_canonical("frxEURUSD","mt5") → "FX.EURUSD"`, `to_canonical("frxXAUUSD","deriv") → "COMMODITY.XAUUSD"`.
 **Pseudocode (sync):**
 ```python
-maps = {"deriv": {"R_75": "SYNTHETIC.VOLATILITY_75", "frxEURUSD": "FX.EURUSD"}, "mt5": {"EURUSD": "FX.EURUSD"}}
+maps = {"deriv": {"frxXAUUSD": "COMMODITY.XAUUSD", "frxEURUSD": "FX.EURUSD"}, "mt5": {"EURUSD": "FX.EURUSD"}}
 def to_canonical(native: str, broker: str) -> str:  # sync
     return maps[broker].get(native, native)
 def to_native(canonical_id: str, broker: str) -> str:  # reverse
@@ -237,7 +237,7 @@ def get_corporate_actions(instrument_id: str, effective_at: datetime) -> list[Ac
 ```
 
 ### `broker_capabilities.py` + `execution_profiles.py` — Facts vs Decisions
-**Does:** `get_capabilities("SYNTHETIC.VOLATILITY_75","deriv") → {order_types:[market,limit], has_depth:False}` (fact). `get_execution_profile("FX.EURUSD","deriv") → {commission:0.0001, financing:..., slippage_params:{k:0.2}}` (descriptive params).
+**Does:** `get_capabilities("COMMODITY.XAUUSD","deriv") → {order_types:[market,limit], has_depth:False}` (fact). `get_execution_profile("FX.EURUSD","deriv") → {commission:0.0001, financing:..., slippage_params:{k:0.2}}` (descriptive params).
 **Why keep execution_profiles in M2b?** It's **reference facts** (`commission=X`). **Routing decision stays in M6**: `M6.smart_router` reads facts from M2b, then decides `route to mt5 because cheaper`. `grep M2b -r "route"` must be 0.
 **Pseudocode (M6 side):**
 ```python
@@ -290,7 +290,7 @@ MarketData(
 )
 ```
 
-**Why?** Six months later: "Why did system normalize `R_75` to `SYNTHETIC.VOLATILITY_75` with `tick_size 0.001` on 2026-03-15?" → replay with `REF-2026-03-10-008` (effective at that time). Essential for **auditing, replay, debugging, research, compliance, historical reproducibility**. M8 replays with **same snapshot** as ingestion time.
+**Why?** Six months later: "Why did system normalize `frxXAUUSD` to `COMMODITY.XAUUSD` with `tick_size 0.001` on 2026-03-15?" → replay with `REF-2026-03-10-008` (effective at that time). Essential for **auditing, replay, debugging, research, compliance, historical reproducibility**. M8 replays with **same snapshot** as ingestion time.
 
 **Storage:** `reference_snapshot_id` stored in `MarketData` parquet + `data_catalog` row. Not nullable.
 
@@ -326,7 +326,7 @@ Dependency: M2 ──depends on──► M2b (M2 imports ReferenceService)
 
 ```bash
 pytest modules/reference --fixtures=forex.yaml
-# pure dict lookups, sync, no DB/broker — `to_canonical("R_75","deriv")==SYNTHETIC.VOLATILITY_75`
+# pure dict lookups, sync, no DB/broker — `to_canonical("frxXAUUSD","deriv")==COMMODITY.XAUUSD`
 # effective-dated: get_spec("FX.EURUSD","deriv", effective_at=2026-03-15) == v12
 # validation: bad YAML (duplicate) → FAIL STARTUP
 ```
@@ -337,7 +337,7 @@ pytest modules/reference --fixtures=forex.yaml
 
 | Phase | Sub-Module | Deliverable | Gate |
 |-------|------------|-------------|------|
-| **P05** | M2b.1 Instrument & Symbol | `instrument_master` (FX.EURUSD), `symbol_mapping` (R_75→SYNTHETIC.VOLATILITY_75), `ReferenceService` facade | `to_canonical("R_75","deriv")==SYNTHETIC.VOLATILITY_75` |
+| **P05** | M2b.1 Instrument & Symbol | `instrument_master` (FX.EURUSD), `symbol_mapping` (frxXAUUSD→COMMODITY.XAUUSD), `ReferenceService` facade | `to_canonical("frxXAUUSD","deriv")==COMMODITY.XAUUSD` |
 | **P06** | M2b.2 Specs & Capabilities | `contract_specs(effective-dated)`, `broker_capabilities`, `execution_profiles(facts only)`, `reference_validator` | `get_spec(FX.EURUSD,deriv, effective_at=2026-03-15)==v12` |
 | **P07** | M2b.3 Calendar | `trading_calendar(effective-dated)`, `corporate_actions`, `contract_rollover` (Temporal Events) + `is_open(effective_at)` | `is_open(FX.EURUSD, 2026-03-15 10:00 UTC, deriv) effective` |
 

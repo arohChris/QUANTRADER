@@ -19,9 +19,11 @@ from pydantic import ValidationError
 
 from shared.contracts.analytics import AnalyticsResult
 from shared.contracts.base import BaseContract
+from shared.contracts.drop import Drop, DropReason
 from shared.contracts.errors import ErrorCode
 from shared.contracts.execution import ExecutionResult, Fill
 from shared.contracts.instrument import AssetClass
+from shared.contracts.internal_tick import InternalTick
 from shared.contracts.market_data import Candle, DataQuality, MarketData, Tick
 from shared.contracts.order import Order
 from shared.contracts.portfolio import PortfolioState
@@ -171,15 +173,15 @@ def test_error_code_not_free_text() -> None:
         ErrorCode("free_text_typo")  # type: ignore[call-arg]
 
 
-def test_asset_class_vocabulary_includes_commodity() -> None:
-    # M2b.1 commodity scope — locked vocabulary must contain all six classes
+def test_asset_class_vocabulary_forex_crypto_commodity_only() -> None:
+    # Scope 2026-09-22 (user): ONLY forex | crypto | commodity — index/equity/synthetic removed
     assert AssetClass.forex == "forex"
     assert AssetClass.crypto == "crypto"
     assert AssetClass.commodity == "commodity"
-    assert AssetClass.index == "index"
-    assert AssetClass.equity == "equity"
-    assert AssetClass.synthetic == "synthetic"
-    assert len(AssetClass) == 6
+    assert len(AssetClass) == 3
+    for removed in ("index", "equity", "synthetic"):
+        with pytest.raises(ValueError):
+            AssetClass(removed)  # type: ignore[arg-type]
 
 
 def test_asset_class_rejects_unknown_value() -> None:
@@ -193,3 +195,97 @@ def test_asset_class_rejects_unknown_value() -> None:
 def test_asset_class_from_yaml_value_valid() -> None:
     assert AssetClass.from_yaml_value("commodity") is AssetClass.commodity
     assert AssetClass.from_yaml_value("forex") is AssetClass.forex
+
+
+# ---- M2.1 Drop contract (shared/contracts/drop.py) ----
+
+
+def test_drop_reason_vocabulary_locked_to_spec() -> None:
+    # docs/specs/m2.tick_ingest.md Drop vocabulary REV1 — exact eight reasons (M2.1+M2.2 shared)
+    assert DropReason.empty == "empty"
+    assert DropReason.invalid_json == "invalid_json"
+    assert DropReason.missing_field == "missing_field"
+    assert DropReason.invalid_price == "invalid_price"
+    assert DropReason.invalid_timestamp == "invalid_timestamp"
+    assert DropReason.timestamp_ahead == "timestamp_ahead"
+    assert DropReason.duplicate_tick == "duplicate_tick"
+    assert DropReason.unknown_symbol == "unknown_symbol"
+    assert len(DropReason) == 8
+    with pytest.raises(ValueError):
+        DropReason("invalid_schema")  # type: ignore[arg-type]
+
+
+def test_drop_frozen_and_extra_forbid() -> None:
+    d = Drop(reason=DropReason.empty, provider="deriv")
+    assert d.reason == DropReason.empty
+    assert d.provider == "deriv"
+    assert d.detail == ""
+    assert d.raw_payload == ""
+    with pytest.raises(ValidationError):
+        d.reason = DropReason.invalid_json  # type: ignore[misc]
+    with pytest.raises(ValidationError):
+        Drop(reason=DropReason.empty, provider="deriv", error_code="x")  # type: ignore[call-arg]
+
+
+def test_drop_requires_reason_and_provider() -> None:
+    with pytest.raises(ValidationError):
+        Drop(provider="deriv")  # type: ignore[call-arg]
+    with pytest.raises(ValidationError):
+        Drop(reason=DropReason.empty)  # type: ignore[call-arg]
+
+
+# ---- M2.1 InternalTick contract (shared/contracts/internal_tick.py) ----
+
+
+def _internal_tick_minimal(**overrides) -> dict:
+    base = {
+        "event_id": uuid.uuid4(),
+        "processing_sequence": 1,
+        "observed_at": datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+        "provider": "deriv",
+        "symbol": "frxEURUSD",
+        "timestamp": datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+        "ask": __import__("decimal").Decimal("1.08542"),
+        "bid": __import__("decimal").Decimal("1.08538"),
+        "quality": "ok",
+        "source_event_id": "tick-1",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_internal_tick_frozen_and_extra_forbid() -> None:
+    t = InternalTick(**_internal_tick_minimal())
+    assert t.provider == "deriv"
+    with pytest.raises(ValidationError):
+        t.symbol = "other"  # type: ignore[misc]
+    with pytest.raises(ValidationError):
+        InternalTick(**_internal_tick_minimal(not_a_field=1))  # type: ignore[call-arg]
+
+
+def test_internal_tick_deriv_optional_fields_default_none() -> None:
+    # Deriv has no ask_size/bid_size; pip_size optional on new API
+    t = InternalTick(**_internal_tick_minimal())
+    assert t.ask_size is None
+    assert t.bid_size is None
+    assert t.quote is None
+    assert t.pip_size is None
+    assert t.source_sequence is None
+
+
+def test_internal_tick_accepts_deriv_quote_and_pip_size() -> None:
+    from decimal import Decimal
+
+    t = InternalTick(
+        **_internal_tick_minimal(
+            quote=Decimal("1.0854"),
+            pip_size=5,
+        )
+    )
+    assert t.quote == Decimal("1.0854")
+    assert t.pip_size == 5
+
+
+def test_internal_tick_not_market_data() -> None:
+    t = InternalTick(**_internal_tick_minimal())
+    assert not isinstance(t, MarketData)

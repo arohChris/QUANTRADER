@@ -13,6 +13,22 @@
 
 ---
 
+## Recent Updates (top of file — read first)
+
+> **2026-09-22 — Agent setup simplified (additive; §0–§11 unchanged and still authoritative):**
+> - **Active role: Builder only** — Builder coordinates directly with the human under §0–§11. **QA and Reviewer agents discontinued.** The `agent_comms/` tree was removed by the human; do not create or reference it.
+> - **Role file:** `.opencode/builder.md` only (`.opencode/reviewer.md` / `qa.md` removed). Role rules are workflow notes — not OS security.
+> - **No INBOX/OUTBOX / multi-agent comms channels** — disagreements and approvals happen in normal session + `BUILD_STATUS.md` / `USER_ACTIONS.md`.
+> - **Human owns LGTM, acceptance, and commits** (unchanged).
+
+> **Project status snapshot (details always in `BUILD_STATUS.md` — that file wins):**
+> - **Gate:** G0 (Edge Validation).
+> - **M2b.1 Instrument & Symbol:** `complete` @ `a6908c2` (tests LGTM + real-data verify + human OK; full suite was 76/76). Scope locked: **forex | crypto | commodity only** — synthetic/index/equity removed (`AssetClass` contract **2.0.0**).
+> - **Next slice:** M2.1 tests rewrite against corrected `docs/specs/m2.tick_ingest.md` — human LGTM on tests before any M2.1 implementation.
+> - **Working tree may carry uncommitted post-complete edits** — do not treat uncommitted diffs as a new gate; verify against `BUILD_STATUS.md` + current tests before changing anything.
+
+---
+
 ## Table of Contents
 
 1. [0 — Prime Directive](#0-prime-directive)
@@ -27,8 +43,9 @@
 10. [9 — Templates (Copy-Paste)](#9-templates-copy-paste)
 11. [10 — Automatic Rejection — Anti-Patterns](#10-automatic-rejection--anti-patterns)
 12. [11 — How To Work As An AI Builder (Session Loop)](#11-how-to-work-as-an-ai-builder-session-loop)
-13. [Appendix A — Glossary](#appendix-a--glossary)
-14. [Appendix B — Where User Data Lives](#appendix-b--where-user-data-lives-tenant-scope)
+13. [12 — Builder Agent Protocol (single agent)](#12-builder-agent-protocol-single-agent)
+14. [Appendix A — Glossary](#appendix-a--glossary)
+15. [Appendix B — Where User Data Lives](#appendix-b--where-user-data-lives-tenant-scope)
 
 ---
 
@@ -464,6 +481,29 @@ AI **must refuse** (and cite this file) if asked to:
 5. **Never offer to build ahead** — if timer idle, ask "Spec for <next> is ready for your review?" not "Want me to build next 3?"
 6. **Before any git push:** run `pytest -q`, `lint-imports`, `gitleaks` locally; paste log in PR.
 7. **End-of-turn report uses §7 template** — not "done".
+
+---
+
+## 12. Builder Agent Protocol (single agent)
+
+> **STATUS: ADDITIVE CONTROL LAYER — added 2026-09-22; simplified same day after human removed `agent_comms/` and discontinued Reviewer/QA.**
+> This section governs **how the Builder agent works with the human.**
+> It does **not** replace, weaken, delete, reorder, or bypass any rule in §0–§11.
+> **The existing project development protocol (§0–§11) remains authoritative.**
+> On conflict with §0–§11 on a development gate, **§0–§11 win**; log discrepancies in `BUILD_STATUS.md → Discrepancies`.
+
+**The Builder must, in this order:**
+
+1. **Identify as `builder`** — read `.opencode/builder.md`.
+2. **Read `BUILD_STATUS.md`** (and `USER_ACTIONS.md` when human actions are tracked) — still required by §6/§11.
+3. **Work only on the assigned sub-module**, only after the required human LGTM gate (`AGENTS.md` §2 Steps 4 and 8).
+4. **Respect role boundaries** — implementation `WRITE` only when authorized by §2; tests `WRITE` only when authorized; specifications `READ`; contracts `READ`. These are **Markdown workflow rules — not OS security.**
+5. **Never bypass human approval gates** — §2 Steps 4 and 8, §3.10, §8 all stand. No self-approve, no self-merge, no commit unless the human asks.
+6. **Do not use or recreate `agent_comms/`**, INBOX/OUTBOX channels, or Reviewer/QA agents — removed by the human.
+7. **Disagreements and open questions** go to the human in the active session (or `BUILD_STATUS.md → Open Questions`) — arguments grounded in specification, contract, architecture, tests, security, correctness, data integrity, maintainability, scalability, or documented requirements; never personal preference; never endless.
+8. **Stop and wait for the human** when approval is required or the Builder and human do not resolve an issue — no self-approval.
+
+**Lifecycle (mirrors §2):** `SPEC → CONTRACT → TESTS → HUMAN_LGTM → IMPLEMENTATION → human acceptance → COMMIT` — human owns LGTM, acceptance, and commits.
 
 ---
 

@@ -117,7 +117,7 @@ class EmaTrend(BaseStrategy):
 - `mean_reversion_grid` — grid levels + inventory_control (persists `grid_state` via `M5` — only exception where strategy touches state)
 - `microstructure` — `order_book_imbalance >0.6 → long` (needs `M3.4`)
 - `liquidity_event` — `liquidity_depletion → short` (needs `M3.4`)
-- `systematic_macro` — `rates differential + macro_regime risk_off → short indices` (needs `M3.6`)
+- `systematic_macro` — `rates differential + macro_regime risk_off → reduce crypto risk` (needs `M3.6`)
 - `event_driven` — `CPI surprise + sentiment → long` (needs `M3.6`)
 
 **Build Independence for M4.2:**
@@ -137,7 +137,7 @@ pytest modules/alpha/strategy/test_trend --fixtures=analytics_trending.json
 def validate(signal: Signal):
     if not reference.exists(signal.symbol, signal.broker): return Drop("unknown_symbol")
     spec = reference.get_spec(signal.symbol, signal.broker)
-    if signal.symbol in ["Volatility 75 Index"] and spec.has_depth==False and signal.needs_depth: Drop
+    if signal.symbol in ["frxEURUSD"] and spec.has_depth==False and signal.needs_depth: Drop
     return signal
 ```
 
@@ -256,7 +256,7 @@ M3 AnalyticsResult + M2 MarketData → M4.1 Registry → M4.2 Families → Signa
 | `volatility_breakout` | `atr, vol_regime` | `DERIVED` ATR from tick range |
 | `pullback` (ema pullback) | `trend + mean_reversion` | M4.5 pullback entry |
 | `cross_sectional_momentum` (rank 10, buy top3) | `correlation, relative_strength` | needs 2+ symbols, fully supported |
-| `statistical_arbitrage / spread` | `spread_builder, hedge_ratio, stationarity` | `Vol75 vs Vol100` synthetics |
+| `statistical_arbitrage / spread` | `spread_builder, hedge_ratio, stationarity` | `EURUSD vs GBPUSD` forex pair |
 | `regime_based` | `market_regime` | switches Tier1 logic |
 
 **Tier 2 — After Tier 1, `PROXY_LIMITED` ⚠️ (must warn UI):**

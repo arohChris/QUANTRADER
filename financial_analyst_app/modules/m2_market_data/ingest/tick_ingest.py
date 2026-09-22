@@ -1,168 +1,267 @@
-"""M2.1 tick ingest — raw broker WS frames to validated MarketData events.
-
-WHY: Every downstream module (M3 analytics, M4 signal, M5 risk, M8 backtest)
-consumes MarketData. A single malformed tick must never crash the pipeline or
-be silently accepted. Drops are first-class: every rejected frame is logged,
-counted, and dead-lettered for M2.7 gap recovery.
 """
+M2.1 — TickIngestor — Deriv WS frame → InternalTick | Drop.
+WHY: Transport + schema validation + dedup only — canonicalization is M2.2.
+Input is the real Deriv msg_type=tick frame (nested tick{ask,bid,epoch,id?,quote,symbol};
+pip_size optional; no ask_size/bid_size). Every valid frame → one InternalTick;
+every reject → typed Drop (dead-letter ready).
 
+Dedup (spec processing order): build source identity first —
+tick.id when present (primary); otherwise deterministic fingerprint over
+provider, symbol, epoch, quote, bid if present, ask if present, source_sequence
+if present (canonical serialization, never bare (symbol, epoch, seq) alone).
+Dedup runs BEFORE future-epoch / other business rules so reason is stable.
+
+Spec: docs/specs/m2.tick_ingest.md (REV1 2026-09-22 — id optional, invalid_timestamp)
+Consumes: shared.contracts.drop, shared.contracts.internal_tick, shared.core.clock
+"""
 from __future__ import annotations
 
+import hashlib
 import json
-import time
-from typing import Any, Optional
+import uuid
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
+from typing import Any
 
-from shared.contracts.base import ErrorCode, utc_now
 from shared.contracts.drop import Drop, DropReason
-from shared.contracts.market_data import MarketData, MarketDataQuality
+from shared.contracts.internal_tick import InternalTick
+from shared.core.clock import Clock
+
+# Fixed namespace so event_id is deterministic across processes/instances (spec).
+_EVENT_NS = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+
+# QUANTRADER2-required inside tick (Deriv docs also require symbol/epoch/quote;
+# bid/ask optional on Deriv but required for InternalTick — Option A, spec field table).
+# tick.id is OPTIONAL (REV1) — absent → fingerprint identity/dedup fallback.
+_REQUIRED_TICK_FIELDS = ("symbol", "epoch", "quote", "ask", "bid")
+_FUTURE_TOLERANCE = timedelta(seconds=1)
+
+
+def _to_decimal(value: Any, field: str) -> Decimal:
+    """Coerce JSON number/string to Decimal. Raises ValueError on garbage."""
+    if isinstance(value, bool) or value is None:
+        raise ValueError(f"{field} not numeric")
+    if isinstance(value, int):
+        return Decimal(value)
+    if isinstance(value, float):
+        # Decimal(str(...)) avoids binary-float artifacts (AGENTS.md §3.1 money path)
+        return Decimal(str(value))
+    if isinstance(value, str):
+        return Decimal(value)
+    raise ValueError(f"{field} not numeric")
+
+
+def _epoch_to_utc(value: Any) -> datetime:
+    if isinstance(value, bool) or value is None:
+        raise ValueError("epoch not int")
+    if isinstance(value, str):
+        try:
+            value = int(value)
+        except ValueError as exc:
+            raise ValueError("epoch not int") from exc
+    if not isinstance(value, (int, float)) or isinstance(value, float) and not float(value).is_integer():
+        if isinstance(value, float) and float(value).is_integer():
+            value = int(value)
+        else:
+            raise ValueError("epoch not int")
+    return datetime.fromtimestamp(int(value), tz=timezone.utc)
 
 
 class TickIngestor:
-    """Validates raw WS frames and emits MarketData or Drop."""
+    """Per-process ingestor for one provider's tick feed."""
 
-    def __init__(self, provider: str, symbol: str, clock) -> None:
+    def __init__(self, provider: str, clock: Clock) -> None:
         self.provider = provider
-        self.symbol = symbol
         self.clock = clock
-        self.drops: list[Drop] = []
-        self.emitted: list[MarketData] = []
-        self._seen: set[tuple[str, str, int]] = set()  # dedupe by (symbol, ts, seq)
+        self._processing_sequence = 0
+        self._seen_source_event_ids: set[str] = set()
+        self._seen_fingerprints: set[str] = set()
+        # Per-symbol last seq — provider sequences are not comparable across instruments.
+        self._last_source_sequence: dict[str, int] = {}
 
-    def ingest(self, raw: str | bytes, correlation_id: str) -> MarketData | None:
-        """Process one raw WS frame. Returns MarketData if valid, else None (Drop recorded)."""
-        if raw is None or (isinstance(raw, str) and not raw.strip()):
-            self._drop(correlation_id, DropReason.INVALID_SCHEMA, "empty", ErrorCode.DROP_INVALID_SCHEMA)
-            return None
+    def ingest(self, raw_message: str | bytes) -> InternalTick | Drop:
+        # --- step 1-2: empty / decode / parse JSON (spec processing order) ---
+        if isinstance(raw_message, bytes):
+            if not raw_message.strip():
+                return self._drop(DropReason.empty, "empty bytes")
+            try:
+                text = raw_message.decode("utf-8")
+            except UnicodeDecodeError:
+                return self._drop(DropReason.invalid_json, "not utf-8")
+        else:
+            text = raw_message
+            if not text or not text.strip():
+                return self._drop(DropReason.empty, "empty payload")
+
         try:
-            if isinstance(raw, bytes):
-                raw = raw.decode("utf-8")
-            payload: dict[str, Any] = json.loads(raw)
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            self._drop(correlation_id, DropReason.INVALID_SCHEMA, "invalid_json", ErrorCode.DROP_INVALID_SCHEMA)
-            return None
+            payload = json.loads(text)
+        except (json.JSONDecodeError, TypeError):
+            return self._drop(DropReason.invalid_json, "malformed JSON")
+        if not isinstance(payload, dict):
+            return self._drop(DropReason.missing_field, "payload is not a JSON object")
 
-        # Required fields
-        required = ("symbol", "timestamp", "ask", "bid", "ask_size", "bid_size")
-        missing = [f for f in required if f not in payload or payload[f] is None]
-        if missing:
-            self._drop(
-                correlation_id,
-                DropReason.INVALID_SCHEMA,
-                f"missing:{','.join(missing)}",
-                ErrorCode.DROP_MISSING_FIELD,
-            )
-            return None
+        # --- step 3: outer structure ---
+        if payload.get("msg_type") != "tick":
+            return self._drop(DropReason.missing_field, "msg_type is not tick")
+        tick = payload.get("tick")
+        if not isinstance(tick, dict):
+            return self._drop(DropReason.missing_field, "missing tick object")
 
-        # Validate types
+        # --- step 4: required fields present and non-null (Deriv + Q2 bid/ask) ---
+        for field in _REQUIRED_TICK_FIELDS:
+            if field not in tick or tick[field] is None:
+                return self._drop(DropReason.missing_field, f"missing tick.{field}")
+
+        symbol = tick["symbol"]
+        if not isinstance(symbol, str) or not symbol:
+            return self._drop(DropReason.missing_field, "missing tick.symbol")
+
         try:
-            ts_str = str(payload["timestamp"])
-            ask = float(payload["ask"])
-            bid = float(payload["bid"])
-            ask_size = float(payload["ask_size"])
-            bid_size = float(payload["bid_size"])
-            seq = int(payload.get("sequence", 0))
-        except (TypeError, ValueError):
-            self._drop(
-                correlation_id,
-                DropReason.INVALID_SCHEMA,
-                "type_error",
-                ErrorCode.DROP_INVALID_PRICE,
-            )
-            return None
+            ask = _to_decimal(tick["ask"], "ask")
+            bid = _to_decimal(tick["bid"], "bid")
+            quote = _to_decimal(tick["quote"], "quote")
+        except (ValueError, InvalidOperation):
+            return self._drop(DropReason.invalid_price, "non-numeric price")
 
-        if ask <= 0 or bid <= 0 or ask < bid:
-            self._drop(
-                correlation_id,
-                DropReason.INVALID_PRICE,
-                f"ask={ask} bid={bid}",
-                ErrorCode.DROP_INVALID_PRICE,
-            )
-            return None
+        if ask <= 0 or bid <= 0 or quote <= 0:
+            return self._drop(DropReason.invalid_price, "non-positive price")
 
-        # Timestamp checks
+        # epoch type check (non-numeric → invalid_timestamp, not invalid_price — REV1)
+        try:
+            ts = _epoch_to_utc(tick["epoch"])
+        except (ValueError, TypeError, OverflowError, OSError):
+            return self._drop(DropReason.invalid_timestamp, "bad epoch")
+
+        # --- step 5: source identity — id when present, else fingerprint ---
+        raw_sei = tick.get("id")
+        source_event_id: str | None
+        if raw_sei is None:
+            source_event_id = None
+        elif isinstance(raw_sei, str) and raw_sei:
+            source_event_id = raw_sei
+        else:
+            # id present but unusable (empty / non-string) → treat as absent (fingerprint)
+            source_event_id = None
+
+        raw_seq = tick.get("seq", payload.get("source_sequence"))
+        source_sequence: int | None
+        if raw_seq is None:
+            source_sequence = None
+        elif isinstance(raw_seq, bool) or not isinstance(raw_seq, int):
+            return self._drop(DropReason.missing_field, "bad seq")
+        else:
+            source_sequence = raw_seq
+
+        # --- step 6: dedup BEFORE timestamp/business rules (spec binding order) ---
+        # WHY fingerprint includes provider: same symbol/epoch on Deriv vs MT5 are
+        # different feeds — bare (symbol, epoch, seq) would false-positive.
+        if source_event_id is not None:
+            if source_event_id in self._seen_source_event_ids:
+                return self._drop(DropReason.duplicate_tick, f"dup tick.id={source_event_id}")
+            self._seen_source_event_ids.add(source_event_id)
+        else:
+            fp = self._fingerprint(symbol, ts, quote, bid, ask, source_sequence)
+            if fp in self._seen_fingerprints:
+                return self._drop(DropReason.duplicate_tick, "dup fingerprint")
+            self._seen_fingerprints.add(fp)
+
+        # --- step 7: timestamp / business constraints (after dedup) ---
+        # Future > 1s → drop (exactly +1s accepted per spec "> 1s")
         now = self.clock.now()
-        try:
-            from datetime import datetime, timezone
-            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-            if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=timezone.utc)
-        except ValueError:
-            self._drop(
-                correlation_id,
-                DropReason.TIMESTAMPED,
-                f"bad_ts={ts_str}",
-                ErrorCode.DROP_TIMESTAMPED,
-            )
-            return None
+        if ts > now + _FUTURE_TOLERANCE:
+            return self._drop(DropReason.timestamp_ahead, "epoch ahead of clock")
 
-        # Future timestamp guard (>1s ahead)
-        if (ts - now).total_seconds() > 1.0:
-            self._drop(
-                correlation_id,
-                DropReason.TIMESTAMPED,
-                f"ahead={(ts - now).total_seconds():.3f}s",
-                ErrorCode.DROP_TIMESTAMPED,
-            )
-            return None
+        # optional sizes (not on Deriv — stay None)
+        ask_size = self._optional_decimal(tick.get("ask_size"), "ask_size")
+        if ask_size is _INVALID:
+            return self._drop(DropReason.invalid_price, "bad ask_size")
+        bid_size = self._optional_decimal(tick.get("bid_size"), "bid_size")
+        if bid_size is _INVALID:
+            return self._drop(DropReason.invalid_price, "bad bid_size")
 
-        # Dedupe
-        dedupe_key = (self.symbol, ts.isoformat(), seq)
-        if dedupe_key in self._seen:
-            self._drop(
-                correlation_id,
-                DropReason.TIMESTAMPED,
-                f"dup seq={seq}",
-                ErrorCode.DROP_TIMESTAMPED,
-            )
-            return None
-        self._seen.add(dedupe_key)
+        # optional pip_size
+        raw_pip = tick.get("pip_size")
+        pip_size: int | None
+        if raw_pip is None:
+            pip_size = None
+        elif isinstance(raw_pip, bool) or not isinstance(raw_pip, int):
+            return self._drop(DropReason.missing_field, "bad pip_size")
+        else:
+            pip_size = raw_pip
 
-        # Sequence gap → gapped quality (M2.7 recovers)
-        quality = MarketDataQuality.OK
-        if self.emitted:
-            last_seq = self.emitted[-1].sequence
-            if seq > last_seq + 1:
-                quality = MarketDataQuality.GAPPED
+        # --- sequence gap marker (still emit) — per symbol ---
+        quality = "ok"
+        if source_sequence is not None:
+            last = self._last_source_sequence.get(symbol)
+            if last is not None and source_sequence != last + 1:
+                quality = "gapped"
+            self._last_source_sequence[symbol] = source_sequence
 
-        md = MarketData(
-            correlation_id=correlation_id,
-            provider=self.provider,
-            symbol=payload["symbol"],
-            timestamp=ts,
+        # --- step 8-9: accept — processing_sequence increments only here ---
+        self._processing_sequence += 1
+        sei_part = source_event_id or ""
+        event_id = uuid.uuid5(
+            _EVENT_NS,
+            f"{self.provider}|{symbol}|{ts.isoformat()}|{ask}|{bid}|{quote}|{sei_part}|{source_sequence}",
+        )
+        return InternalTick(
+            event_id=event_id,
+            source_event_id=source_event_id,
+            source_sequence=source_sequence,
+            processing_sequence=self._processing_sequence,
             observed_at=now,
+            provider=self.provider,
+            symbol=symbol,
+            timestamp=ts,
             ask=ask,
             bid=bid,
             ask_size=ask_size,
             bid_size=bid_size,
-            sequence=seq,
-            reference_snapshot_id="",
+            quote=quote,
+            pip_size=pip_size,
             quality=quality,
         )
-        self.emitted.append(md)
-        return md
 
-    def _drop(
+    @staticmethod
+    def _optional_decimal(value: Any, field: str) -> Decimal | None:
+        if value is None:
+            return None
+        try:
+            return _to_decimal(value, field)
+        except (ValueError, InvalidOperation):
+            return _INVALID  # type: ignore[return-value]
+
+    def _fingerprint(
         self,
-        correlation_id: str,
-        reason: DropReason,
-        detail: str,
-        error_code: ErrorCode,
-    ) -> None:
-        d = Drop(
-            correlation_id=correlation_id,
-            provider=self.provider,
-            symbol=self.symbol,
-            reason=reason,
-            detail=detail,
-            raw_payload=detail[:200],
-            error_code=error_code,
+        symbol: str,
+        ts: datetime,
+        quote: Decimal,
+        bid: Decimal,
+        ask: Decimal,
+        source_sequence: int | None,
+    ) -> str:
+        # Spec identity fingerprint (fixed field order): provider, symbol, epoch, quote,
+        # bid if present, ask if present, source_sequence if present — canonical encoding
+        # (stable Decimal/None via str), never Python object repr.
+        # WHY not bare (symbol, epoch, seq): collides across providers / misses quote-only dups.
+        material = "|".join(
+            (
+                self.provider,
+                symbol,
+                ts.isoformat(),
+                str(quote),
+                str(bid) if bid is not None else "",
+                str(ask) if ask is not None else "",
+                str(source_sequence) if source_sequence is not None else "",
+            )
         )
-        self.drops.append(d)
+        return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
-    @property
-    def drop_count(self) -> int:
-        return len(self.drops)
+    def _drop(self, reason: DropReason, detail: str) -> Drop:
+        return Drop(reason=reason, provider=self.provider, detail=detail)
 
-    @property
-    def emit_count(self) -> int:
-        return len(self.emitted)
+
+# Sentinel for optional decimal parse failure (distinct from None = absent)
+_INVALID = object()
+
+__all__ = ["TickIngestor"]

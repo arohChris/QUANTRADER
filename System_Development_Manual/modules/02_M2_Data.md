@@ -25,7 +25,7 @@ M2 knows **"What happened to FX.EURUSD at 10:31:42.123?"** (observations). M2b k
 | Sub | Name | One-Line Job | Key Correction v1.4 |
 |-----|------|--------------|---------------------|
 | **M2.1** | Ingestion | Opens **per-broker SINGLETON WS/REST** (one Deriv connection reads raw ticks to us, then fanned-out to all UIs of that broker) | **One connection per broker, storage global, fan-out to all tenants** |
-| **M2.2** | Normalization | `R_75 → SYNTHETIC.VOLATILITY_75`, `frxEURUSD → FX.EURUSD` via **M2b sync lookup**, stamps `reference_snapshot_id`, converts time → UTC | **Now stamps `reference_snapshot_id` + handles `instrument_id` not `symbol`** |
+| **M2.2** | Normalization | `frxXAUUSD → COMMODITY.XAUUSD`, `frxEURUSD → FX.EURUSD` via **M2b sync lookup**, stamps `reference_snapshot_id`, converts time → UTC | **Now stamps `reference_snapshot_id` + handles `instrument_id` not `symbol`** |
 | **M2.3** | Validation | Drops future/negative/inverted ticks | **Uses `source_sequence` + `watermark` distinction** |
 | **M2.4** | Transformation | Tick → `Candle(1m,1h)` | Unchanged |
 | **M2.5** | Order Book | Keeps depth, detects **source_sequence gaps** | **Reads `has_depth` via M2b sync before expecting depth** |
@@ -44,7 +44,7 @@ External Broker WS/REST (per-BROKER singleton — ONE Deriv WS via platform feed
    ▼
 M2.1 Ingestion (per-broker singleton WS, captures source_sequence + source_event_id, fans out to all UIs)
    │
-   ▼ RawDerivTick(R_75, source_sequence=845921, source_event_id=tick-id-123)
+   ▼ RawDerivTick(frxXAUUSD, source_sequence=845921, source_event_id=tick-id-123)
 M2.2 Normalization (sync: reference.to_canonical → FX.EURUSD, reference.get_spec(effective_at), stamp reference_snapshot_id)
    │
    ▼ MarketData(instrument_id=FX.EURUSD, reference_snapshot_id=REF-2026-09-22-014, source_sequence=845921, watermark=1001, quality=pristine)
@@ -87,7 +87,7 @@ Brokers speak different languages (Deriv WS, MT5 bridge). M2.1 is ONLY place tha
 ### Files — Simple + Pseudocode + Connection — v1.4 corrected per 2026-09-22 (singleton fan-out)
 
 #### `ingestion_engine/ingestion_manager.py` — The Starter/Stopper (async, per-broker singleton)
-**Does:** `start(instrument_id=FX.EURUSD, broker=deriv)` — **NO user_id** (platform singleton). One Deriv WS streams `R_75`, normalizes once, stores once, **broadcasts to all UIs** subscribed to `deriv`.
+**Does:** `start(instrument_id=FX.EURUSD, broker=deriv)` — **NO user_id** (platform singleton). One Deriv WS streams `frxXAUUSD`, normalizes once, stores once, **broadcasts to all UIs** subscribed to `deriv`.
 **Pseudocode (corrected — singleton):**
 ```python
 # Market-data feed is PUBLIC per-broker — one WS for all tenants of that broker
@@ -124,7 +124,7 @@ async def get_or_create(broker: str):
 ```python
 # models.py
 class RawDerivTick(BaseModel):  # internal only
-    native_symbol: str  # "R_75"
+    native_symbol: str  # "frxXAUUSD"
     native_price: float
     provider_event_time: int  # epoch
     source_sequence: int | None = None  # broker seq if provided (may be None for Deriv)
@@ -147,7 +147,7 @@ async def on_ws_message(msg):
 **Global market-data (shared, no user_id):**
 ```
 market-data/provider=deriv/instrument=FX.EURUSD/date=2026-09-22/data_type=candles/interval=1m/candles.parquet
-market-data/provider=deriv/instrument=SYNTHETIC.VOLATILITY_75/date=2026-09-22/data_type=ticks/ticks.parquet
+market-data/provider=deriv/instrument=COMMODITY.XAUUSD/date=2026-09-22/data_type=ticks/ticks.parquet
 ```
 *Why global?* `FX.EURUSD` on Deriv is same for user 42 and 99 — one copy.
 
@@ -167,17 +167,17 @@ private/broker=deriv/user_id=42/date=2026-09-22/ledger.parquet
 ## 4. M2.2 — NORMALIZATION — The Translator (now stamps reference lineage)
 
 ### Why
-`R_75` → `SYNTHETIC.VOLATILITY_75`, `frxEURUSD` → `FX.EURUSD` so M3 can write RSI once.
+`frxXAUUSD` → `COMMODITY.XAUUSD`, `frxEURUSD` → `FX.EURUSD` so M3 can write RSI once.
 
 ### Files — v1.4 with reference_snapshot_id + sync M2b lookups
 
 #### `normalization_engine/engine.py`
-**Does:** `RawDerivTick(R_75, 123) → MarketData(instrument_id=SYNTHETIC.VOLATILITY_75, reference_snapshot_id=REF-2026-09-22-014, source_sequence=845921, watermark=1001, ...)`
+**Does:** `RawDerivTick(frxXAUUSD, 123) → MarketData(instrument_id=COMMODITY.XAUUSD, reference_snapshot_id=REF-2026-09-22-014, source_sequence=845921, watermark=1001, ...)`
 **Pseudocode (corrected — sync M2b, stamps lineage):**
 ```python
 def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sync: M2b lookups are sync
     # M2b lookups — SYNC, no await, <1µs
-    instrument_id = reference.to_canonical(raw.native_symbol, broker=broker)  # R_75 → SYNTHETIC.VOLATILITY_75
+    instrument_id = reference.to_canonical(raw.native_symbol, broker=broker)  # frxXAUUSD → COMMODITY.XAUUSD
     spec = reference.get_spec(instrument_id, broker=broker, effective_at=to_utc(raw.provider_event_time))  # effective-dated
     snapshot_id = reference.current_snapshot_id()  # REF-2026-09-22-014 — for lineage
     price = round(raw.native_price, spec.tick_size)
@@ -186,7 +186,7 @@ def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sy
     wm = watermark_registry.next(instrument_id, broker)  # global processing seq (not per-user)
     return MarketData(
         instrument_id=instrument_id,  # FX.EURUSD — canonical
-        symbol=instrument_id.split(".")[-1].replace("VOLATILITY_75","Volatility 75 Index"),  # display
+        symbol=instrument_id.split(".")[-1],  # display
         broker=broker,
         kind="tick",
         payload=Tick(price=price),
@@ -209,7 +209,7 @@ def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sy
 | `watermark / processing_sequence` | **M2.7 owns & generates** | `1001, 1002...` per `instrument_id+broker` | **Gap detection & recovery** (M2.7's key), not M2b |
 | `reference_snapshot_id` | M2b owns, M2 stamps | `REF-2026-09-22-014` | Historical reproducibility |
 
-**M2b knows nothing about `source_sequence/watermark`.** It only maps `R_75 → SYNTHETIC.VOLATILITY_75`.
+**M2b knows nothing about `source_sequence/watermark`.** It only maps `frxXAUUSD → COMMODITY.XAUUSD`.
 
 ---
 
@@ -306,7 +306,7 @@ def append_fill(fill, user_id, broker):
 ```
 
 **Tenant isolation example (corrected per 2026-09-22 — singleton fan-out):**
-- **Market-data:** Platform `Deriv` singleton WS → ingests `R_75` once → global `market-data/provider=deriv/instrument=SYNTHETIC.VOLATILITY_75/...` (shared) → **fanned-out via pub/sub to UIs of all users who use `deriv`** (user 42 and 99 see same tick in real-time, `tick→parquet<50ms + broadcast<20ms`)
+- **Market-data:** Platform `Deriv` singleton WS → ingests `frxXAUUSD` once → global `market-data/provider=deriv/instrument=COMMODITY.XAUUSD/...` (shared) → **fanned-out via pub/sub to UIs of all users who use `deriv`** (user 42 and 99 see same tick in real-time, `tick→parquet<50ms + broadcast<20ms`)
 - **Private per-user:** `user 42/Deriv` risk/PnL/balance → `WHERE user_id=42 AND broker=deriv` → `MaxRisk: margin_used = position.qty * price / leverage(42)` — **same FX.EURUSD + same RSI=68, but different `available_balance` → different `approved_qty` / PnL**
 - `user 99` sees same market-data + same analytics, but his `orders/ledger` are isolated, zero rows for 42. **General calculations identical, personal results diverge by account info.**
 
@@ -322,7 +322,7 @@ External Deriv WS (per-BROKER singleton via platform feed — ONE connection fan
    ▼
 M2.1 Ingestion (singleton, captures source_sequence + source_event_id, broadcasts)
    │
-   ▼ (sync M2b: R_75 → SYNTHETIC.VOLATILITY_75, stamp REF-...)
+   ▼ (sync M2b: frxXAUUSD → COMMODITY.XAUUSD, stamp REF-...)
 M2.2 Normalization (canonical instrument_id + reference_snapshot_id + watermark)
    │
    ▼

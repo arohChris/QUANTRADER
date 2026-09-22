@@ -1,6 +1,7 @@
 # M2b — Crypto
-# Aligned with forex/synthetic: canonical_symbol, display_name, broker_native required by M2b.1.
-BTCUSD:
+# Aligned with forex/commodities: canonical_symbol, display_name, broker_native required by M2b.1.
+# Namespace: CRYPTO. (canonical instrument_id) — canonical_symbol stays bare (display).
+CRYPTO.BTCUSD:
   canonical_symbol: BTCUSD
   display_name: Bitcoin
   asset_class: crypto

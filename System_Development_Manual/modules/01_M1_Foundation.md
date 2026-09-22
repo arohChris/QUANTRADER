@@ -227,7 +227,7 @@ logger.info("risk_decision", signal_id=..., approved=True, qty=0.4, correlation_
 ## 5. M1.3 — CONFIG & ENVIRONMENT — The YAML That Is the Truth
 
 ### Why it exists
-No hard-coded `if symbol=="R_75"` or `rsi_period=14` or `max_exposure=0.1` in code. All numbers live in `config/*.yaml`, loaded once, validated at startup. Change YAML, not code.
+No hard-coded `if symbol=="frxEURUSD"` or `rsi_period=14` or `max_exposure=0.1` in code. All numbers live in `config/*.yaml`, loaded once, validated at startup. Change YAML, not code.
 
 ### Files
 

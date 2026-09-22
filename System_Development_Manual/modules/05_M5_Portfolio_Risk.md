@@ -11,7 +11,7 @@
 ---
 
 ## 1. Purpose in One Sentence
-> **M5 answers: “Is this TradePlan (entry/SL/TP/timing) safe for this tenant? How much?” — before any `Order` is built.** Same `M5` code serves `user 42@deriv` and `user 99@mt5`, but risk is per-tenant `user_id+broker_id`. **BEST APPROACH:** M5 now validates `TradePlan` (not raw Signal) — checks `valid_until, SL/TP existence, RR, data_quality, spread, margin`.
+> **M5 answers: “Is this TradePlan (entry/SL/TP/timing) safe this tenant? How much?” — before any `Order` is built.** Same `M5` code serves `user 42@deriv` and `user 99@mt5`, but risk is per-tenant `user_id+broker_id`. **BEST APPROACH:** M5 now validates `TradePlan` (not raw Signal) — checks `valid_until, SL/TP existence, RR, data_quality, spread, margin`.
 
 
 > **INSTITUTIONAL HEDGE FUND GRADE — Speed, Zero-Error, Clean Async Event-Driven, Well-Commented**

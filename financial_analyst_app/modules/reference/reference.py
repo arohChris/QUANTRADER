@@ -3,7 +3,7 @@ M2b.1 — ReferenceService facade — broker-native ↔ canonical instrument ide
 WHY: sync pure dict/cache lookups (spec: no await, no I/O in hot path); YAML is the
 single source of truth (no hard-coded symbol ifs); typed errors from shared.contracts.errors.
 
-Gate: to_canonical("R_75", "deriv") == "SYNTHETIC.VOLATILITY_75"
+Gate: to_canonical("frxEURUSD", "deriv") == "FX.EURUSD"
 """
 from __future__ import annotations
 
@@ -28,7 +28,8 @@ class _EmptyBrokerError(UnknownBrokerError, ReferenceValidationError):
 
 _KNOWN_BROKERS = frozenset({"deriv", "mt5", "headway"})
 _ASSETS_DIR = Path(__file__).resolve().parents[2] / "config" / "assets"
-_YAML_FILES = ("forex.yaml", "synthetic.yaml", "crypto.yaml", "commodities.yaml")
+# Scope 2026-09-22: forex | crypto | commodity only — synthetic.yaml removed
+_YAML_FILES = ("forex.yaml", "crypto.yaml", "commodities.yaml")
 
 
 def _load_master() -> dict[str, dict[str, Any]]:

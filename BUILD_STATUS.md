@@ -5,7 +5,7 @@
 
 ## Current Gate: G0 — Edge Validation (entry 2026-09-22)
 
-## Last Updated: 2026-09-22  commit a6908c2  — M2b.1 COMPLETE (LGTM + impl + 76/76 green + real-data OK); next = M2.1 tests rewrite
+## Last Updated: 2026-09-22  — ACTION 9+10 LGTM received; Drop 1.4 **frozen**; M2.1 REV1 signed; M2.2 Step 3 tests written (`test_normalize_spec.py`); suite currently collection-RED until Step 5 (expected). Next: human LGTM on M2.2 tests (ACTION 11).
 
 ## Sub-Modules
 
@@ -15,9 +15,9 @@
 | M1 | M1.2 Core Runtime | ✓ `BaseEngine, Clock, Lifecycle` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
 | M1 | M1.3 Config & Env | ✓ `Settings, feature_flags SIGHUP` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
 | M1 | M1.4 Security & Isolation | ✓ `tenant_context, vault, permissions` | n/a | 42 | 42/42 | n/a | n/a | ✓ @you | complete | v0.1-foundation |
-| M2 | M2.1 Ingestion | ✓ `docs/specs/m2.tick_ingest.md` (review corrections applied 2026-09-22: duplicate_tick naming, source_event_id dedup, event_id identity, M2.1→M2.2 boundary, output = internal tick/event \| Drop) | pending (M2.1-internal output type not yet frozen; Drop module missing) | 0 (stale file disabled) | — | — | — | — | spec | — |
-| M2 | M2.2 Normalization | spec in `02_M2_Data.md` §4 | — | 0 | — | — | — | — | not started | — |
-| M2b | M2b.1 Instrument & Symbol | ✓ `docs/specs/m2b.instrument_symbol.md` | ✓ `AssetClass` 1.0 + `ReferenceError` hierarchy 1.2.0 | 31 | 31/31 (full suite 76/76, 0 skipped) | n/a (no money) | ✓ config/assets/*.yaml 2026-09-22, human OK | ✓ tests LGTM + verify OK @you | complete | a6908c2 |
+| M2 | M2.1 Ingestion | ✓ `docs/specs/m2.tick_ingest.md` **REV1** signed @you 2026-09-22 | ✓ `InternalTick` 1.1 + pkg 2.1.0 + `Drop` **1.4 frozen** (LGTM ACTION 10) | 50+contract | full suite **139/139** pre-M2.2-tests, 0 skipped | n/a (no money) | ✓ verify accepts=4 drops=6; human OK | ✓ LGTM @you (ACTION 10) | complete | (uncommitted — pending commit) |
+| M2 | M2.2 Normalization | ✓ `docs/specs/m2.normalize.md` REV1 **LGTM @you (ACTION 9)** | Drop **1.4 frozen**; MarketData 1.4 unchanged | Step 3 written: `tests/m2_market_data/test_normalize_spec.py` | collection-RED until Step 5 (expected) | — hand-calc cases in test comments | — | **awaiting tests LGTM (ACTION 11)** | tests | — |
+| M2b | M2b.1 Instrument & Symbol | ✓ `docs/specs/m2b.instrument_symbol.md` | ✓ `AssetClass` **2.0.0** (major scope cut) + `ReferenceError` hierarchy 1.2.0 — pkg **2.1.0** | 36 (post-review F2/F4/F5/F7) | m2b file 36/36; full suite **139/139**, 0 skipped | n/a (no money) | ✓ fixtures only (`config/assets/*.yaml` + human OK 2026-09-22) — **no broker-tick replay log** (F9: downgraded vs M2.1 bar) | ✓ tests LGTM + verify OK @you; review F1–F11 applied | complete (review minors applied 2026-09-22; F6 deferred P06) | a6908c2 |
 | M3 | M3.1 RSI | — | — | 0 | — | — | — | — | not started | — |
 | M4 | M4.1 <strategy> | — | — | 0 | — | — | — | — | not started | — |
 | M5 | M5.1 Risk | — | — | 0 | — | — | — | — | not started | — |
@@ -38,8 +38,11 @@
 
 - ~~**blocking:** no git commits yet~~ — **RESOLVED 2026-09-22:** identity set (Christian); commits `efb59ff` + `a6908c2` (M2b.1 complete).
 - **non-blocking:** import-linter config needed `include_external_packages=True` (fixed 2026-09-22); `check_structure.py` cp1252 Unicode crash fixed with ASCII output (fixed 2026-09-22).
-- **non-blocking:** `tests/m2_market_data/test_tick_ingest_spec.py` disabled (renamed `.disabled`) — encoded pre-correction M2.1 contract (bad import path, missing `shared.contracts.drop`, old dedup/`MarketData` emit). BUILD_STATUS already says M2.1 tests = 0; rewrite against corrected `docs/specs/m2.tick_ingest.md` when M2.1 starts (after M2b.1 complete). Does not abort `pytest -q` collection anymore.
-- ~~**expected (not a bug):** full suite is RED while M2b.1 Step 5 impl is unwritten~~ — **RESOLVED 2026-09-22:** importorskip removed, impl written, full suite **76/76 green, 0 skipped**.
+- ~~**non-blocking:** `tests/m2_market_data/test_tick_ingest_spec.py` disabled (pre-correction contract)~~ — **RESOLVED 2026-09-22:** rewritten against corrected `docs/specs/m2.tick_ingest.md` (InternalTick+Drop contracts, fingerprint dedup, no MarketData emit). Suite is intentionally collection-RED until Step 5 `TickIngestor` impl (only after human LGTM on tests).
+- ~~**non-blocking:** M2.1 REV1 (Deriv optional id/bid/ask etc.) applied to spec + Drop 1.4 code 2026-09-22 — existing M2.1 tests/impl may need a small sync pass once ACTION 10 LGTM lands; re-run full suite then. Drop 1.4 enum change needs human LGTM per AGENTS §5 before treated as frozen.~~ — **SYNCED 2026-09-22:** `tick_ingest.py` + tests rewritten to REV1; suite **133/133 green, 0 skipped**; verify re-run OK. Still awaiting human LGTM to freeze Drop 1.4 + sign ACTION 10 (AGENTS §5).
+- ~~**expected (not a bug):** full suite is RED while M2b.1 Step 5 impl is unwritten~~ — **RESOLVED 2026-09-22:** importorskip removed, impl written; current full suite **139/139 green, 0 skipped** (do not quote historical 76/76 as current — F10).
+- **F6 deferred → P06 entry criteria (non-blocking for M2b.1):** `reference.py` silently continues on missing YAML / malformed `broker_native` / duplicate native last-wins / no `AssetClass` validation at load. Spec defers to P06 `reference_validator` (`FAIL STARTUP`); **P06 must land the load-time validator before `tick_size` becomes authoritative.**
+- **F9 verify honesty:** M2b.1 Real-Data cell is **fixtures only** — no `scripts/verify_*` broker-tick replay. Fine for pure mapping (no money); do not treat as M2.1-class evidence.
 - M1 `42/42` green. New bugs go here as `blocking` vs `non-blocking` with issue link.
 
 ## Open Questions
@@ -52,6 +55,6 @@
 
 ## Discrepancies vs Manual
 
-- Manual canonical list shows `FX. | SYNTHETIC. | INDEX. | EQUITY.` only — this spec adds `CRYPTO.` and `COMMODITY.` namespaces (crypto already existed in config; commodity added 2026-09-22 per user request). Flagged, not silently resolved: manual §canonical identity may need a v1.5 note.
-- Manual folder tree lists `assets/{forex,crypto,commodities,indices,synthetic}.yaml` — project also has no `indices.yaml` yet (out of scope for M2b.1 defaults).
-- None else — AGENTS.md v2.0 aligns with manual v1.4. Where they diverge, this file wins per AGENTS.md §6.
+- ~~Manual still lists `SYNTHETIC./INDEX./EQUITY.` namespaces and `indices/synthetic.yaml` tree~~ — **RESOLVED 2026-09-22:** full manual cleanup applied (`System_Development_Manual.md` + modules/01,02,02b,03,04,06); canonical list + folder tree now **forex | crypto | commodity only**.
+- ~~Bible 02b examples used bare `BTCUSD` as canonical id / `tick_size=0.001` for XAUUSD~~ — **RESOLVED 2026-09-22 (F11):** examples updated to `CRYPTO.BTCUSD` + `tick_size=0.01` fixture note (code already followed spec; bible was stale).
+- None else — AGENTS.md v2.0 aligns with manual after scope cleanup. Where they diverge, this file wins per AGENTS.md §6.

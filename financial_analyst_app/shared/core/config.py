@@ -2,7 +2,7 @@
 M1.3 — Config & Environment — YAML is the Truth
 INSTITUTIONAL HEDGE FUND GRADE
 
-WHY: No hard-coded `if symbol=="R_75"` or `rsi_period=14` in code.
+WHY: No hard-coded `if symbol=="frxEURUSD"` or `rsi_period=14` in code.
      All numbers live in config/*.yaml, loaded once, validated at startup.
      Change YAML, not code. Invalid YAML → startup FAILS LOUD (not half-boot).
 

@@ -6,7 +6,7 @@ M5/M6/M7 all classify instruments by asset class. Free-string asset_class invite
 Enum = compile-time + runtime validation; unknown value fails loudly at YAML load / P06 gate.
 
 Consumers: M2b (instrument_master, reference_validator), M2.2, M3, M5, M6, M7, M8.
-Version: 1.0 frozen — additive members require minor bump + migration note; removals major.
+Version: 2.0 frozen — index/equity/synthetic removed (human sign-off 2026-09-22); only forex|crypto|commodity.
 """
 from __future__ import annotations
 
@@ -23,9 +23,6 @@ class AssetClass(str, Enum):
     forex = "forex"
     crypto = "crypto"
     commodity = "commodity"
-    index = "index"
-    equity = "equity"
-    synthetic = "synthetic"
 
     @classmethod
     def from_yaml_value(cls, raw: str) -> "AssetClass":

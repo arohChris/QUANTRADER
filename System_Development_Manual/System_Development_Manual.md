@@ -28,12 +28,12 @@ This document is **the law**. If code contradicts this bible, code is wrong.
 
 We are building an **institutional-grade, highly profitable, multi-asset, 99.8% automated (minimal manual) algo-trading, research & analysis platform**.
 
-**Asset & Broker Coverage:** forex, crypto, commodities, indices, synthetic indices across **Deriv, MT5, Headway** (extensible via `broker_feeds/` + `broker_adapters/` — no core rewrite per broker).
+**Asset & Broker Coverage:** forex, crypto, commodities across **Deriv, MT5, Headway** (extensible via `broker_feeds/` + `broker_adapters/` — no core rewrite per broker).
 
 **Institutional Expectations (explicitly designed):**
 1. **Multi-User Platform — Strict Tenant Isolation:** Every user = isolated tenant (`user_id` + `broker_id` composite). A Deriv user sees/stores/processes ONLY Deriv streams, Deriv account, Deriv risk/account-info calculations. An MT5 user sees ONLY MT5. No cross-broker or cross-user leakage (`ContextVar[user_id, broker_id]` + row-level `WHERE user_id=:uid AND broker_id=:bid` + per-tenant lake partition). Same `Shared Kernel` + same calculation Modules serve all tenants — no per-broker rewrite.
 2. **High-Speed Calculation & Operation — 99.8% Automation:** P95 budgets: Ingestion→Storage <50ms, MarketData→AnalyticsResult <20ms, RiskDecision <10ms, Order→BrokerAck <500ms (broker-bound). Vectorized `numpy/pandas` + `feature_engine` caching + `Redis` + async ingestion. Target 99.8% algo-handled (minimal manual = only `emergency/kill_switch` + `unknown_state` human triage).
-3. **Multi-Broker, DBs Remain Diff, Calc Shared:** Raw & normalized data remain **diff per broker, per user** (`data/lake/brokers/{deriv,mt5,headway}/` + DB `WHERE broker_id` + per-user namespace). *Canonical* `MarketData` + `AnalyticsResult` are broker-agnostic, so `M3 Analytics`, `M4 Alpha`, `M5 Risk`, `M6 Execution Intelligence` (algos/costs) are **written once, reused for every broker** via `M2b Reference` mapping (`frxEURUSD` → `EURUSD`, `R_75` → `Volatility 75 Index` + `contract_specs` per broker). Account management (`M5 PortfolioState`, `M7 Trust`) is per-`user_id+broker_id` — risk/account-info calc is per-tenant but engine code is shared.
+3. **Multi-Broker, DBs Remain Diff, Calc Shared:** Raw & normalized data remain **diff per broker, per user** (`data/lake/brokers/{deriv,mt5,headway}/` + DB `WHERE broker_id` + per-user namespace). *Canonical* `MarketData` + `AnalyticsResult` are broker-agnostic, so `M3 Analytics`, `M4 Alpha`, `M5 Risk`, `M6 Execution Intelligence` (algos/costs) are **written once, reused for every broker** via `M2b Reference` mapping (`frxEURUSD` → `EURUSD`, `frxXAUUSD` → `Gold` + `contract_specs` per broker). Account management (`M5 PortfolioState`, `M7 Trust`) is per-`user_id+broker_id` — risk/account-info calc is per-tenant but engine code is shared.
 
 
 **The platform is NOT a monolith.** It is a **Modular Monolith** composed of **Bounded Engines**.
@@ -202,7 +202,7 @@ financial_analyst_app/               # ← regenerated AFTER v1.1 lock (currentl
 │       └── scripts/{seed, migrate}/
 │
 ├── config/                           # YAML overlays (owned by Foundation, consumed by all)
-│   ├── assets/{forex,crypto,commodities,indices,synthetic}.yaml
+│   ├── assets/{forex,crypto,commodities}.yaml
 │   ├── brokers/{deriv,mt5,headway}.yaml
 │   ├── strategies/{...}.yaml, execution/{routing,algorithms}.yaml, risk/{limits,sizing}.yaml, system/{system,feature_flags}.yaml
 │   └── environments/{development,testing,paper,canary,production}.yaml
@@ -455,7 +455,7 @@ logger.info("risk_decision", signal_id=..., approved=True, qty=0.4, correlation_
 ## 5. M1.3 — CONFIG & ENVIRONMENT — The YAML That Is the Truth
 
 ### Why it exists
-No hard-coded `if symbol=="R_75"` or `rsi_period=14` or `max_exposure=0.1` in code. All numbers live in `config/*.yaml`, loaded once, validated at startup. Change YAML, not code.
+No hard-coded `if symbol=="frxXAUUSD"` or `rsi_period=14` or `max_exposure=0.1` in code. All numbers live in `config/*.yaml`, loaded once, validated at startup. Change YAML, not code.
 
 ### Files
 
@@ -710,7 +710,7 @@ backend/contracts/
 ```python
 # market_data.py
 class MarketData(BaseContract):
-    symbol: str                 # canonical: "EURUSD", "BTCUSD", "Volatility 75 Index"
+    symbol: str                 # canonical: "EURUSD", "BTCUSD", "Gold"
     broker: str                 # "deriv" | "mt5" | "headway" | "canonical"
     timestamp: datetime         # exchange timestamp, UTC
     received_at: datetime       # ingestion timestamp, UTC
@@ -859,7 +859,7 @@ M2 knows **"What happened to FX.EURUSD at 10:31:42.123?"** (observations). M2b k
 | Sub | Name | One-Line Job | Key Correction v1.4 |
 |-----|------|--------------|---------------------|
 | **M2.1** | Ingestion | Opens **per-broker SINGLETON WS/REST** (one Deriv connection reads raw ticks to us, then fanned-out to all UIs of that broker) | **One connection per broker, storage global, fan-out to all tenants** |
-| **M2.2** | Normalization | `R_75 → SYNTHETIC.VOLATILITY_75`, `frxEURUSD → FX.EURUSD` via **M2b sync lookup**, stamps `reference_snapshot_id`, converts time → UTC | **Now stamps `reference_snapshot_id` + handles `instrument_id` not `symbol`** |
+| **M2.2** | Normalization | `frxXAUUSD → COMMODITY.XAUUSD`, `frxEURUSD → FX.EURUSD` via **M2b sync lookup**, stamps `reference_snapshot_id`, converts time → UTC | **Now stamps `reference_snapshot_id` + handles `instrument_id` not `symbol`** |
 | **M2.3** | Validation | Drops future/negative/inverted ticks | **Uses `source_sequence` + `watermark` distinction** |
 | **M2.4** | Transformation | Tick → `Candle(1m,1h)` | Unchanged |
 | **M2.5** | Order Book | Keeps depth, detects **source_sequence gaps** | **Reads `has_depth` via M2b sync before expecting depth** |
@@ -878,7 +878,7 @@ External Broker WS/REST (per-BROKER singleton — ONE Deriv WS via platform feed
    ▼
 M2.1 Ingestion (per-broker singleton WS, captures source_sequence + source_event_id, fans out to all UIs)
    │
-   ▼ RawDerivTick(R_75, source_sequence=845921, source_event_id=tick-id-123)
+   ▼ RawDerivTick(frxXAUUSD, source_sequence=845921, source_event_id=tick-id-123)
 M2.2 Normalization (sync: reference.to_canonical → FX.EURUSD, reference.get_spec(effective_at), stamp reference_snapshot_id)
    │
    ▼ MarketData(instrument_id=FX.EURUSD, reference_snapshot_id=REF-2026-09-22-014, source_sequence=845921, watermark=1001, quality=pristine)
@@ -921,7 +921,7 @@ Brokers speak different languages (Deriv WS, MT5 bridge). M2.1 is ONLY place tha
 ### Files — Simple + Pseudocode + Connection — v1.4 corrected per 2026-09-22 (singleton fan-out)
 
 #### `ingestion_engine/ingestion_manager.py` — The Starter/Stopper (async, per-broker singleton)
-**Does:** `start(instrument_id=FX.EURUSD, broker=deriv)` — **NO user_id** (platform singleton). One Deriv WS streams `R_75`, normalizes once, stores once, **broadcasts to all UIs** subscribed to `deriv`.
+**Does:** `start(instrument_id=FX.EURUSD, broker=deriv)` — **NO user_id** (platform singleton). One Deriv WS streams `frxXAUUSD`, normalizes once, stores once, **broadcasts to all UIs** subscribed to `deriv`.
 **Pseudocode (corrected — singleton):**
 ```python
 # Market-data feed is PUBLIC per-broker — one WS for all tenants of that broker
@@ -958,7 +958,7 @@ async def get_or_create(broker: str):
 ```python
 # models.py
 class RawDerivTick(BaseModel):  # internal only
-    native_symbol: str  # "R_75"
+    native_symbol: str  # "frxXAUUSD"
     native_price: float
     provider_event_time: int  # epoch
     source_sequence: int | None = None  # broker seq if provided (may be None for Deriv)
@@ -981,7 +981,7 @@ async def on_ws_message(msg):
 **Global market-data (shared, no user_id):**
 ```
 market-data/provider=deriv/instrument=FX.EURUSD/date=2026-09-22/data_type=candles/interval=1m/candles.parquet
-market-data/provider=deriv/instrument=SYNTHETIC.VOLATILITY_75/date=2026-09-22/data_type=ticks/ticks.parquet
+market-data/provider=deriv/instrument=COMMODITY.XAUUSD/date=2026-09-22/data_type=ticks/ticks.parquet
 ```
 *Why global?* `FX.EURUSD` on Deriv is same for user 42 and 99 — one copy.
 
@@ -1001,17 +1001,17 @@ private/broker=deriv/user_id=42/date=2026-09-22/ledger.parquet
 ## 4. M2.2 — NORMALIZATION — The Translator (now stamps reference lineage)
 
 ### Why
-`R_75` → `SYNTHETIC.VOLATILITY_75`, `frxEURUSD` → `FX.EURUSD` so M3 can write RSI once.
+`frxXAUUSD` → `COMMODITY.XAUUSD`, `frxEURUSD` → `FX.EURUSD` so M3 can write RSI once.
 
 ### Files — v1.4 with reference_snapshot_id + sync M2b lookups
 
 #### `normalization_engine/engine.py`
-**Does:** `RawDerivTick(R_75, 123) → MarketData(instrument_id=SYNTHETIC.VOLATILITY_75, reference_snapshot_id=REF-2026-09-22-014, source_sequence=845921, watermark=1001, ...)`
+**Does:** `RawDerivTick(frxXAUUSD, 123) → MarketData(instrument_id=COMMODITY.XAUUSD, reference_snapshot_id=REF-2026-09-22-014, source_sequence=845921, watermark=1001, ...)`
 **Pseudocode (corrected — sync M2b, stamps lineage):**
 ```python
 def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sync: M2b lookups are sync
     # M2b lookups — SYNC, no await, <1µs
-    instrument_id = reference.to_canonical(raw.native_symbol, broker=broker)  # R_75 → SYNTHETIC.VOLATILITY_75
+    instrument_id = reference.to_canonical(raw.native_symbol, broker=broker)  # frxXAUUSD → COMMODITY.XAUUSD
     spec = reference.get_spec(instrument_id, broker=broker, effective_at=to_utc(raw.provider_event_time))  # effective-dated
     snapshot_id = reference.current_snapshot_id()  # REF-2026-09-22-014 — for lineage
     price = round(raw.native_price, spec.tick_size)
@@ -1020,7 +1020,7 @@ def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sy
     wm = watermark_registry.next(instrument_id, broker)  # global processing seq (not per-user)
     return MarketData(
         instrument_id=instrument_id,  # FX.EURUSD — canonical
-        symbol=instrument_id.split(".")[-1].replace("VOLATILITY_75","Volatility 75 Index"),  # display
+        symbol=instrument_id.split(".")[-1].replace("XAUUSD","Gold"),  # display
         broker=broker,
         kind="tick",
         payload=Tick(price=price),
@@ -1043,7 +1043,7 @@ def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sy
 | `watermark / processing_sequence` | **M2.7 owns & generates** | `1001, 1002...` per `instrument_id+broker` | **Gap detection & recovery** (M2.7's key), not M2b |
 | `reference_snapshot_id` | M2b owns, M2 stamps | `REF-2026-09-22-014` | Historical reproducibility |
 
-**M2b knows nothing about `source_sequence/watermark`.** It only maps `R_75 → SYNTHETIC.VOLATILITY_75`.
+**M2b knows nothing about `source_sequence/watermark`.** It only maps `frxXAUUSD → COMMODITY.XAUUSD`.
 
 ---
 
@@ -1140,7 +1140,7 @@ def append_fill(fill, user_id, broker):
 ```
 
 **Tenant isolation example (corrected per 2026-09-22 — singleton fan-out):**
-- **Market-data:** Platform `Deriv` singleton WS → ingests `R_75` once → global `market-data/provider=deriv/instrument=SYNTHETIC.VOLATILITY_75/...` (shared) → **fanned-out via pub/sub to UIs of all users who use `deriv`** (user 42 and 99 see same tick in real-time, `tick→parquet<50ms + broadcast<20ms`)
+- **Market-data:** Platform `Deriv` singleton WS → ingests `frxXAUUSD` once → global `market-data/provider=deriv/instrument=COMMODITY.XAUUSD/...` (shared) → **fanned-out via pub/sub to UIs of all users who use `deriv`** (user 42 and 99 see same tick in real-time, `tick→parquet<50ms + broadcast<20ms`)
 - **Private per-user:** `user 42/Deriv` risk/PnL/balance → `WHERE user_id=42 AND broker=deriv` → `MaxRisk: margin_used = position.qty * price / leverage(42)` — **same FX.EURUSD + same RSI=68, but different `available_balance` → different `approved_qty` / PnL**
 - `user 99` sees same market-data + same analytics, but his `orders/ledger` are isolated, zero rows for 42. **General calculations identical, personal results diverge by account info.**
 
@@ -1156,7 +1156,7 @@ External Deriv WS (per-BROKER singleton via platform feed — ONE connection fan
    ▼
 M2.1 Ingestion (singleton, captures source_sequence + source_event_id, broadcasts)
    │
-   ▼ (sync M2b: R_75 → SYNTHETIC.VOLATILITY_75, stamp REF-...)
+   ▼ (sync M2b: frxXAUUSD → COMMODITY.XAUUSD, stamp REF-...)
 M2.2 Normalization (canonical instrument_id + reference_snapshot_id + watermark)
    │
    ▼
@@ -1211,7 +1211,7 @@ pytest modules/data --fixtures=recorded_raw_ticks.parquet --mock-reference
 ## 1. Purpose in One Sentence
 > **M2b answers "What is this instrument?" — its identity, specs, calendar, capabilities — as versioned reference facts. Never "What happened at 10:31:42.123?" (that's M2). Never trading decisions (that's M6).**
 
-M2b prevents `if symbol=="R_75"` scattered in code. One place knows `R_75 → SYNTHETIC.VOLATILITY_75` (`display: Volatility 75 Index`), `tick_size=0.001`, `deriv: market/limit supported, depth unavailable`, `trading hours 00:00-23:59`.
+M2b prevents `if symbol=="frxXAUUSD"` scattered in code. One place knows `frxXAUUSD → COMMODITY.XAUUSD` (`display: Gold`), `tick_size=0.001`, `deriv: market/limit supported, depth unavailable`, `trading hours 00:00-23:59`.
 
 ### Canonical Identity — The Most Important Correction
 
@@ -1219,10 +1219,10 @@ M2b prevents `if symbol=="R_75"` scattered in code. One place knows `R_75 → SY
 
 | Term | Example | Used by | Meaning |
 |------|---------|---------|---------|
-| `canonical_instrument_id` | `FX.EURUSD`, `SYNTHETIC.VOLATILITY_75`, `INDEX.DE40`, `EQUITY.AAPL` | **All modules — primary key** | Unique, namespaced, immutable id. `FX.` = forex, `SYNTHETIC.` = synthetic, `INDEX.` = index |
+| `canonical_instrument_id` | `FX.EURUSD`, `COMMODITY.XAUUSD`, `BTCUSD` | **All modules — primary key** | Unique, namespaced, immutable id. `FX.` = forex, bare/`CRYPTO.` = crypto, `COMMODITY.` = commodity |
 | `canonical_symbol` | `EURUSD` | API display, logs | Short display, derived from instrument_id suffix (not stored separately) |
-| `display_name` | `Volatility 75 Index`, `Apple Inc.` | UI only | Human-readable |
-| `broker_native_symbol` | `frxEURUSD`, `R_75` | Only inside M2.1/M6.4 | Never leaks beyond M2/M6 translators |
+| `display_name` | `Gold`, `Bitcoin` | UI only | Human-readable |
+| `broker_native_symbol` | `frxEURUSD`, `frxXAUUSD` | Only inside M2.1/M6.4 | Never leaks beyond M2/M6 translators |
 
 **Contract fields (after v1.4):**
 
@@ -1238,7 +1238,7 @@ get_spec(instrument="FX.EURUSD", broker="deriv", effective_at=None) # None → c
 |---------------|---------------------------|--------------------|----|
 | `frxEURUSD` (Deriv) | `FX.EURUSD` | `EURUSD` | `EURUSD` |
 | `EURUSD` (MT5) | `FX.EURUSD` | `EURUSD` | `EURUSD` |
-| `R_75` (Deriv) | `SYNTHETIC.VOLATILITY_75` | `VOLATILITY_75` | `Volatility 75 Index` |
+| `frxXAUUSD` (Deriv) | `COMMODITY.XAUUSD` | `XAUUSD` | `Gold` |
 
 No module may use `EURUSD` as instrument_id and `FX.EURUSD` interchangeably. `instrument_id` is the law; storage partition is `instrument=FX.EURUSD` (never `instrument=EURUSD` ambiguous).
 
@@ -1264,7 +1264,7 @@ No module may use `EURUSD` as instrument_id and `FX.EURUSD` interchangeably. `in
 | M2b — **Knows what EURUSD *is*** (identity, facts) | M2 — **Knows what *happened* to EURUSD at 10:31:42.123** (observations) |
 |-----------------------------------------------------|--------------------------------------------------------------------------|
 | Instrument identity (`FX.EURUSD`, asset class) | Tick, Quote, Trade, OrderBook update |
-| Symbol mappings (`R_75 → SYNTHETIC.VOLATILITY_75`) | Timestamp (`exchange_timestamp`, `received_at`, `processed_at`) |
+| Symbol mappings (`frxXAUUSD → COMMODITY.XAUUSD`) | Timestamp (`exchange_timestamp`, `received_at`, `processed_at`) |
 | Contract specs (`contract_size`, `tick_size`, `pip`, `min_qty`, `qty_step`, `margin rules`) — **versioned, effective-dated** | Source identifiers (`source_sequence`, `source_event_id`, `broker_native_symbol`) |
 | Trading calendar (`sessions, holidays, DST`) — **effective-dated** | Processing identity (`processing_sequence / watermark` — M2's internal ordering, not M2b) |
 | Broker capabilities (`market/limit/stop supported, has_depth`) | Processing quality (`pristine/gapped/suspect`), `quality_status` |
@@ -1278,7 +1278,7 @@ M2b REFERENCE (read-only truth, versioned snapshots)
    │   instrument_id, specs, calendar, capabilities, mapping, execution facts
    │   sync lookup <1µs, shared cache (instrument,broker)
    │
-   ├──► M2.2 Mapping (R_75 → SYNTHETIC.VOLATILITY_75) ──► canonical instrument_id
+   ├──► M2.2 Mapping (frxXAUUSD → COMMODITY.XAUUSD) ──► canonical instrument_id
    ├──► M2.3 Rules (min_qty/step validation) — reads spec via M2b
    ├──► M2.5 Book — reads has_depth via M2b before expecting depth
    │
@@ -1311,8 +1311,8 @@ from modules.reference import reference  # singleton ReferenceService
 
 # Identity
 reference.exists("FX.EURUSD", broker="deriv") -> bool
-reference.to_canonical("R_75", broker="deriv") -> "SYNTHETIC.VOLATILITY_75"
-reference.to_native("SYNTHETIC.VOLATILITY_75", broker="deriv") -> "R_75"
+reference.to_canonical("frxXAUUSD", broker="deriv") -> "COMMODITY.XAUUSD"
+reference.to_native("COMMODITY.XAUUSD", broker="deriv") -> "frxXAUUSD"
 reference.get_instrument("FX.EURUSD") -> {asset_class: "forex", display_name: "EURUSD"}
 
 # Specs — effective-dated (MUST support historical)
@@ -1325,12 +1325,12 @@ reference.is_open("FX.EURUSD", timestamp, broker="deriv") -> bool  # evaluates c
 reference.get_calendar("FX.EURUSD", broker="deriv", effective_at=ts)
 
 # Capabilities — facts only
-reference.get_capabilities("SYNTHETIC.VOLATILITY_75", broker="deriv") -> {order_types: [market,limit], has_depth: False}
+reference.get_capabilities("COMMODITY.XAUUSD", broker="deriv") -> {order_types: [market,limit], has_depth: False}
 reference.get_execution_profile("FX.EURUSD", broker="deriv", effective_at=ts) -> {commission, financing, slippage_params} # descriptive
 
 # Temporal events
-reference.get_corporate_actions("EQUITY.AAPL", effective_at=ts) -> [Action(split 4:1 @ 2024-08-31)]
-reference.get_rollover("INDEX.DE40", effective_at=ts) -> Rollover(...)
+reference.get_corporate_actions("BTCUSD", effective_at=ts) -> [Action(split 4:1 @ 2024-08-31)]
+reference.get_rollover("COMMODITY.XAGUSD", effective_at=ts) -> Rollover(...)
 ```
 
 **Internally (not exposed):**
@@ -1371,7 +1371,7 @@ async def load_reference() -> None:  # async I/O at startup
 ## 5. Files (updated with effective dating, validation, facade)
 
 ### `instrument_master.py` — The List (now canonical)
-**Does:** `master = {"FX.EURUSD": {asset_class:"forex", canonical_symbol:"EURUSD", display_name:"EURUSD", brokers:[deriv,mt5], active:True}, "SYNTHETIC.VOLATILITY_75": {...}}` — keyed by `instrument_id`.
+**Does:** `master = {"FX.EURUSD": {asset_class:"forex", canonical_symbol:"EURUSD", display_name:"EURUSD", brokers:[deriv,mt5], active:True}, "COMMODITY.XAUUSD": {...}}` — keyed by `instrument_id`.
 **Pseudocode (sync):**
 ```python
 # sync, deterministic — no await
@@ -1383,10 +1383,10 @@ def exists(instrument_id: str, broker: str | None = None) -> bool:
 ```
 
 ### `symbol_mapping.py` — The Translator (now to instrument_id)
-**Does:** `to_canonical("frxEURUSD","mt5") → "FX.EURUSD"`, `to_canonical("R_75","deriv") → "SYNTHETIC.VOLATILITY_75"`.
+**Does:** `to_canonical("frxEURUSD","mt5") → "FX.EURUSD"`, `to_canonical("frxXAUUSD","deriv") → "COMMODITY.XAUUSD"`.
 **Pseudocode (sync):**
 ```python
-maps = {"deriv": {"R_75": "SYNTHETIC.VOLATILITY_75", "frxEURUSD": "FX.EURUSD"}, "mt5": {"EURUSD": "FX.EURUSD"}}
+maps = {"deriv": {"frxXAUUSD": "COMMODITY.XAUUSD", "frxEURUSD": "FX.EURUSD"}, "mt5": {"EURUSD": "FX.EURUSD"}}
 def to_canonical(native: str, broker: str) -> str:  # sync
     return maps[broker].get(native, native)
 def to_native(canonical_id: str, broker: str) -> str:  # reverse
@@ -1425,8 +1425,8 @@ def is_open(instrument_id: str, ts: datetime, broker: str) -> bool:  # sync
 ### `corporate_actions.py`, `contract_rollover.py` — Temporal Reference Events (new classification)
 **Why classification?** Ordinary specs are `mostly static/versioned`. These are **events effective at a specific time** — not continuous state.
 - **Instrument spec** → static/versioned (`EURUSD` contract_size)
-- **Corporate action** → event (`AAPL split 4:1 @ 2024-08-31`)
-- **Rollover** → event + relationship (`DE40 expiry 2026-09-20 → next contract`)
+- **Corporate action** → event (`BTCUSD split 4:1 @ 2024-08-31`)
+- **Rollover** → event + relationship (`COMMODITY.XAGUSD expiry 2026-09-20 → next contract`)
 **Pseudocode:**
 ```python
 def get_corporate_actions(instrument_id: str, effective_at: datetime) -> list[Action]:  # sync
@@ -1434,7 +1434,7 @@ def get_corporate_actions(instrument_id: str, effective_at: datetime) -> list[Ac
 ```
 
 ### `broker_capabilities.py` + `execution_profiles.py` — Facts vs Decisions
-**Does:** `get_capabilities("SYNTHETIC.VOLATILITY_75","deriv") → {order_types:[market,limit], has_depth:False}` (fact). `get_execution_profile("FX.EURUSD","deriv") → {commission:0.0001, financing:..., slippage_params:{k:0.2}}` (descriptive params).
+**Does:** `get_capabilities("COMMODITY.XAUUSD","deriv") → {order_types:[market,limit], has_depth:False}` (fact). `get_execution_profile("FX.EURUSD","deriv") → {commission:0.0001, financing:..., slippage_params:{k:0.2}}` (descriptive params).
 **Why keep execution_profiles in M2b?** It's **reference facts** (`commission=X`). **Routing decision stays in M6**: `M6.smart_router` reads facts from M2b, then decides `route to mt5 because cheaper`. `grep M2b -r "route"` must be 0.
 **Pseudocode (M6 side):**
 ```python
@@ -1487,7 +1487,7 @@ MarketData(
 )
 ```
 
-**Why?** Six months later: "Why did system normalize `R_75` to `SYNTHETIC.VOLATILITY_75` with `tick_size 0.001` on 2026-03-15?" → replay with `REF-2026-03-10-008` (effective at that time). Essential for **auditing, replay, debugging, research, compliance, historical reproducibility**. M8 replays with **same snapshot** as ingestion time.
+**Why?** Six months later: "Why did system normalize `frxXAUUSD` to `COMMODITY.XAUUSD` with `tick_size 0.001` on 2026-03-15?" → replay with `REF-2026-03-10-008` (effective at that time). Essential for **auditing, replay, debugging, research, compliance, historical reproducibility**. M8 replays with **same snapshot** as ingestion time.
 
 **Storage:** `reference_snapshot_id` stored in `MarketData` parquet + `data_catalog` row. Not nullable.
 
@@ -1523,7 +1523,7 @@ Dependency: M2 ──depends on──► M2b (M2 imports ReferenceService)
 
 ```bash
 pytest modules/reference --fixtures=forex.yaml
-# pure dict lookups, sync, no DB/broker — `to_canonical("R_75","deriv")==SYNTHETIC.VOLATILITY_75`
+# pure dict lookups, sync, no DB/broker — `to_canonical("frxXAUUSD","deriv")==COMMODITY.XAUUSD`
 # effective-dated: get_spec("FX.EURUSD","deriv", effective_at=2026-03-15) == v12
 # validation: bad YAML (duplicate) → FAIL STARTUP
 ```
@@ -1534,7 +1534,7 @@ pytest modules/reference --fixtures=forex.yaml
 
 | Phase | Sub-Module | Deliverable | Gate |
 |-------|------------|-------------|------|
-| **P05** | M2b.1 Instrument & Symbol | `instrument_master` (FX.EURUSD), `symbol_mapping` (R_75→SYNTHETIC.VOLATILITY_75), `ReferenceService` facade | `to_canonical("R_75","deriv")==SYNTHETIC.VOLATILITY_75` |
+| **P05** | M2b.1 Instrument & Symbol | `instrument_master` (FX.EURUSD), `symbol_mapping` (frxXAUUSD→COMMODITY.XAUUSD), `ReferenceService` facade | `to_canonical("frxXAUUSD","deriv")==COMMODITY.XAUUSD` |
 | **P06** | M2b.2 Specs & Capabilities | `contract_specs(effective-dated)`, `broker_capabilities`, `execution_profiles(facts only)`, `reference_validator` | `get_spec(FX.EURUSD,deriv, effective_at=2026-03-15)==v12` |
 | **P07** | M2b.3 Calendar | `trading_calendar(effective-dated)`, `corporate_actions`, `contract_rollover` (Temporal Events) + `is_open(effective_at)` | `is_open(FX.EURUSD, 2026-03-15 10:00 UTC, deriv) effective` |
 
@@ -1648,7 +1648,7 @@ async def get_features(symbol, timeframe, user_id, broker):  # async: Redis + La
 **Connects:** Called by `M4` `strategy.generate` (one call, not 17). `M5` also calls for `vol` during sizing.
 
 ### `profiles/*.py`
-**Does:** `forex_profile → {rsi_period:14, vol_window:20}`, `crypto_profile → {rsi_period:14, vol_window:30}`, `synthetic_profile → {vol_window:50, no overnight gap handling}`. Thin wrappers around `config/assets/*.yaml`.
+**Does:** `forex_profile → {rsi_period:14, vol_window:20}`, `crypto_profile → {rsi_period:14, vol_window:30}`, `commodity_profile → {vol_window:30}`. Thin wrappers around `config/assets/*.yaml`.
 **Pseudocode:** `def get_profile(asset_class): return load_yaml(f"config/assets/{asset_class}.yaml")["analytics"]`
 **Connects:** `M3.2` reads params, not hard-coded. Adding `crypto` = new YAML + profile file, no code change in `per_asset`.
 
@@ -1751,7 +1751,7 @@ def correlation(candles_a, candles_b, window=20):
 #### `macro/rates.py`, `event/event_registry.py`
 **Does:** `rates` fetches FED 5.5%, `event_registry` knows `CPI 2026-09-21 14:30` is high impact.
 **Pseudocode:** `event = registry.get("CPI", date); impact = classifier(event)  # high/medium/low`
-**Connects:** `M4 systematic_macro` reads `macro_regime=risk_off → short indices`.
+**Connects:** `M4 systematic_macro` reads `macro_regime=risk_off → reduce crypto / commodity risk`.
 
 ---
 
@@ -1911,7 +1911,7 @@ class EmaTrend(BaseStrategy):
 - `mean_reversion_grid` — grid levels + inventory_control (persists `grid_state` via `M5` — only exception where strategy touches state)
 - `microstructure` — `order_book_imbalance >0.6 → long` (needs `M3.4`)
 - `liquidity_event` — `liquidity_depletion → short` (needs `M3.4`)
-- `systematic_macro` — `rates differential + macro_regime risk_off → short indices` (needs `M3.6`)
+- `systematic_macro` — `rates differential + macro_regime risk_off → reduce crypto risk` (needs `M3.6`)
 - `event_driven` — `CPI surprise + sentiment → long` (needs `M3.6`)
 
 **Build Independence for M4.2:**
@@ -1931,7 +1931,7 @@ pytest modules/alpha/strategy/test_trend --fixtures=analytics_trending.json
 def validate(signal: Signal):
     if not reference.exists(signal.symbol, signal.broker): return Drop("unknown_symbol")
     spec = reference.get_spec(signal.symbol, signal.broker)
-    if signal.symbol in ["Volatility 75 Index"] and spec.has_depth==False and signal.needs_depth: Drop
+    if signal.symbol in ["Gold"] and spec.has_depth==False and signal.needs_depth: Drop
     return signal
 ```
 
@@ -2050,7 +2050,7 @@ M3 AnalyticsResult + M2 MarketData → M4.1 Registry → M4.2 Families → Signa
 | `volatility_breakout` | `atr, vol_regime` | `DERIVED` ATR from tick range |
 | `pullback` (ema pullback) | `trend + mean_reversion` | M4.5 pullback entry |
 | `cross_sectional_momentum` (rank 10, buy top3) | `correlation, relative_strength` | needs 2+ symbols, fully supported |
-| `statistical_arbitrage / spread` | `spread_builder, hedge_ratio, stationarity` | `Vol75 vs Vol100` synthetics |
+| `statistical_arbitrage / spread` | `spread_builder, hedge_ratio, stationarity` | `EURUSD vs GBPUSD` forex pair |
 | `regime_based` | `market_regime` | switches Tier1 logic |
 
 **Tier 2 — After Tier 1, `PROXY_LIMITED` ⚠️ (must warn UI):**
@@ -2336,7 +2336,7 @@ def build(risk: RiskDecision, trade_plan: TradePlan, user_id, broker):  # sync p
 ```
 
 ### `order_validator.py`, `order_capability_check.py`
-**Does:** `validator` checks `qty % step ==0`, `qty >= min_qty` via `M2b`; `capability_check` checks `order_type in broker_capabilities[broker][symbol]` (e.g., `Volatility 75` Deriv has no `stop`).
+**Does:** `validator` checks `qty % step ==0`, `qty >= min_qty` via `M2b`; `capability_check` checks `order_type in broker_capabilities[broker][symbol]` (e.g., `frxEURUSD` Deriv has no `stop`).
 **Pseudocode:** `if qty % spec.qty_step !=0: Reject("qty_step")`; `if order_type not in cap: Reject("capability_not_supported")`
 
 ### `state_machine.py` — ONLY Owner of Transitions
@@ -2395,7 +2395,7 @@ async def send_order(order: Order, user_id, broker):  # async: per-tenant vault 
 ### 6. M6.4 — BROKER ADAPTERS — The Thin Translators (Per-Broker Parallel, ISOLATED)
 
 ### `broker_adapters/deriv/{client,execution,models}`, `mt5/...`, `headway/...`
-**Does:** Translates `Order(EURUSD, buy, 0.4, market)` → `Deriv native {"symbol":"R_75","buy":0.4}` and `Deriv fill {"price":1.08,"qty":0.4}` → `Fill(price=1.08, qty=0.4)`. **No sizing, no risk.** One folder per broker, no cross imports.
+**Does:** Translates `Order(EURUSD, buy, 0.4, market)` → `Deriv native {"symbol":"frxXAUUSD","buy":0.4}` and `Deriv fill {"price":1.08,"qty":0.4}` → `Fill(price=1.08, qty=0.4)`. **No sizing, no risk.** One folder per broker, no cross imports.
 **Pseudocode (Deriv):**
 ```python
 # execution.py
@@ -3284,7 +3284,7 @@ This section is now a **stub**. The full `Command` specification lives in **§22
 ### Per-File (see §22 M10.3)
 | File | Purpose |
 |------|---------|
-| `command/parser.py` | `parse('analyse R_75')` → `{intent, entities}` |
+| `command/parser.py` | `parse('analyse frxXAUUSD')` → `{intent, entities}` |
 | `command/registry.py` | Maps intent → `M3/M5/M7` read model call |
 | `command/tools/*.py` (30 files) | Each tool = one read-only operation, audited per tenant |
 
@@ -3297,8 +3297,6 @@ backend/config/
 │   ├── forex.yaml            # Symbols, trading hours
 │   ├── crypto.yaml
 │   ├── commodities.yaml
-│   ├── indices.yaml
-│   └── synthetic_indices.yaml # Synthetic: special handling (no gaps, 24/7, unique vol)
 │
 ├── brokers/
 │   ├── deriv.yaml            # {api_url, capabilities: [ticks, candles], rate_limit: 100/s}
@@ -3409,7 +3407,7 @@ This section is now a **stub**. The full `Frontend` specification lives in **§2
 | File | Purpose |
 |------|---------|
 | `frontend/features/portfolio/` | Reads `M5` read model via `api` + `sync` |
-| `frontend/realtime/useMarketStream.ts` | Subscribes `sync:42:deriv:R_75:ticks` per tenant |
+| `frontend/realtime/useMarketStream.ts` | Subscribes `sync:42:deriv:frxXAUUSD:ticks` per tenant |
 | `frontend/components/Chart.tsx` | Candles from `M2 Lake` via `api` |
 | `frontend/lib/syncClient.ts` | `seq` + `replay` replay on reconnect |
 
@@ -3785,7 +3783,7 @@ Detailed runbooks live in `backend/monitoring/runbooks/*.md`. Summary behavior:
 ## 43. Top 10 Pitfalls to Avoid (Learned from Amateur Review)
 
 1. **Don’t put margin calc in Order.** It’s in `risk/pre_trade/margin_check.py`. Order just builds.
-2. **Don’t hard-code `frxEURUSD` or `R_75`.** Use `symbol_mapping` → canonical.
+2. **Don’t hard-code `frxEURUSD` or `frxXAUUSD`.** Use `symbol_mapping` → canonical.
 3. **Don’t compute analytics in Strategy.** Strategy calls `AnalyticsResult` only.
 4. **Don’t size in Strategy.** `strength` → Risk.sizing does qty.
 5. **Don’t talk to broker outside Execution.** Even “just to check price”.
@@ -3966,7 +3964,7 @@ Each `modules/<name>/` has its own: `README.md`, `contracts` (re-exports), `src/
 - **Source:** User audit (18 points) on M2 DATA + M2b REFERENCE — design-level issues caught before implementation. Applied as **v1.4 CORRECTED [18-point audit]** to `modules/02_M2_Data.md`, `modules/02b_M2b_Reference.md`, `shared/contracts/market_data.py`, and master §§6-7.
 - **1) Core relationship clarified:** `M2b = knows what market data means (identity/specs/calendar/capabilities)`, `M2 = obtains/processes/validates/recovers/stores observations` — documented in §2 and diagram `M2b → M2 → M3/M5/M8`.
 - **2) M2b type fixed:** `Stateless registry/cache` → `Read-only reference-data service with versioned state and cache` — state = immutable snapshots (`REF-YYYY-MM-DD-NNN`), lookups are stateless from caller's perspective but module owns versioned state. Explains why historical backtest needs `effective_at`.
-- **3) Canonical identity formalized:** `canonical_instrument_id = FX.EURUSD | SYNTHETIC.VOLATILITY_75 | INDEX.DE40 | EQUITY.AAPL` is primary key; `canonical_symbol` (`EURUSD`) and `display_name` (`Volatility 75 Index`) derived; `broker_native_symbol` (`frxEURUSD`, `R_75`) never leaks. Mapping table added; storage partition is `instrument=FX.EURUSD`.
+- **3) Canonical identity formalized:** `canonical_instrument_id = FX.EURUSD | COMMODITY.XAUUSD | COMMODITY.XAGUSD | BTCUSD` is primary key; `canonical_symbol` (`EURUSD`) and `display_name` (`Gold`) derived; `broker_native_symbol` (`frxEURUSD`, `frxXAUUSD`) never leaks. Mapping table added; storage partition is `instrument=FX.EURUSD`.
 - **4) Ownership boundary formalized:** Table `M2b owns identity/symbol/specs/calendar/capabilities/corporate actions` vs `M2 owns tick/quote/trade/book/timestamp/source_sequence/watermark/quality/recovery/storage` — added as §2 in both modules.
 - **5) Watermark terminology fixed:** `source_sequence` (broker-provided, may be None) vs `source_event_id` (tick-id-123) vs `watermark/processing_sequence` (M2's own monotonic per instrument+broker, M2.7's gap key) — M2b knows nothing about any. Updated M2.1 → M2.7 pseudocode.
 - **6-7) Effective dating added:** `get_spec(instrument, broker, effective_at)` + `get_current_spec` convenience, `is_open(instrument, timestamp, broker)` evaluates calendar effective at timestamp, specs & calendars are versioned `WHERE effective_from <= :ts ORDER BY effective_from DESC LIMIT 1`. Historical changes (e.g., `min_qty 0.001 → 0.002` on 2026-06-01) no longer corrupt backtests.
@@ -3979,7 +3977,7 @@ Each `modules/<name>/` has its own: `README.md`, `contracts` (re-exports), `src/
 - **14) Validation gate added:** `reference_validator` fails startup on `duplicate canonical`, `unknown instrument`, `missing tick_size`, `invalid session`, `duplicate effective_from` — with field name.
 - **15) Invariants formalized:** `M2b-I01` Canonical Identity → `I08` Deterministic Lookup (table in §2, enforceable).
 - **16) Dependency clarified:** `M2 ─depends on→ M2b` (M2 imports ReferenceService), `M2b never depends on M2` (no circular) — enforced by `import-linter`.
-- **17) Lineage added:** `MarketData.reference_snapshot_id = REF-2026-09-22-014` stamped by M2.2, stored in parquet + catalog — enables `Why did R_75 normalize to SYNTHETIC.VOLATILITY_75 on 2026-03-15?` reproducibility for audit/replay/research/compliance. Propagated to `TradePlan` later.
+- **17) Lineage added:** `MarketData.reference_snapshot_id = REF-2026-09-22-014` stamped by M2.2, stored in parquet + catalog — enables `Why did frxXAUUSD normalize to COMMODITY.XAUUSD on 2026-03-15?` reproducibility for audit/replay/research/compliance. Propagated to `TradePlan` later.
 - **18) Lake contradiction resolved:** Market-data Lake is **global shared** `market-data/provider=deriv/instrument=FX.EURUSD/...` (no user_id, saves terabytes); private per-tenant remains `private/broker=deriv/user_id=42/{signals,trade_plans,orders,ledger}` (`WHERE user_id+broker_id`). Early draft `brokers/deriv/user_id=42/symbol=EURUSD` for market-data removed.
 - **Contracts updated:** `MarketData` now `instrument_id + reference_snapshot_id + source_sequence + source_event_id` (all optional with defaults for backward compat), `watermark` re-documented as processing seq. Future `AnalyticsResult`/`TradePlan` will propagate `reference_snapshot_id`.
 - **Master patched:** `§6` and `§7` inner bodies repacked from `modules/02*.md v1.4`, master length 3590 → 3959 lines, verified markers `v1.4 CORRECTED`, `reference_snapshot_id`, `canonical_instrument_id`.

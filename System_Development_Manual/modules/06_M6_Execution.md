@@ -45,7 +45,7 @@ def build(risk: RiskDecision, trade_plan: TradePlan, user_id, broker):  # sync p
 ```
 
 ### `order_validator.py`, `order_capability_check.py`
-**Does:** `validator` checks `qty % step ==0`, `qty >= min_qty` via `M2b`; `capability_check` checks `order_type in broker_capabilities[broker][symbol]` (e.g., `Volatility 75` Deriv has no `stop`).
+**Does:** `validator` checks `qty % step ==0`, `qty >= min_qty` via `M2b`; `capability_check` checks `order_type in broker_capabilities[broker][symbol]` (e.g., `frxEURUSD` Deriv has no `stop`).
 **Pseudocode:** `if qty % spec.qty_step !=0: Reject("qty_step")`; `if order_type not in cap: Reject("capability_not_supported")`
 
 ### `state_machine.py` — ONLY Owner of Transitions
@@ -104,7 +104,7 @@ async def send_order(order: Order, user_id, broker):  # async: per-tenant vault 
 ## 6. M6.4 — BROKER ADAPTERS — The Thin Translators (Per-Broker Parallel, ISOLATED)
 
 ### `broker_adapters/deriv/{client,execution,models}`, `mt5/...`, `headway/...`
-**Does:** Translates `Order(EURUSD, buy, 0.4, market)` → `Deriv native {"symbol":"R_75","buy":0.4}` and `Deriv fill {"price":1.08,"qty":0.4}` → `Fill(price=1.08, qty=0.4)`. **No sizing, no risk.** One folder per broker, no cross imports.
+**Does:** Translates `Order(EURUSD, buy, 0.4, market)` → `Deriv native {"symbol":"frxEURUSD","buy":0.4}` and `Deriv fill {"price":1.08,"qty":0.4}` → `Fill(price=1.08, qty=0.4)`. **No sizing, no risk.** One folder per broker, no cross imports.
 **Pseudocode (Deriv):**
 ```python
 # execution.py

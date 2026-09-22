@@ -4,7 +4,7 @@ INSTITUTIONAL HEDGE FUND GRADE
 
 WHY: M2 is the ONLY writer of MarketData. M3/M4 trust its quality field to decide
      "compute or skip". Watermark is monotonic per symbol+broker+user — gap detection.
-     Uses canonical symbol (EURUSD) not broker-native (frxEURUSD/R_75) so M3 calc is shared.
+     Uses canonical symbol (EURUSD) not broker-native (frxEURUSD / MT5 EURUSD) so M3 calc is shared.
      P95 tick→parquet <50ms — this contract must be tiny and frozen.
 """
 from __future__ import annotations
@@ -106,7 +106,7 @@ class MarketData(BaseContract):
     # v1.4 canonical identity — primary key is instrument_id, symbol is display
     instrument_id: str | None = Field(
         default=None,
-        description="Canonical instrument id — FX.EURUSD, SYNTHETIC.VOLATILITY_75, INDEX.DE40, EQUITY.AAPL — primary key (v1.4)",
+        description="Canonical instrument id — FX.EURUSD, COMMODITY.XAUUSD, CRYPTO.BTCUSD — primary key (v1.4)",
     )
     symbol: str = Field(description="Display/canonical: EURUSD, BTCUSD, Volatility 75 Index — alias for instrument_id suffix (backwards compat)")
     broker: str = Field(description="deriv | mt5 | headway | canonical")

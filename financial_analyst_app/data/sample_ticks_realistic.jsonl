@@ -1,0 +1,10 @@
+{"echo_req":{"req_id":101,"subscribe":1,"ticks":"frxEURUSD"},"msg_type":"tick","req_id":101,"subscription":{"id":"a9b8c7d6-1234-5678-90ab-cdef12345678"},"tick":{"ask":1.08542,"bid":1.08538,"epoch":1774208800,"id":"a9b8c7d6-1234-5678-90ab-cdef12345678","pip_size":5,"quote":1.08540,"symbol":"frxEURUSD"}}
+{"echo_req":{"req_id":102,"subscribe":1,"ticks":"cryBTCUSD"},"msg_type":"tick","req_id":102,"subscription":{"id":"e4f3g2h1-9876-5432-10ba-fedc87654321"},"tick":{"ask":64250.80,"bid":64245.20,"epoch":1774208801,"id":"e4f3g2h1-9876-5432-10ba-fedc87654321","pip_size":2,"quote":64248.00,"symbol":"cryBTCUSD"}}
+{"echo_req":{"req_id":103,"subscribe":1,"ticks":"frxXAUUSD"},"msg_type":"tick","req_id":103,"subscription":{"id":"7890abcd-ef12-3456-7890-abcdef123456"},"tick":{"ask":2380.45,"bid":2380.15,"epoch":1774208802,"id":"7890abcd-ef12-3456-7890-abcdef123456","pip_size":2,"quote":2380.30,"symbol":"frxXAUUSD"}}
+{"echo_req":{"req_id":101,"subscribe":1,"ticks":"frxEURUSD"},"msg_type":"tick","req_id":101,"subscription":{"id":"a9b8c7d6-1234-5678-90ab-cdef12345678"},"tick":{"ask":1.08542,"bid":1.08538,"epoch":1774208800,"id":"a9b8c7d6-1234-5678-90ab-cdef12345678","pip_size":5,"quote":1.08540,"symbol":"frxEURUSD"}}
+{"msg_type":"tick","tick":{"ask":1.08550,"bid":1.08546,"epoch":1774208810,"id":"dup-check-no-echo","quote":1.08548,"symbol":"frxEURUSD"}}
+{"msg_type":"tick"}
+{"msg_type":"subscription","subscription":{"id":"not-a-tick"}}
+{"msg_type":"tick","tick":{"ask":-1,"bid":-1.1,"epoch":1774208800,"id":"neg-price","quote":0,"symbol":"frxEURUSD"}}
+{"msg_type":"tick","tick":{"ask":1.08542,"bid":1.08538,"epoch":1774209999,"id":"future-epoch","quote":1.08540,"symbol":"frxEURUSD"}}
+{"msg_type":"tick","tick":{"ask":"x","bid":1.08538,"epoch":1774208800,"id":"bad-ask","quote":1.08540,"symbol":"frxEURUSD"}}
