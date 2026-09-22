@@ -1,0 +1,9 @@
+# M2.1 + M6.4 — Deriv broker
+name: deriv
+ws_url: wss://ws.derivws.com/websockets/v3
+rest_url: https://api.deriv.com
+capabilities: [ticks, candles]
+rate_limit: 100/s
+order_types: [market, limit]
+has_depth: false
+has_trades: false

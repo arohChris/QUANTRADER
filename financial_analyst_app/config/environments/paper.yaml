@@ -1,0 +1,6 @@
+risk:
+  max_exposure_per_symbol: 0.1
+system:
+  log_level: INFO
+feature_flags:
+  enable_stat_arb: true

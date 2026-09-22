@@ -1,0 +1,6 @@
+# M6.2 — Routing — pin or smart
+EURUSD:
+  primary: mt5
+  fallback: deriv
+Volatility_75_Index:
+  primary: deriv

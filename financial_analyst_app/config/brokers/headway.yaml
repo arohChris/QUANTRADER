@@ -1,0 +1,6 @@
+name: headway
+rest_url: https://api.headway.example.com
+capabilities: [ticks, candles]
+rate_limit: 50/s
+order_types: [market, limit]
+has_depth: false

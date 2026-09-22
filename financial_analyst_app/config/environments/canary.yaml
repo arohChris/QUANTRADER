@@ -1,0 +1,4 @@
+risk:
+  max_exposure_per_symbol: 0.01  # 1% — canary
+system:
+  log_level: INFO

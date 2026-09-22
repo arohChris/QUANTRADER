@@ -1,0 +1,11 @@
+# M4 — Strategy params — loaded by parameter_registry
+strategy_id: trend_following::ema_trend
+version: 2.1
+params:
+  ema_fast: 10
+  ema_slow: 20
+  rsi_threshold: 60
+  valid_until_seconds: 60
+entry_model: BREAKOUT
+stop_model: ATR_2x
+target_model: RR_2

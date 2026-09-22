@@ -1,0 +1,22 @@
+# M2b — Synthetic indices (Deriv only) — 24/7, unique vol — v1.4 canonical
+SYNTHETIC.VOLATILITY_75:
+  canonical_symbol: VOLATILITY_75
+  display_name: Volatility 75 Index
+  asset_class: synthetic
+  broker_native: R_75
+  tick_size: 0.001
+  contract_size: 1
+  min_qty: 0.001
+  qty_step: 0.001
+  brokers: [deriv]
+  trading_hours: 24/7
+SYNTHETIC.VOLATILITY_100:
+  canonical_symbol: VOLATILITY_100
+  display_name: Volatility 100 Index
+  asset_class: synthetic
+  broker_native: R_100
+  tick_size: 0.001
+  contract_size: 1
+  min_qty: 0.001
+  qty_step: 0.001
+  brokers: [deriv]

@@ -1,0 +1,28 @@
+# M2b — Commodities — read by instrument_master + symbol_mapping
+# v1.4 canonical_instrument_id is primary key; symbol is display alias
+# tick_size / contract_size are IDENTITY FIXTURES for P05 — authoritative specs land in P06.
+# broker_native: per-broker map when natives differ (deriv frx-prefixed, mt5 bare).
+COMMODITY.XAUUSD:
+  canonical_symbol: XAUUSD
+  display_name: Gold
+  asset_class: commodity
+  tick_size: 0.01
+  contract_size: 100
+  min_qty: 0.01
+  qty_step: 0.01
+  brokers: [deriv, mt5]
+  broker_native:
+    deriv: frxXAUUSD
+    mt5: XAUUSD
+COMMODITY.XAGUSD:
+  canonical_symbol: XAGUSD
+  display_name: Silver
+  asset_class: commodity
+  tick_size: 0.01
+  contract_size: 5000
+  min_qty: 0.01
+  qty_step: 0.01
+  brokers: [deriv, mt5]
+  broker_native:
+    deriv: frxXAGUSD
+    mt5: XAGUSD

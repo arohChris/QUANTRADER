@@ -1,0 +1,32 @@
+# M2b — Forex assets — read by instrument_master + symbol_mapping
+# v1.4 canonical_instrument_id is primary key (FX.EURUSD), symbol is display alias
+# broker_native: multi-broker map — needed so to_canonical("frxEURUSD","deriv") has a source.
+FX.EURUSD:
+  canonical_symbol: EURUSD
+  display_name: EURUSD
+  asset_class: forex
+  pip: 0.0001
+  tick_size: 0.00001
+  contract_size: 100000
+  min_qty: 0.001
+  qty_step: 0.001
+  brokers: [deriv, mt5, headway]
+  broker_native:
+    deriv: frxEURUSD
+    mt5: EURUSD
+    headway: EURUSD
+  # versioning: effective_from allows historical changes
+  # e.g., on 2026-06-01 min_qty changed 0.001->0.002 via new snapshot
+FX.GBPUSD:
+  canonical_symbol: GBPUSD
+  display_name: GBPUSD
+  asset_class: forex
+  pip: 0.0001
+  tick_size: 0.00001
+  contract_size: 100000
+  min_qty: 0.001
+  qty_step: 0.001
+  brokers: [deriv, mt5]
+  broker_native:
+    deriv: frxGBPUSD
+    mt5: GBPUSD

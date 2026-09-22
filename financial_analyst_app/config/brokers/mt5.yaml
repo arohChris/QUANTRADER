@@ -1,0 +1,6 @@
+name: mt5
+rest_url: https://mt5.example.com/api
+capabilities: [ticks, candles, depth]
+rate_limit: 50/s
+order_types: [market, limit, stop]
+has_depth: true

@@ -1,0 +1,5 @@
+# Overlay — development is permissive
+risk:
+  max_exposure_per_symbol: 0.2
+system:
+  log_level: DEBUG

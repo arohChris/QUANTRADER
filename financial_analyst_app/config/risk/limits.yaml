@@ -1,0 +1,7 @@
+# M1.3 + M5 — Risk limits — validated by RiskLimits pydantic model
+# WHY here? So risk policy changes without code deploy. Platform safety > user override.
+max_exposure_per_symbol: 0.1  # 10% equity per symbol
+max_leverage: 10
+min_free_margin: 100
+max_drawdown: 0.2
+# Hard safety boundaries (never overridable): max_leverage 50 enforced in code

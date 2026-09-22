@@ -1,0 +1,6 @@
+# Production — strictest
+risk:
+  max_exposure_per_symbol: 0.05
+  max_leverage: 5
+system:
+  log_level: INFO

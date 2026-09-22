@@ -1,0 +1,6 @@
+# M1.3 — System defaults — loaded by shared.core.config
+# WHY here not code? Changing base_currency should not require deploy.
+base_currency: USD
+clock: utc
+log_level: INFO
+# Three config layers (Bible §2b): Build-time (code) → Platform Runtime (this file) → Customer Runtime (user override)

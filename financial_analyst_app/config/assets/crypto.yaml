@@ -1,0 +1,14 @@
+# M2b — Crypto
+# Aligned with forex/synthetic: canonical_symbol, display_name, broker_native required by M2b.1.
+BTCUSD:
+  canonical_symbol: BTCUSD
+  display_name: Bitcoin
+  asset_class: crypto
+  tick_size: 0.01
+  contract_size: 1
+  min_qty: 0.001
+  qty_step: 0.001
+  brokers: [deriv, mt5]
+  broker_native:
+    deriv: cryBTCUSD
+    mt5: BTCUSD

@@ -1,0 +1,8 @@
+# M1.3 — Feature Flags — checked via shared.core.feature_flags.is_enabled()
+# WHY flags here? Enable/disable strategy without redeploy. Reload via SIGHUP / restart Day 1.
+enable_stat_arb: false
+enable_headway: true
+enable_momentum: true
+enable_trend_following: true
+enable_mean_reversion: false
+# New flags require bible amendment if they affect trading path

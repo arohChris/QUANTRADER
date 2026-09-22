@@ -1,0 +1,134 @@
+"""M2.1 tick ingest tests — valid emit, drops, dedupe, sequence gap."""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from financial_analyst_app.modules.m2_market_data.ingest.tick_ingest import TickIngestor
+from shared.contracts.base import ErrorCode, utc_now
+from shared.contracts.drop import DropReason
+from shared.contracts.market_data import MarketDataQuality
+
+
+class FakeClock:
+    def __init__(self, t: datetime):
+        self._t = t
+    def now(self) -> datetime:
+        return self._t
+
+
+BASE_TS = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+
+def _valid_payload(**overrides):
+    p = {
+        "symbol": "EURUSD",
+        "timestamp": BASE_TS.isoformat(),
+        "ask": 1.10500,
+        "bid": 1.10490,
+        "ask_size": 1000000,
+        "bid_size": 1000000,
+        "sequence": 1,
+    }
+    p.update(overrides)
+    return json.dumps(p)
+
+
+def _ing(clock_t=BASE_TS):
+    return TickIngestor(provider="deriv", symbol="EURUSD", clock=FakeClock(clock_t))
+
+
+# --- Valid emit ---
+def test_valid_tick_emits_market_data():
+    ing = _ing()
+    md = ing.ingest(_valid_payload(), correlation_id="c1")
+    assert md is not None
+    assert md.symbol == "EURUSD"
+    assert md.ask == 1.10500
+    assert md.bid == 1.10490
+    assert md.sequence == 1
+    assert md.quality == MarketDataQuality.OK
+    assert ing.emit_count == 1
+    assert ing.drop_count == 0
+
+
+# --- Edges: empty ---
+def test_empty_payload_drops():
+    ing = _ing()
+    assert ing.ingest("", "c2") is None
+    assert ing.drops[0].reason == DropReason.INVALID_SCHEMA
+    assert ing.drops[0].error_code == ErrorCode.DROP_INVALID_SCHEMA
+
+
+# --- Edges: invalid JSON ---
+def test_invalid_json_drops():
+    ing = _ing()
+    assert ing.ingest("{not json", "c3") is None
+    assert ing.drops[0].reason == DropReason.INVALID_SCHEMA
+
+
+# --- Edges: missing fields ---
+def test_missing_fields_drops():
+    ing = _ing()
+    assert ing.ingest(json.dumps({"symbol": "EURUSD"}), "c4") is None
+    assert ing.drops[0].error_code == ErrorCode.DROP_MISSING_FIELD
+
+
+# --- Edges: non-numeric price ---
+def test_non_numeric_price_drops():
+    ing = _ing()
+    assert ing.ingest(_valid_payload(ask="not_a_number"), "c5") is None
+    assert ing.drops[0].error_code == ErrorCode.DROP_INVALID_PRICE
+
+
+# --- Edges: future timestamp ---
+def test_future_timestamp_drops():
+    ing = _ing(clock_t=BASE_TS - timedelta(hours=1))  # clock 1h behind → tick is "future"
+    assert ing.ingest(_valid_payload(), "c6") is None
+    assert ing.drops[0].reason == DropReason.TIMESTAMPED
+
+
+# --- Edges: dedupe (same symbol+ts+seq) ---
+def test_duplicate_tick_dropped():
+    ing = _ing()
+    assert ing.ingest(_valid_payload(), "c7") is not None
+    assert ing.ingest(_valid_payload(), "c8") is None  # duplicate
+    assert ing.drops[0].reason == DropReason.TIMESTAMPED
+    assert ing.emit_count == 1
+
+
+# --- Edges: sequence gap → gapped quality ---
+def test_sequence_gap_marks_gapped():
+    ing = _ing()
+    ing.ingest(_valid_payload(sequence=1), "c9")
+    md2 = ing.ingest(_valid_payload(timestamp=(BASE_TS + timedelta(seconds=1)).isoformat(), sequence=5), "c10")
+    assert md2 is not None
+    assert md2.quality == MarketDataQuality.GAPPED
+
+
+# --- Edges: bid >= ask invalid ---
+def test_crossed_market_drops():
+    ing = _ing()
+    assert ing.ingest(_valid_payload(ask=1.10400, bid=1.10500), "c11") is None
+    assert ing.drops[0].reason == DropReason.INVALID_PRICE
+
+
+# --- Adversarial: negative price ---
+def test_negative_price_drops():
+    ing = _ing()
+    assert ing.ingest(_valid_payload(ask=-1.0, bid=-1.1), "c12") is None
+    assert ing.drops[0].error_code == ErrorCode.DROP_INVALID_PRICE
+
+
+# --- Adversarial: sequence as string ---
+def test_string_sequence_coerced_or_drops():
+    ing = _ing()
+    # sequence as string "1" → int() coerces → valid
+    md = ing.ingest(_valid_payload(sequence="1"), "c13")
+    assert md is None or md.sequence == 1
+    # sequence as garbage → drops
+    ing2 = _ing()
+    assert ing2.ingest(_valid_payload(sequence="garbage"), "c14") is None

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Test / coverage
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.mypy_cache/
+
+# Secrets / env — never commit
+.env
+.env.*
+*.pem
+*.key
+*.p12
+secrets.*
+config/secrets/
+deriv_token*
+token*.json
+*.token
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local data artifacts
+*.log
+tmp/
+/temp/
+data/lake/
+data/parquet/

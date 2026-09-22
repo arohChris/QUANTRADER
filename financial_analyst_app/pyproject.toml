@@ -1,0 +1,56 @@
+[project]
+name = "financial-analyst-app"
+version = "0.1.0"
+description = "Institutional Hedge Fund Grade Algo Trading Platform — M1 Foundation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.5",
+    "pydantic-settings>=2.1",
+    "pyyaml>=6.0",
+    "structlog>=24.0",
+    "cryptography>=42.0",  # for Fernet vault — fallback to base64 if missing
+    "anyio>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "import-linter>=2.0",
+    "ruff>=0.6",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.coverage.run]
+source = ["shared"]
+
+[tool.importlinter]
+root_package = "financial_analyst_app"
+include_external_packages = true
+
+# Enforce Bible §33 — no reverse imports (contracts/core never import modules)
+[[tool.importlinter.contracts]]
+name = "M1 never imports modules"
+type = "forbidden"
+source_modules = ["shared.contracts", "shared.core"]
+forbidden_modules = ["modules"]
+
+[[tool.importlinter.contracts]]
+name = "Intelligence never trades"
+type = "forbidden"
+source_modules = ["shared"]
+forbidden_modules = ["modules.execution", "modules.trust"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
