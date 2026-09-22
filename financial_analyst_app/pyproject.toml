@@ -26,6 +26,9 @@ dev = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+# WHY importlib: human naming uses dots (test_m2.3_spec.py) — default mode
+# treats dots as package separators → "No module named 'test_m2'".
+addopts = "--import-mode=importlib"
 
 [tool.ruff]
 line-length = 100
