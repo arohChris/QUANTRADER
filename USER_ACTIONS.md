@@ -4,8 +4,8 @@
 ## CURRENT STATUS (UPDATED 2026-09-22)
 # GATE: G0 ENTRY
 # M1 COMPLETE: 42/42 TESTS GREEN
-# M2b.1 COMPLETE: 76/76 FULL SUITE GREEN (0 SKIP) — LGTM + verify OK + first commit efb59ff
-# NEXT: (A) COMMIT the M2b.1 impl delta  (B) AI starts M2.1 tests rewrite
+# M2b.1 COMPLETE: 76/76 FULL SUITE GREEN (0 SKIP) — commits efb59ff + a6908c2
+# NEXT: AI starts M2.1 tests rewrite (spec already corrected) — your LGTM before impl
 
 ==================================================
 ACTION 1 — DONE: LGTM ON P05 TESTS
@@ -18,17 +18,9 @@ ACTION 3 — DONE: EYEBALL REAL-DATA VERIFY
 # STATUS: [DONE] 2026-09-22 — you replied "ok" → M2b.1 marked complete in BUILD_STATUS.
 
 ==================================================
-ACTION 2 — PARTIAL: GIT (identity + first commit done; impl delta uncommitted)
+ACTION 2 — DONE: GIT IDENTITY + COMMITS
 ==================================================
-# DONE: identity Christian <onyebuchiogadinma@gmail.com>; first commit efb59ff.
-# STILL UNCOMMITTED:
-#   financial_analyst_app/modules/reference/reference.py   (M2b.1 impl — NEW)
-#   financial_analyst_app/tests/m2b/test_instrument_symbol_spec.py
-#   docs/specs/m2b.instrument_symbol.md
-#   BUILD_STATUS.md, USER_ACTIONS.md
-# REPLY "COMMIT" and I will stage + commit
-#   (message: M2b.1 Instrument & Symbol complete — impl + status 76/76)
-# NOTE: I will NOT commit without your explicit "COMMIT" reply (AGENTS.md).
+# STATUS: [DONE] 2026-09-22 — identity Christian; efb59ff (first) + a6908c2 (M2b.1 complete).
 
 ==================================================
 ACTION 4 — PERIODIC: KEEP THIS FILE FRESH
