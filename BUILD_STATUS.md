@@ -5,7 +5,7 @@
 
 ## Current Gate: G0 — Edge Validation (entry 2026-09-22)
 
-## Last Updated: 2026-09-23 — **M2.1 Connection (P08) `complete` + human test OK** (“tested and all parts are working”). `USER_ACTIONS.md` updated: ACTION 12 DONE; **no user config action for demo/fake-money** — market-data uses platform `app_id` in `config/brokers/deriv.yaml`; demo env = `config/environments/paper.yaml`. Config root: `financial_analyst_app/config/` (brokers, environments, assets, risk, system). Spec/tests/impl LGTM as prior; suite **249/249**. **Next slice:** await human choice of next `not started` sub-module (no parallel slices).
+## Last Updated: 2026-09-23 — **M1.3 account mode (demo/live) added @ `13969ec`** — `config/accounts.yaml` (mode + `live.enabled` hard gate + env/vault placeholder **names** only), `.env.example`, `AccountsConfig` loader + `ACCOUNT_MODE` env override, `settings.accounts`; **7 new tests**; full suite **256/256**, 0 skipped; `check_structure` OK. Prior: M2.1 Connection `complete` + human test OK; `USER_ACTIONS` documents demo/live switch. **Next slice:** await human choice of next `not started` sub-module (no parallel slices).
 
 ## Sub-Modules
 

@@ -6,21 +6,26 @@
 # M1 COMPLETE | M2b.1 COMPLETE | M2.1 Ingestion/Normal/Valid/Trans COMPLETE
 # M2.1 Connection (P08) COMPLETE @ 367a85f + 759b0c5 — LGTM + HUMAN TEST OK 2026-09-23
 #   You: "tested and all parts are working" → real-human verify recorded in BUILD_STATUS.
-# NEXT ACTION: none blocking for M2.1 connection. Next = AI opens NEXT sub-module SPEC only
-#   when you say which slice (no parallel slices). Reply with preferred next or "next".
+# M1.3 ACCOUNT MODE (demo/live) ADDED @ 13969ec — suite 256/256.
+# NEXT ACTION: none blocking. Next = AI opens NEXT sub-module SPEC only when you
+#   say which slice (no parallel slices). Reply with preferred next or "next".
 
-## DEMO / FAKE-MONEY ACCOUNT (YOUR Q — ANSWERED)
-# USER ACTION WILL NOT BE REQUIRED TO CONFIG THIS FOR THE DEMO ACCOUNT.
-# Market-data (M2.1 ticks) uses PLATFORM app_id already in config/brokers/deriv.yaml
-#   (app_id: "1089") — public feed, no per-user vault token, nothing for you to paste.
-# FAKE MONEY / DEMO = environment "paper":
-#   financial_analyst_app/config/environments/paper.yaml  (risk overlay for paper/demo)
-#   financial_analyst_app/config/environments/development.yaml (local dev overlay)
-# REAL-MONEY path (later, M6/M7) will need per-user broker token via vault.store() —
-#   NOT required now; demo/paper does not need it for market-data.
+## DEMO vs LIVE — HOW TO SWITCH (human OR auto-bot) — UPDATED 2026-09-23
+# FILE: financial_analyst_app/config/accounts.yaml
+#   mode: demo | live   under each broker (default_mode: demo while G0/G1)
+#   live.enabled: false → must set true to ARM real-money (fail loud otherwise)
+# ENV override (no file edit):  ACCOUNT_MODE=demo  or  ACCOUNT_MODE=live
+# PLACEHOLDERS for future insert (human or bot) — NAMES only, never secret values:
+#   .env (copy .env.example → .env, never commit .env):
+#     DERIV_DEMO_ACCOUNT_ID / DERIV_DEMO_API_TOKEN
+#     DERIV_LIVE_ACCOUNT_ID / DERIV_LIVE_API_TOKEN   ← fill only when going live
+#     MT5_* / HEADWAY_* same pattern
+#   OR vault (M6 private): vault.store(user_id, broker, token) — api_token_vault_key
+# Market-data (M2.1) needs NO account token — only platform app_id in brokers/deriv.yaml.
 
 ## WHERE CONFIG FILES LIVE
 # Root: financial_analyst_app/config/
+#   accounts.yaml               — DEMO vs LIVE mode + env/vault placeholder NAMES
 #   brokers/deriv.yaml          — Deriv ws_url + platform app_id (M2.1 connection)
 #   brokers/mt5.yaml, headway.yaml
 #   environments/paper.yaml     — DEMO / fake-money overlay (use this for demo)
@@ -28,7 +33,8 @@
 #   assets/{forex,crypto,commodities}.yaml — instrument master (M2b.1)
 #   risk/limits.yaml, system/system.yaml, system/feature_flags.yaml
 #   strategies/trend_following.yaml, execution/routing.yaml
-# Secrets: never in YAML — env (DERIV_APP_ID, VAULT_KEY) or vault DB (private tokens).
+# Repo root: .env.example — copy to .env and fill placeholders (never commit .env)
+# Secrets: never in YAML — env (.env) or vault DB (private tokens).
 
 ==================================================
 ACTION 12 — DONE: HUMAN TEST M2.1 CONNECTION (P08)

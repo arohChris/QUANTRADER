@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from shared.core.config import AccountsConfig, BrokerAccountConfig, load_settings
+from shared.core.config import AccountsConfig, load_settings
 
 
 def _write_accounts(tmp_path: Path, body: str) -> None:

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Mapping
 
 import yaml
 from pydantic import BaseModel, Field, ValidationError
@@ -76,7 +76,7 @@ class AccountsConfig(BaseModel):
     brokers: dict[str, BrokerAccountConfig] = Field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: Path, env: dict[str, str] | None = None) -> AccountsConfig:
+    def load(cls, path: Path, env: Mapping[str, str] | None = None) -> AccountsConfig:
         raw = _load_yaml(path)
         if not raw:
             return cls()
