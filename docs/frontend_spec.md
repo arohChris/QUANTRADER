@@ -1,9 +1,11 @@
 # Frontend Design Spec — QUANTRADER2 Institutional Workstation
 
-Status: **DESIGN LOCK DRAFT REV2 2026-09-23** — human `lgtm frontend spec` to freeze.  
+Status: **FROZEN REV2.3 2026-09-23** — human `lgtm frontend spec` (**ACTION 16F DONE**).  
 Location: `QUANTRADER2/docs/frontend_spec.md` (bible). Implementation at `QUANTRADER2/frontend/` under human-opened M10.4.  
 Backend contract: M1.3 2-gate **MODE + AUTO** complete; kill = M5.5 reference; JSON-only REST under `/api/v1/…`.  
-Supersedes cockpit-only REV1 sketch; REV2 folds human workstation vision 2026-09-23 (27-point brief).
+Supersedes cockpit-only REV1 sketch; REV2 folds human workstation vision 2026-09-23 (27-point brief).  
+REV2.3 (2026-09-23 review): **Manual Trade Session**, **calculation boundary**, **LIVE manual confirm**, **MODE ≠ AUTO authorization**, layout `Dashboard`→`Workspace`.  
+Day-1 panel chrome (same day): **left rail brand `QUANTRADER` + Role (X-Role) in side menu**; status chips in top rail.
 
 > **One sentence:** This is **not a dashboard** — it is a **visual operating system** over intelligence, research, execution, risk, and algos: an institutional trading workstation (Bloomberg × quant hedge fund × aerospace control × premium AI) where every pixel answers *what is happening / why / what to investigate / what I can do / what happens if I do it*.
 
@@ -50,9 +52,24 @@ frontend/
 
 - **Feature-first** — each feature owns tsx, css/modules, tests; export a thin route/entry.
 - **TypeScript only** under `features/`, `services/`, `state/`, `shared/` — no `.jsx` app code after M10.4 open.
-- **Contracts only** — typed API; never recompute risk/PnL in UI.
+- **Contracts only** — typed API; never recompute risk/PnL in UI (see §0.2 calculation boundary).
 - Day-1 static layer: multi-file ES modules + split CSS (already in place).
 - When M10.4 opens: `npm create vite`-style layout is fine; tests gain build check (`tsc` + `vite build`) and feature-boundary checks.
+
+### 0.2 Calculation boundary (REV2.3 — lock)
+
+> **Calculation boundary:** UI may perform presentation-only arithmetic that cannot diverge from a backend business rule. Broker-, instrument-, account-, currency-, margin-, or risk-dependent calculations must come from a **typed backend contract**. The UI must never invent authoritative risk, PnL, margin, sizing, or execution values.
+
+Examples:
+
+| Frontend OK (deterministic display) | Backend contract required |
+|-------------------------------------|---------------------------|
+| percent change on displayed prices | lot → notional / exposure |
+| tick-count on visible rows | pip distance in money |
+| formatting / rounding for display | estimated monetary risk · TP return · R:R |
+| pure layout math | any margin, VaR, risk %, position sizing |
+
+**Never** treat a failed optional calc as a blocker for a valid manual order path (see §4.1).
 
 ---
 
@@ -160,7 +177,31 @@ These are **modes of one shell**, not ten websites. Workspace memory: layouts, p
 **Contexts, not pages:** `OBJECT → CONTEXT → WORKSPACE`  
 Select **EUR/USD** → context graph (chart, technical, fundamentals, news, AI, signals, risk, orders, history) can appear in any workspace.
 
-**Trade mode ladder** (top-level): `RESEARCH → SIMULATION → PAPER → LIVE` — UI emphasis shifts; **LIVE is unmistakably different** (persistent safety state: broker / risk / execution / kill). Maps to M1.3 gates: MODE+AUTO breakers already live in `features/account_mode/`.
+**Trade mode ladder** (top-level UI emphasis): `RESEARCH → SIMULATION → PAPER → LIVE` — **LIVE is unmistakably different** (persistent safety state: broker / risk / execution / kill). Maps to M1.3 gates: MODE+AUTO breakers already live in `features/account_mode/`.
+
+### 4.0 MODE vs AUTO (REV2.3 — freeze semantics)
+
+```text
+MODE  (account/M1.3 gate 1)          AUTO  (bot enable/M1.3 gate 2)
+ ├─ RESEARCH / SIMULATION            ├─ OFF → automated execution disabled;
+ ├─ PAPER / DEMO                       │        **manual execution may remain available**
+ └─ LIVE                             └─ ON  → automated execution may operate
+                                              **if all other gates permit**
+
+MODE + AUTO ≠ complete execution authorization.
+Risk · kill switch · broker/execution state · permissions · armed-live still apply.
+Frontend must never treat AUTO=ON alone as “system may trade.”
+```
+
+Switching MODE never implies AUTO; switching AUTO never implies MODE (M1.3 contract).
+
+### 4.1 Manual Trade Session (REV2.3 — freeze — primary manual path when AUTO is OFF)
+
+> **Manual Trade Session:** When **AUTO is OFF**, both Demo/Paper and Live environments expose a **manual trade session panel**. The panel accepts only the minimum execution inputs required by the applicable order contract (instrument, side, order type, quantity/lot size where applicable, entry parameters, SL, TP, and required execution fields). Optional calculations such as pip distance, estimated monetary risk, exposure, potential P&L, and R:R may be displayed when reliable **backend contract** data is available (§0.2). **Calculation failure must never block valid manual execution.** Manual execution must use the **same backend validation/execution contracts** as other orders and must **not** depend on the AUTO-trading configuration.
+
+> **AUTO OFF does not mean trading UI disappears.** It means automated strategy execution is disabled; **manual execution remains available** subject to MODE, risk, execution, and kill controls.
+
+**LIVE manual orders:** require an **explicit final execution confirmation** showing the **effective order parameters** and **applicable risk state** before submission (final inspection point — not a second global breaker).
 
 ---
 
@@ -242,7 +283,7 @@ News → assets → price → volatility → signals linkage. Chart overlay: 1px
     components/   Button · Input · CommandBar · DataTable · Chart · Metric
                   Signal · Alert · Status · Inspector · Panel · SplitPane · Tabs
     patterns/     TradingWorkspace · ResearchWorkspace · AIWorkspace · Risk · System
-    layouts/      Terminal · Dashboard · Fullscreen · SplitView
+    layouts/      Terminal · Workspace · Fullscreen · SplitView
   features/<name>/   # self-contained (entry, UI, styles, tests)
   services/          # one domain per file (account_api, market_api, …)
   state/ · realtime/ · types/
@@ -293,6 +334,6 @@ APPLICATION SHELL
 |-------|--------|
 | `features/account_mode/` MODE+AUTO breaker panel + guards | Split 2026-09-23 into **multi-file** thin HTML + `styles.css` + `main.js` + `guards.js` + `services/account_api.js` + design-system foundations |
 | Full shell / Cmd+K / chart / AI workspace / 10 environments | **Gated** — human opens M10.4 after M2.8 backend slice |
-| Design lock | **ACTION 16F** — reply `lgtm frontend spec` freezes this file (incl. §0.1 architecture lock) |
+| Design lock | **DONE 2026-09-23** — human `lgtm frontend spec` froze **REV2.3** (§0.1 + §0.2 + §4.0/§4.1 + Day-1 left rail QUANTRADER / Role) |
 
 Related: `docs/specs/m1.3_account_mode_two_gate.spec.md` · `frontend/README.md` · `BUILD_STATUS.md` · `USER_ACTIONS.md`

@@ -13,11 +13,11 @@
 # BACKEND: A16-A26 DONE. **M2.8 Storage COMPLETE 2026-09-23** — suite 386/386 · verify EXIT 0.
 #   Commits: frontend 467a42c · backend/specs/status 93c1f07 · (status note may need re-commit if edited after).
 #   Next open: ACTION 24 (unpark M10.1 spec) or ACTION 16F (frontend) — you choose.
-# FRONTEND: ACTION 16F OPEN — bible REV2.2 — **Day-1 committed `467a42c` 2026-09-23**
-#   ONE stack: Vite + React + TypeScript, feature folders (not a React/Vite mess).
-#   Day-1 breaker panel stays static multi-file until you open M10.4.
-#   FORBIDDEN: big HTML · React god-file · Vite junk-drawer · JS-only after open.
-#   Reply "lgtm frontend spec" → freeze docs/frontend_spec.md.
+# FRONTEND: ACTION 16F **DONE** — bible **FROZEN REV2.3** (`lgtm frontend spec` 2026-09-23)
+#   REV2.3: Manual Trade Session (§4.1) · calc boundary (§0.2) · LIVE manual confirm · MODE≠AUTO auth
+#   Day-1 panel: left rail QUANTRADER + Role/X-Role in side menu · status chips top rail
+#   layouts: Terminal · Workspace · Fullscreen · SplitView
+#   ONE stack: Vite + React + TypeScript — Day-1 static until M10.4 open.
 #   UI redesign + browser WS: AFTER M10.1 complete.
 
 ==================================================

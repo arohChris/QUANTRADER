@@ -2,7 +2,7 @@
 
 **Location:** `QUANTRADER2/frontend/` — **project root**, not inside `financial_analyst_app/`.
 
-**Design bible:** [`docs/frontend_spec.md`](../docs/frontend_spec.md) — **REV2 institutional workstation** + **§0.1 file architecture lock**. Await human `lgtm frontend spec` (**ACTION 16F**).
+**Design bible:** [`docs/frontend_spec.md`](../docs/frontend_spec.md) — **FROZEN REV2.3** (**ACTION 16F DONE** 2026-09-23).
 
 ## Architecture lock (§0.1 REV2.2 — one stack)
 
@@ -48,6 +48,7 @@ frontend/
 | `services/account_api.js` | `GET status` / `POST mode` / `POST auto-trade` |
 
 ## Status
-- Design spec **REV2 DRAFT** + **§0.1 architecture lock** 2026-09-23 — **ACTION 16F** open.
-- Breaker panel **split multi-file** under human direction while M2.8 spec under review.
-- Full workstation shell / 10 environments: **gated** until human opens M10.4 after M2.8 clears.
+- Design bible **FROZEN REV2.3** — **ACTION 16F DONE** 2026-09-23 (`lgtm frontend spec`).
+- Day-1 panel: left rail **QUANTRADER** + **Role (X-Role)** in side menu; MODE/AUTO top chips.
+- Breaker panel **split multi-file** under human direction.
+- Full workstation shell / 10 environments: **gated** until human opens M10.4.

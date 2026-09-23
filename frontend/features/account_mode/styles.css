@@ -1,19 +1,156 @@
-/* Breaker panel feature styles — frontend_spec §1/§6. Feature-local only. */
+/* Breaker panel — Day-1 app shell: left QUANTRADER rail + status top rail + body. */
 body {
+  display: block;
+  padding: 0;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  min-height: 100vh;
+}
+
+/* ---- Left menu side bar: brand + role ---- */
+.side-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0.75rem;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  min-height: 100vh;
+}
+
+.brand {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid rgba(34, 211, 238, 0.55);
+  border-radius: 4px;
+  background: rgba(34, 211, 238, 0.12);
+  color: var(--cyan-demo);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
-.shell {
-  width: min(560px, 100%);
-  background: var(--panel);
+
+.brand-name {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.rail-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.rail-item {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rail-item.active {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.rail-item.muted {
+  color: var(--dim);
+  opacity: 0.75;
+}
+
+.rail-role {
+  margin-top: auto;
+  padding: 0.75rem 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
 }
+
+.rail-role h2 {
+  margin: 0 0 0.55rem;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.role-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.role-select {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.45rem;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.role-select:focus {
+  outline: 1px solid rgba(34, 211, 238, 0.45);
+  border-color: rgba(34, 211, 238, 0.45);
+}
+
+.role-hint {
+  margin: 0.4rem 0 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--dim);
+}
+
+.rail-foot {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: center;
+}
+
+/* ---- Main column ---- */
+.main-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+
 .top-rail {
   display: flex;
   flex-wrap: wrap;
@@ -27,6 +164,7 @@ body {
   color: var(--muted);
   background: rgba(0, 0, 0, 0.25);
 }
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -34,8 +172,10 @@ body {
   padding: 0.2rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 4px;
+  background: var(--panel);
   color: var(--text);
 }
+
 .chip .dot {
   width: 6px;
   height: 6px;
@@ -72,26 +212,33 @@ body {
 .chip.armed-pause .dot {
   background: var(--amber);
 }
+
 .body {
   padding: 1.25rem 1.25rem 1.5rem;
+  max-width: 720px;
 }
+
 h1 {
   margin: 0 0 0.25rem;
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--text);
 }
+
 .sub {
   margin: 0 0 1.25rem;
   font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.45;
+  background: transparent;
 }
 .sub code {
   font-size: 11px;
   color: var(--dim);
 }
+
 .law {
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -101,6 +248,7 @@ h1 {
   border: 1px dashed var(--border);
   border-radius: 6px;
   text-align: center;
+  background: rgba(0, 0, 0, 0.2);
 }
 .law strong {
   color: var(--text);
@@ -118,17 +266,27 @@ h1 {
 .law .off {
   color: var(--dim);
 }
+
 .breakers {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
-@media (max-width: 480px) {
+@media (max-width: 720px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+  .side-rail {
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
   .breakers {
     grid-template-columns: 1fr;
   }
 }
+
 .breaker {
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -156,6 +314,7 @@ h1 {
   padding: 0 4px;
   font-weight: 500;
 }
+
 .state {
   font-size: 1.35rem;
   font-weight: 700;
@@ -175,6 +334,7 @@ h1 {
 .state.on {
   color: var(--green);
 }
+
 .toggle-row {
   display: flex;
   gap: 0.4rem;
@@ -226,6 +386,7 @@ h1 {
   border-color: rgba(255, 92, 92, 0.45);
   color: var(--red);
 }
+
 .meta {
   display: flex;
   flex-wrap: wrap;
@@ -239,52 +400,42 @@ h1 {
   padding: 0.25rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
 }
-.roles {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin-bottom: 0.85rem;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.roles select {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.3rem 0.45rem;
-  font-family: var(--mono);
-  font-size: 12px;
-}
-.roles .hint-inline {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--dim);
-}
+
+/* Status line — solid surface, clear contrast (not ghost text) */
 #status {
   min-height: 1.4rem;
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--text);
   margin-bottom: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
 }
 #status.err {
   color: var(--red);
+  border-color: rgba(255, 92, 92, 0.4);
 }
 #status.ok {
   color: var(--green);
+  border-color: rgba(61, 220, 151, 0.35);
 }
+
 .hint {
   margin: 0;
   font-size: 0.72rem;
-  color: var(--dim);
+  color: var(--muted);
   line-height: 1.45;
 }
 .hint code {
   font-size: 11px;
+  color: var(--dim);
 }
+
 dialog.guard {
   border: 1px solid var(--border);
   border-radius: 12px;
