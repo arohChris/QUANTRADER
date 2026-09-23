@@ -11,7 +11,7 @@
 #   A13 spec | A14 tests (30) | A15 impl "lgtm" → BUILD_STATUS complete
 #   Full suite 306/306. Frontend design bible DRAFT: docs/frontend_spec.md
 # BACKEND: A16-A26 DONE. **M2.8 Storage COMPLETE 2026-09-23** — suite 386/386 · verify EXIT 0.
-#   Verify LGTM: full 5-tuple order · catalog unique/match · DAY2 2 partitions · provider `or` rule aligned.
+#   Commits: frontend 467a42c · backend/specs/status 93c1f07 · (status note may need re-commit if edited after).
 #   Next open: ACTION 24 (unpark M10.1 spec) or ACTION 16F (frontend) — you choose.
 # FRONTEND: ACTION 16F OPEN — bible REV2.2 — **Day-1 committed `467a42c` 2026-09-23**
 #   ONE stack: Vite + React + TypeScript, feature folders (not a React/Vite mess).

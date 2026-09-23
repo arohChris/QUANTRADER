@@ -5,7 +5,7 @@
 
 ## Current Gate: G0 — Edge Validation (entry 2026-09-22)
 
-## Last Updated: 2026-09-23 — **M2.8 Storage COMPLETE** (A23+A25+A26) · **verify LGTM** · suite **386/386** · **frontend committed `467a42c`** (Day-1 panel + bible + tests; A16F still open) · M10.1 parked A24 · M2.7 FROZEN.
+## Last Updated: 2026-09-23 — **M2.8 complete** · **frontend `467a42c`** · **backend+specs+status `93c1f07`** · suite **386/386** · M10.1 parked A24 · A16F open · M2.7 FROZEN.
 
 ## Sub-Modules
 
