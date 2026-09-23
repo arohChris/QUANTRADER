@@ -11,6 +11,7 @@ dependencies = [
     "structlog>=24.0",
     "cryptography>=42.0",  # for Fernet vault — fallback to base64 if missing
     "anyio>=4.0",
+    "websockets>=12.0",  # M2.1 connection — async WS client (P08)
 ]
 
 [project.optional-dependencies]

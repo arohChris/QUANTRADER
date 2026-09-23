@@ -2,6 +2,8 @@
 name: deriv
 ws_url: wss://ws.derivws.com/websockets/v3
 rest_url: https://api.deriv.com
+# Platform public-feed app id (NOT a per-user vault token). Env DERIV_APP_ID overrides in deploy.
+app_id: "1089"
 capabilities: [ticks, candles]
 rate_limit: 100/s
 order_types: [market, limit]
