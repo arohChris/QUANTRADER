@@ -6,9 +6,51 @@
 # M1 COMPLETE | M2b.1 COMPLETE | M2.1 Ingestion/Normal/Valid/Trans COMPLETE
 # M2.1 Connection (P08) COMPLETE @ 367a85f + 759b0c5 — LGTM + HUMAN TEST OK 2026-09-23
 #   You: "tested and all parts are working" → real-human verify recorded in BUILD_STATUS.
-# M1.3 ACCOUNT MODE (demo/live) ADDED @ 13969ec — suite 256/256.
-# NEXT ACTION: none blocking. Next = AI opens NEXT sub-module SPEC only when you
-#   say which slice (no parallel slices). Reply with preferred next or "next".
+# M1.3 ACCOUNT MODE CONFIG ADDED @ 13969ec — suite was 256/256.
+# M1.3 2-GATE COMPLETE 2026-09-23 — spec+tests+impl all LGTM
+#   A13 spec | A14 tests (30) | A15 impl "lgtm" → BUILD_STATUS complete
+#   Full suite 306/306. Frontend design bible DRAFT: docs/frontend_spec.md
+# BACKEND: A16-A26 DONE. **M2.8 Storage COMPLETE 2026-09-23** — suite 386/386 · verify EXIT 0.
+#   Verify LGTM: full 5-tuple order · catalog unique/match · DAY2 2 partitions · provider `or` rule aligned.
+#   Next open: ACTION 24 (unpark M10.1 spec) or ACTION 16F (frontend) — you choose.
+# FRONTEND: ACTION 16F OPEN — bible REV2.2 — **Day-1 committed `467a42c` 2026-09-23**
+#   ONE stack: Vite + React + TypeScript, feature folders (not a React/Vite mess).
+#   Day-1 breaker panel stays static multi-file until you open M10.4.
+#   FORBIDDEN: big HTML · React god-file · Vite junk-drawer · JS-only after open.
+#   Reply "lgtm frontend spec" → freeze docs/frontend_spec.md.
+#   UI redesign + browser WS: AFTER M10.1 complete.
+
+==================================================
+ACTION 26 — IMPL LGTM ON M2.8 STORAGE — DONE
+==================================================
+# STATUS: [DONE] 2026-09-23 — human LGTM with 3 fixes → all applied + suite green:
+#   1) watermark rejects bool (True/False not int>=1)
+#   2) catalog.jsonl rewrite atomic (tmp → os.replace) — still no parquet+catalog 2PC
+#   3) all partitions validated (_entry_from_rows) before first filesystem write
+#   + @needs_parquet on test_user_id_not_in_created_path (pyarrow path).
+#   pytest 25/25 · full suite 386/386 · structure OK · verify EXIT 0.
+#   BUILD_STATUS M2.8 → complete.
+
+==================================================
+ACTION 25 — LGTM ON M2.8 TESTS — DONE
+==================================================
+# STATUS: [DONE] 2026-09-23 — human LGTM + 2 improvements applied:
+#   1) explicit rows_in_write_order assert in checksum test
+#   2) multi-row same-partition P14 test (3 rows → 1 file)
+#   partition_key freeze already exact in REV1.1 spec.
+#   user_id tree walk fixed to relative paths (test name false positive).
+
+==================================================
+ACTION 24 — LGTM ON M10.1 SYNCHRONIZATION SPEC (PARKED)
+==================================================
+# STATUS: [OPEN / PARKED] — human “2.8 first”. SPEC: docs/specs/m10.1_synchronization.spec.md
+
+==================================================
+ACTION 23 — LGTM ON M2.8 STORAGE SPEC — DONE
+==================================================
+# STATUS: [DONE] 2026-09-23 — human LGTM + 5 freezes + 2 nits → applied REV1.1.
+#   Partition identity, no parquet+catalog 2PC, rows_in_write_order, order_book
+#   ValueError, JSONL one entry/key, read_partition signature, path segment rules.
 
 ## DEMO vs LIVE — HOW TO SWITCH (human OR auto-bot) — UPDATED 2026-09-23
 # FILE: financial_analyst_app/config/accounts.yaml
@@ -22,6 +64,12 @@
 #     MT5_* / HEADWAY_* same pattern
 #   OR vault (M6 private): vault.store(user_id, broker, token) — api_token_vault_key
 # Market-data (M2.1) needs NO account token — only platform app_id in brokers/deriv.yaml.
+#
+# FRONTEND (M10.4) — PARKED at PROJECT ROOT, built later per you 2026-09-23 ("backend first"):
+#   QUANTRADER2/frontend/                          — own folder at root, M10.4 layout, zero backend code
+#   financial_analyst_app/tests/m10_experience/     — frontend-only tests
+#   NOT inside financial_analyst_app. Backend never serves HTML.
+# API JSON Day-1: GET/POST http://127.0.0.1:8000/api/v1/account/mode (will gain auto field + /auto-trade after impl)
 
 ## WHERE CONFIG FILES LIVE
 # Root: financial_analyst_app/config/
@@ -35,6 +83,82 @@
 #   strategies/trend_following.yaml, execution/routing.yaml
 # Repo root: .env.example — copy to .env and fill placeholders (never commit .env)
 # Secrets: never in YAML — env (.env) or vault DB (private tokens).
+
+==================================================
+ACTION 13 — DONE: LGTM ON M1.3 2-GATE SPEC (MODE + AUTO)
+==================================================
+# STATUS: [DONE] 2026-09-23 — "lgtm" → Step 1 closed.
+#   Spec frozen: docs/specs/m1.3_account_mode_two_gate.spec.md
+#   Builder proceeds to Step 3 tests only (no impl until ACTION 14).
+
+==================================================
+ACTION 14 — DONE: LGTM ON M1.3 2-GATE TESTS (Step 4)
+==================================================
+# STATUS: [DONE] 2026-09-23 — "lgtm" → Step 4 closed → builder Step 5 impl.
+#   tests/test_account_mode_two_gate.py (30) frozen as review baseline.
+
+==================================================
+ACTION 15 — DONE: SMOKE + IMPL LGTM (M1.3 2-GATE)
+==================================================
+# STATUS: [DONE] 2026-09-23 — "lgtm" → M1.3 2-gate marked complete in BUILD_STATUS.
+#   Spec A13 + tests A14 + impl A15 all closed.
+
+==================================================
+ACTION 16 — DONE: LGTM ON M2.6 DATA QUALITY SPEC
+==================================================
+# STATUS: [DONE] 2026-09-23 — "LGTM on spec for M2.6" + 4 minors applied:
+#   (1) store unified (per-instance seen+prev_map; optional dedup_store inject)
+#   (2) paths locked financial_analyst_app/modules|tests/m2_market_data/...
+#   (3) provider = md.provider or md.broker in fingerprint key
+#   (4) prev_map broker = md.broker or md.provider fallback
+#   Spec: docs/specs/m2.6_data_quality.spec.md — ready for tests.
+
+==================================================
+ACTION 17 — DONE: LGTM ON M2.6 TESTS (19)
+==================================================
+# STATUS: [DONE] 2026-09-23 — "lgtm" → Step 5 quality.py written.
+
+==================================================
+ACTION 18 — DONE: LGTM ON M2.6 IMPL (quality.py)
+==================================================
+# STATUS: [DONE] 2026-09-23 — "lgtm" → suite + verify green → BUILD_STATUS complete.
+#   Module: financial_analyst_app/modules/m2_market_data/quality.py
+#   Tests: 19/19 | verify: scripts/verify_m2.6_quality.py
+
+==================================================
+ACTION 19 — DONE: LGTM ON M2.7 RECOVERY SPEC
+==================================================
+# STATUS: [DONE] 2026-09-23 — "lgtm" → tests written; recovery.py NOT yet.
+
+==================================================
+ACTION 20 — DONE: LGTM ON M2.7 TESTS (19)
+==================================================
+# STATUS: [DONE] 2026-09-23 — "LGTM on tests" → Step 5 recovery.py written.
+
+==================================================
+ACTION 21 — DONE then SUPERSEDED: initial impl LGTM then REVOKED
+==================================================
+# STATUS: [SUPERSEDED] 2026-09-23 — human review: architecture OK, correctness
+#   blocked on to_interval collapsing disjoint gaps. REV2 applied.
+
+==================================================
+ACTION 22 — DONE: LGTM ON M2.7 REV2.1 (disjoint-gap fix)
+==================================================
+# STATUS: [DONE] 2026-09-23 — human "lgtm" → BUILD_STATUS M2.7 complete.
+#   REV2.1 hardening: §9 three-run + run-boundary, §7 multi-interval (28 tests).
+#   Suite 353/353; verify disjoint + three-run OK; structure OK.
+#   Ownership frozen: M2.2 sole allocator; M2.7 observe-only.
+
+==================================================
+ACTION 16F — LGTM ON FRONTEND DESIGN SPEC (non-blocking design lock)
+==================================================
+# STATUS: [OPEN] 2026-09-23 — design bible only; does NOT start M10.4 build.
+#   SPEC: docs/frontend_spec.md
+#   Captures: cockpit shell, Cmd+K center + right audit, chart Lake proof,
+#   TradePlan rec cards, terminal AI/news, MODE+AUTO breaker panel (maps A13
+#   two-gate), GitOps config, 5 crisp rules, API touchpoints for account/status.
+#   Reply "lgtm frontend spec" → freeze file. M10.4 build still deferred
+#   until human opens it after current backend slice (ACTION 20+) clears.
 
 ==================================================
 ACTION 12 — DONE: HUMAN TEST M2.1 CONNECTION (P08)

@@ -31,6 +31,8 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "order.read",
         "trade.create",
         "trade.confirm",
+        "account.switch",  # demo ↔ live runtime switch (M1.3 MODE gate)
+        "trading.enable",  # AUTO OFF|ON gate (M1.3 two-gate) — independent of mode
         "command:marketday",
         "command:forex",
         "command:risk",

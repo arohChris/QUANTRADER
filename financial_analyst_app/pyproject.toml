@@ -12,6 +12,9 @@ dependencies = [
     "cryptography>=42.0",  # for Fernet vault — fallback to base64 if missing
     "anyio>=4.0",
     "websockets>=12.0",  # M2.1 connection — async WS client (P08)
+    "fastapi>=0.110",  # M10.2 thin API — account mode switch
+    "uvicorn>=0.27",  # serve app.main + frontend
+    "pyarrow>=14",  # M2.8 parquet lake (spec Step 5)
 ]
 
 [project.optional-dependencies]
@@ -21,6 +24,7 @@ dev = [
     "pytest-cov>=5.0",
     "import-linter>=2.0",
     "ruff>=0.6",
+    "httpx>=0.27",  # FastAPI TestClient for M10.2 API tests
 ]
 
 [tool.pytest.ini_options]
