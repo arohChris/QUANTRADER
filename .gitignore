@@ -22,6 +22,7 @@ coverage.xml
 # Secrets / env — never commit
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.p12
