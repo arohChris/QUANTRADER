@@ -1,0 +1,368 @@
+/* Breaker panel feature styles — frontend_spec §1/§6. Feature-local only. */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.shell {
+  width: min(560px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.top-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.25);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+}
+.chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+.chip.demo .dot {
+  background: var(--cyan-demo);
+}
+.chip.live .dot {
+  background: var(--red);
+}
+.chip.auto-on .dot {
+  background: var(--green);
+}
+.chip.auto-off .dot {
+  background: var(--dim);
+}
+.chip.will .dot {
+  background: var(--amber);
+}
+.chip.will-yes {
+  border-color: rgba(255, 92, 92, 0.55);
+  color: var(--red);
+}
+.chip.will-yes .dot {
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+.chip.armed-pause {
+  border-color: rgba(245, 165, 36, 0.5);
+  color: var(--amber);
+}
+.chip.armed-pause .dot {
+  background: var(--amber);
+}
+.body {
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sub {
+  margin: 0 0 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.sub code {
+  font-size: 11px;
+  color: var(--dim);
+}
+.law {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  text-align: center;
+}
+.law strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.law .live {
+  color: var(--red);
+}
+.law .demo {
+  color: var(--cyan-demo);
+}
+.law .on {
+  color: var(--green);
+}
+.law .off {
+  color: var(--dim);
+}
+.breakers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 480px) {
+  .breakers {
+    grid-template-columns: 1fr;
+  }
+}
+.breaker {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 0.9rem;
+  background: rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+.breaker h2 {
+  margin: 0 0 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.breaker h2 kbd {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-weight: 500;
+}
+.state {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.65rem;
+  color: var(--text);
+}
+.state.demo {
+  color: var(--cyan-demo);
+}
+.state.live {
+  color: var(--red);
+}
+.state.off {
+  color: var(--dim);
+}
+.state.on {
+  color: var(--green);
+}
+.toggle-row {
+  display: flex;
+  gap: 0.4rem;
+}
+.toggle-row button {
+  flex: 1;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.55rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  transition: filter 0.15s, border-color 0.15s, color 0.15s;
+}
+.toggle-row button:hover:not(:disabled) {
+  filter: brightness(1.15);
+  color: var(--text);
+}
+.toggle-row button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.toggle-row button.active-demo {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.55);
+  color: var(--cyan-demo);
+}
+.toggle-row button.active-live {
+  background: rgba(255, 92, 92, 0.14);
+  border-color: rgba(255, 92, 92, 0.55);
+  color: var(--red);
+}
+.toggle-row button.active-off {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+  color: var(--text);
+}
+.toggle-row button.active-on {
+  background: rgba(61, 220, 151, 0.12);
+  border-color: rgba(61, 220, 151, 0.55);
+  color: var(--green);
+}
+.toggle-row button.arm-danger {
+  border-color: rgba(255, 92, 92, 0.45);
+  color: var(--red);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.meta span {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.roles {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.roles select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.45rem;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.roles .hint-inline {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+}
+#status {
+  min-height: 1.4rem;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+#status.err {
+  color: var(--red);
+}
+#status.ok {
+  color: var(--green);
+}
+.hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--dim);
+  line-height: 1.45;
+}
+.hint code {
+  font-size: 11px;
+}
+dialog.guard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 1.25rem 1.35rem;
+  width: min(420px, calc(100vw - 2rem));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+dialog.guard::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+dialog.guard h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+dialog.guard h3.danger {
+  color: var(--red);
+}
+dialog.guard h3.warn {
+  color: var(--amber);
+}
+dialog.guard p.lead {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+dialog.guard label.ck {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  color: var(--text);
+  margin-bottom: 0.55rem;
+  cursor: pointer;
+  line-height: 1.35;
+}
+dialog.guard label.ck input {
+  margin-top: 0.2rem;
+  accent-color: var(--red);
+}
+dialog.guard .guard-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
+dialog.guard .guard-actions button {
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.5rem 0.9rem;
+  letter-spacing: 0.04em;
+}
+dialog.guard .guard-actions button.confirm-live {
+  background: rgba(255, 92, 92, 0.18);
+  border-color: rgba(255, 92, 92, 0.6);
+  color: var(--red);
+}
+dialog.guard .guard-actions button.confirm-live:disabled,
+dialog.guard .guard-actions button.confirm-on:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+dialog.guard .guard-actions button.confirm-on {
+  background: rgba(61, 220, 151, 0.16);
+  border-color: rgba(61, 220, 151, 0.55);
+  color: var(--green);
+}
+#refresh {
+  display: none;
+}

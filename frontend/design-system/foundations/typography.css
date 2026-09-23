@@ -1,0 +1,17 @@
+/* foundations — sans = action, mono = truth (11px .14em terminal) */
+:root {
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  --sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+body {
+  font-family: var(--sans);
+}
+code,
+kbd,
+.mono,
+.state,
+.top-rail,
+.meta,
+.hint code {
+  font-family: var(--mono);
+}
