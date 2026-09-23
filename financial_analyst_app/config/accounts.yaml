@@ -1,0 +1,60 @@
+# M1.3 + Customer Runtime (Manual §2b layer 3) — DEMO vs LIVE account switch
+# =============================================================================
+# HOW TO SWITCH demo ↔ live (human OR auto-trading bot):
+#   1. Set `mode: demo` or `mode: live` under the broker (or `default_mode`).
+#   2. Optional env override (wins over this file, no file edit needed):
+#        ACCOUNT_MODE=demo   or   ACCOUNT_MODE=live
+#   3. For live: set `live.enabled: true` — refuses to arm otherwise (fail loud).
+#
+# HOW TO FILL PLACEHOLDERS LATER (human or bot inserts real values):
+#   - Account IDs / API tokens are NEVER stored in this file (AGENTS §3.7).
+#   - Only the ENV VAR NAMES (or vault keys) live here — fill values in:
+#       .env / process env   →  DERIV_DEMO_ACCOUNT_ID=..., DERIV_LIVE_API_TOKEN=...
+#       or broker vault      →  vault.store(user_id, broker, token)  [M6 private ops]
+#   - See .env.example at repo root for the full placeholder list.
+#
+# Market-data (M2.1 ticks) needs only platform app_id in brokers/deriv.yaml —
+# no account token. Tokens below are for future M6/M7 private (money) ops.
+# =============================================================================
+
+default_mode: demo  # safe default while Gate G0/G1 (fake money / paper)
+
+brokers:
+  deriv:
+    mode: demo  # ← flip to `live` when intentionally going live
+    demo:
+      # Fake-money Deriv demo — placeholders only
+      account_id_env: DERIV_DEMO_ACCOUNT_ID    # env var NAME (value set outside git)
+      api_token_env: DERIV_DEMO_API_TOKEN      # env var NAME — M6 private ops later
+      api_token_vault_key: ""                  # optional vault alternative: e.g. deriv/demo
+      enabled: true
+    live:
+      # Real-money — arm ONLY when ready; placeholders ready for future insert
+      enabled: false                           # HARD GATE — must set true + mode: live
+      account_id_env: DERIV_LIVE_ACCOUNT_ID
+      api_token_env: DERIV_LIVE_API_TOKEN
+      api_token_vault_key: ""                  # e.g. deriv/live when using vault
+  mt5:
+    mode: demo
+    demo:
+      account_id_env: MT5_DEMO_ACCOUNT_ID
+      api_token_env: MT5_DEMO_API_TOKEN
+      api_token_vault_key: ""
+      enabled: true
+    live:
+      enabled: false
+      account_id_env: MT5_LIVE_ACCOUNT_ID
+      api_token_env: MT5_LIVE_API_TOKEN
+      api_token_vault_key: ""
+  headway:
+    mode: demo
+    demo:
+      account_id_env: HEADWAY_DEMO_ACCOUNT_ID
+      api_token_env: HEADWAY_DEMO_API_TOKEN
+      api_token_vault_key: ""
+      enabled: true
+    live:
+      enabled: false
+      account_id_env: HEADWAY_LIVE_ACCOUNT_ID
+      api_token_env: HEADWAY_LIVE_API_TOKEN
+      api_token_vault_key: ""
