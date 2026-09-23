@@ -1,22 +1,45 @@
 # USER_ACTIONS — WHAT YOU (HUMAN) MUST DO
 # ALL CAPS. UPDATED CONSTANTLY. READ THIS FIRST.
 
-## CURRENT STATUS (UPDATED 2026-09-22)
+## CURRENT STATUS (UPDATED 2026-09-23)
 # GATE: G0 ENTRY
-# M1 COMPLETE: 42/42 TESTS GREEN
-# M2b.1 COMPLETE: 36/36 + full suite 139/139 (post F-review) — commits efb59ff + a6908c2
-# M2.1 REV1 + M2.2 SPEC + Drop 1.4: LGTM received 2026-09-22 ("lgtm") → Steps 1–2 closed
-# NEXT: Review M2.2 normalize TESTS (Step 3 written) → reply "LGTM on M2.2 tests" → AI writes impl (Step 5).
+# M1 COMPLETE | M2b.1 COMPLETE | M2.1 Ingestion/Normal/Valid/Trans COMPLETE
+# M2.1 Connection (P08) COMPLETE @ 367a85f + 759b0c5 — LGTM + HUMAN TEST OK 2026-09-23
+#   You: "tested and all parts are working" → real-human verify recorded in BUILD_STATUS.
+# NEXT ACTION: none blocking for M2.1 connection. Next = AI opens NEXT sub-module SPEC only
+#   when you say which slice (no parallel slices). Reply with preferred next or "next".
+
+## DEMO / FAKE-MONEY ACCOUNT (YOUR Q — ANSWERED)
+# USER ACTION WILL NOT BE REQUIRED TO CONFIG THIS FOR THE DEMO ACCOUNT.
+# Market-data (M2.1 ticks) uses PLATFORM app_id already in config/brokers/deriv.yaml
+#   (app_id: "1089") — public feed, no per-user vault token, nothing for you to paste.
+# FAKE MONEY / DEMO = environment "paper":
+#   financial_analyst_app/config/environments/paper.yaml  (risk overlay for paper/demo)
+#   financial_analyst_app/config/environments/development.yaml (local dev overlay)
+# REAL-MONEY path (later, M6/M7) will need per-user broker token via vault.store() —
+#   NOT required now; demo/paper does not need it for market-data.
+
+## WHERE CONFIG FILES LIVE
+# Root: financial_analyst_app/config/
+#   brokers/deriv.yaml          — Deriv ws_url + platform app_id (M2.1 connection)
+#   brokers/mt5.yaml, headway.yaml
+#   environments/paper.yaml     — DEMO / fake-money overlay (use this for demo)
+#   environments/{development,testing,canary,production}.yaml
+#   assets/{forex,crypto,commodities}.yaml — instrument master (M2b.1)
+#   risk/limits.yaml, system/system.yaml, system/feature_flags.yaml
+#   strategies/trend_following.yaml, execution/routing.yaml
+# Secrets: never in YAML — env (DERIV_APP_ID, VAULT_KEY) or vault DB (private tokens).
 
 ==================================================
-ACTION 11 — LGTM ON M2.2 NORMALIZE TESTS (Step 4 gate)
+ACTION 12 — DONE: HUMAN TEST M2.1 CONNECTION (P08)
 ==================================================
-# STATUS: [WAITING] 2026-09-22 — tests file ready for your review
-# FILE: financial_analyst_app/tests/m2_market_data/test_normalize_spec.py
-# SPEC: docs/specs/m2.normalize.md (REV1 — you already LGTM'd via ACTION 9)
-# NOTE: Suite is intentionally collection-RED until Step 5 impl (import of
-#   modules.m2_market_data.normalize missing) — same pattern as M2.1 Step 3–4.
-# REPLY: "LGTM on M2.2 tests" → Step 4 closed → AI writes Normalizer impl → full green.
+# STATUS: [DONE] 2026-09-23 — "tested and all parts are working" → BUILD_STATUS real-human
+#   verify updated; M2.1 Connection stays complete. No further config action for demo.
+
+==================================================
+ACTION 11 — DONE: LGTM ON M2.2 NORMALIZE TESTS (Step 4 gate)
+==================================================
+# STATUS: [DONE] 2026-09-22 — superseded path; M2.2 complete @ e75adac (ACTION history).
 
 ==================================================
 ACTION 10 — DONE: LGTM ON M2.1 TICK-INGEST REV1 + Drop 1.4
