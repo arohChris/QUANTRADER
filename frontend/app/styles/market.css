@@ -1,0 +1,548 @@
+/* Market display: toolbar, asset chips, chart surfaces, markets dashboards. */
+.market-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.9rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface-soft);
+}
+
+.toolbar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.toolbar-group-end {
+  margin-left: auto;
+  align-items: flex-end;
+}
+
+.toolbar-group-assets {
+  flex: 1 1 100%;
+}
+
+/* Asset box: same control language as the timeframe select, multi-select inside. */
+.asset-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 12rem;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--text);
+  background: var(--surface);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+
+.asset-box:hover {
+  border-color: var(--accent-cyan);
+}
+
+.asset-box-list {
+  position: absolute;
+  z-index: 30;
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.3rem 0 0;
+  padding: 0.35rem;
+  width: min(22rem, 90vw);
+  max-height: 20rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-card);
+  list-style: none;
+}
+
+.toolbar-group {
+  position: relative;
+}
+
+.asset-option {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.3rem 0.45rem;
+  border: 0;
+  border-radius: 0.25rem;
+  color: var(--muted);
+  background: transparent;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.asset-option:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.asset-option.is-active {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.asset-option-tick {
+  color: var(--accent-cyan);
+}
+
+.asset-option-symbol {
+  color: var(--dim);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+}
+
+/* Auto / manual switch: the decision that gates the manual ticket. */
+.mode-switch {
+  display: inline-flex;
+  padding: 0.15rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  background: var(--surface-soft);
+}
+
+.mode-button {
+  min-width: 5rem;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.7rem;
+  border: 0;
+  border-radius: 0.2rem;
+  color: var(--muted);
+  background: transparent;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.mode-button.is-active {
+  color: var(--bg);
+  background: var(--accent-cyan);
+}
+
+.auto-mode-panel {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.auto-mode-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.series-last {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.scale-hint {
+  color: var(--accent-amber);
+}
+
+.toolbar-label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toolbar-select {
+  min-width: 8rem;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--text);
+  background: var(--surface);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--text-sm);
+}
+
+.clock {
+  min-height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--accent-cyan);
+  background: var(--surface);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--text-sm);
+}
+
+.toolbar-note {
+  color: var(--dim);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+}
+
+.phase-chip {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--positive);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+}
+
+.phase-chip.is-drawdown {
+  color: var(--negative);
+  border-color: var(--negative);
+}
+
+.experiment-chart {
+  min-height: 20rem;
+  padding: 1rem 0.5rem;
+  border: 1px solid var(--border);
+  color: var(--accent-cyan);
+  background: var(--chart-wash);
+  box-shadow: inset 0 0 40px rgba(34, 211, 238, 0.05);
+}
+
+.experiment-chart canvas {
+  display: block;
+  width: 100% !important;
+  height: 18rem !important;
+}
+
+.series-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+}
+
+.series-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+}
+
+.series-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+}
+
+/* Markets surface: heatmap, ranked leaderboard, then one dashboard per instrument. */
+.markets-view {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.markets-view-head h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+.markets-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.summary-chip {
+  margin: 0;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+
+.summary-chip strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Heatmap: one tile per instrument, tinted by the trend of the day. */
+.markets-heatmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.6rem;
+}
+
+.heat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.heat-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-cyan);
+}
+
+.heat-tile.is-up {
+  color: var(--positive);
+  background: color-mix(in srgb, var(--positive) 14%, var(--surface));
+}
+
+.heat-tile.is-down {
+  color: var(--negative);
+  background: color-mix(in srgb, var(--negative) 14%, var(--surface));
+}
+
+.heat-symbol {
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+}
+
+.heat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* Ranked leaderboard: best to worst on the day's move. */
+.leaderboard {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+}
+
+.leaderboard-heading {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 1.5rem 8.5rem minmax(0, 1fr) 4.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+
+.leaderboard-rank {
+  color: var(--dim);
+}
+
+.leaderboard-symbol {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.leaderboard-bar {
+  position: relative;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.leaderboard-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.leaderboard-fill.is-up {
+  background: var(--positive);
+}
+
+.leaderboard-fill.is-down {
+  background: var(--negative);
+}
+
+.leaderboard-value {
+  text-align: right;
+  font-weight: 700;
+}
+
+.is-up {
+  color: var(--positive);
+}
+
+.is-down {
+  color: var(--negative);
+}
+
+/* Dashboard grid: spaced out, count per row follows the viewport. */
+.markets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1.5rem;
+}
+
+.market-card {
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  box-shadow: var(--shadow-card);
+}
+
+.market-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.market-card-head h3 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+}
+
+.market-card-alias {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.market-trend {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.trend-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.trend-caption {
+  color: var(--muted);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.market-sparkline {
+  min-height: 4.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  background: var(--chart-wash);
+}
+
+.market-sparkline canvas {
+  display: block;
+  width: 100% !important;
+  height: 4.5rem !important;
+}
+
+/* Day range bar: fill to the last price, marker on the last price,
+   red width shows how deep the drawdown runs below the high. */
+.range-bar {
+  position: relative;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.range-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--accent-violet);
+  opacity: 0.5;
+}
+
+.range-marker {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--text);
+}
+
+.range-drawdown {
+  position: absolute;
+  inset: 0 0 0 auto;
+  background: var(--negative);
+  opacity: 0.55;
+}
+
+.market-card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 0.9rem;
+  margin: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+}
+
+.market-card-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.market-card-stats dt {
+  color: var(--muted);
+}
+
+.market-card-stats dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.market-card-note {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.6;
+}

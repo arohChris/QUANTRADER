@@ -1,0 +1,52 @@
+# WHY this file exists — Bible System_Development_Manual.md:3286-3288 (G1 storage tiers):
+#   HOT  = Valkey        — latest quote / active candle (Redis wire protocol, BSD licence)
+#   WARM = TimescaleDB   — candles/signals/trade_plans/ledger 30-90d (Postgres extension, one ACID engine)
+#   COLD = M2.8 local parquet (already built, stays the G0 sink) — MinIO/S3 promotion ONLY if human asks
+#          (build order LGTM 2026-09-25: Redis -> Timescale -> MinIO/S3 cold promotion, only if needed).
+# AGENTS note: environment prep only — NOT an application slice, no §2/§5 code in this folder.
+# Security: loopback-only ports; no password literal in repo — compose reads
+#           TIMESCALE_DEV_PASSWORD from .env (copy .env.example, never commit).
+#
+# Run from repo root, after Docker Desktop engine is running:
+#   docker compose --env-file .env -f financial_analyst_app/infra/docker-compose.yml up -d --wait
+#   docker compose --env-file .env -f financial_analyst_app/infra/docker-compose.yml down
+
+name: quantrader-infra
+
+services:
+  valkey:
+    image: valkey/valkey:9.1
+    container_name: quantrader-valkey
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes", "--dir", "/data"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  timescaledb:
+    image: timescale/timescaledb:2.30.1-pg17
+    container_name: quantrader-timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: quantrader
+      POSTGRES_PASSWORD: ${TIMESCALE_DEV_PASSWORD:?set TIMESCALE_DEV_PASSWORD in .env (copy .env.example)}
+      POSTGRES_DB: quantrader
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quantrader -d quantrader"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  valkey-data:
+  timescale-data:

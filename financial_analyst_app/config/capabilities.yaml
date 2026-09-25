@@ -1,0 +1,87 @@
+# WHY: P15 capability gate config — M3.0 loads ONCE (fail-loud startup on malformed).
+# Consumers: M3.1 (is_available before features) · M4.1 (DISABLED families) ·
+#            M10 GET /capabilities (Day-2).
+# Law: absence of a broker override = inherit features: defaults (spec §YAML shape).
+# Statuses: FULLY_SUPPORTED | DERIVED | PROXY_LIMITED | UNAVAILABLE |
+#           REQUIRES_EXTERNAL_DATA (strict enum — no prose aliases).
+version: "1.0"
+features:
+  rsi_14:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  ema_20:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  # P18 batch (m3.2_p18 spec) — price-only analytics, deriv-capable day-1
+  sma_20:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  std_20:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  zscore_20:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  returns:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  atr_14:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  adx_14:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  macd:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  bb_percent:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  donchian_20:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  choppiness:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  vol_regime:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  hurst:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  tick_rate:
+    status: PROXY_LIMITED
+    method: tick_count_proxy
+    warning: "tick_count ≠ volume"
+    requires: [tick_count]
+  order_book_imbalance:
+    status: UNAVAILABLE # default global; broker overrides below
+    reason: "needs bid_levels"
+    requires: [bid_levels, ask_qty]
+brokers:
+  deriv:
+    # Day-1: only explicit overrides; absence of feature under broker = use features: default
+    overrides:
+      order_book_imbalance:
+        status: UNAVAILABLE
+        reason: "Deriv has_depth:false"
+      # rsi_14 not listed → inherit FULLY_SUPPORTED
+  mt5:
+    overrides:
+      order_book_imbalance:
+        status: FULLY_SUPPORTED # depth available on MT5 when adapter present
+strategies:
+  rsi_overbought_oversold:
+    requires_analytics: [rsi_14]
+  donchian_breakout: # M4.2 fulfilled the m3.0 Day-1 stub (spec-declared amendment)
+    requires_analytics: [donchian_20, choppiness]
+  microstructure_flow:
+    requires_analytics: [order_book_imbalance]
+  trend_following:
+    requires_analytics: [ema_20, sma_20, rsi_14]
+  mean_reversion:
+    requires_analytics: [zscore_20]
+  pullback:
+    requires_analytics: [adx_14, zscore_20]
+  regime_based:
+    requires_analytics: [choppiness, hurst]

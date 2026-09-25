@@ -1,0 +1,67 @@
+/* Theme tokens. Dark is the default; .theme-light overrides the same names. */
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  --text-sm: 0.78rem;
+  --text-md: 0.95rem;
+  --text-lg: 1.15rem;
+  --surface: rgba(18, 26, 51, 0.72);
+  --surface-strong: rgba(10, 16, 34, 0.86);
+  --surface-soft: rgba(255, 255, 255, 0.03);
+  --hover: rgba(255, 255, 255, 0.06);
+  --chart-wash: linear-gradient(180deg, rgba(34, 211, 238, 0.06), transparent 65%);
+  --accent-cyan: #22d3ee;
+  --accent-violet: #a78bfa;
+  --accent-lime: #a3e635;
+  --accent-amber: #fbbf24;
+  --accent-magenta: #f472b6;
+  /* Focus ring and elevation are theme tokens so both modes stay legible. */
+  --focus-ring: #22d3ee;
+  --shadow-card: 0 1px 2px rgba(2, 6, 23, 0.5);
+  --shadow-header: 0 1px 0 rgba(255, 255, 255, 0.04);
+  /* Financial semantics kept separate from decorative accents. */
+  --positive: #34d399;
+  --negative: #fb7185;
+  /* Restated here so both themes are readable and comparable in one place. */
+  --text: #e6edf7;
+  --muted: #8b9bb4;
+  --dim: #5c6b82;
+  --text-weight-strong: 700;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  color-scheme: dark;
+}
+
+/* Light mode: slate ramp, one accent hue family, WCAG AA text on #fff surfaces.
+   Text is pushed darker and heavier than dark mode: a pale background eats
+   weight, so light mode buys its contrast back with tone and font-weight. */
+.theme-light {
+  --bg: #eef2f7;
+  --panel: #ffffff;
+  --text: #020617;
+  --muted: #1e293b;
+  --dim: #334155;
+  --border: #b6c2d4;
+  --cyan-demo: #0e7490;
+  --green: #15803d;
+  --blue: #1d4ed8;
+  --amber: #b45309;
+  --surface: #ffffff;
+  --surface-strong: #f7f9fc;
+  --surface-soft: rgba(2, 6, 23, 0.05);
+  --hover: rgba(2, 6, 23, 0.07);
+  --chart-wash: linear-gradient(180deg, rgba(14, 116, 144, 0.07), transparent 65%);
+  --accent-cyan: #0e7490;
+  --accent-violet: #6d28d9;
+  --accent-lime: #4d7c0f;
+  --accent-amber: #b45309;
+  --accent-magenta: #be185d;
+  --focus-ring: #0e7490;
+  --shadow-card: 0 1px 2px rgba(2, 6, 23, 0.1), 0 8px 24px rgba(2, 6, 23, 0.06);
+  --shadow-header: 0 1px 0 rgba(2, 6, 23, 0.08);
+  --positive: #15803d;
+  --negative: #be123c;
+  --text-weight-strong: 800;
+  color-scheme: light;
+}

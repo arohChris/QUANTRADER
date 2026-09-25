@@ -26,3 +26,8 @@ COMMODITY.XAGUSD:
   broker_native:
     deriv: frxXAGUSD
     mt5: XAGUSD
+
+# M3.1 profiles (bible §4) — same shape as forex.yaml (see comment there).
+analytics:
+  rsi_14:
+    period: 14

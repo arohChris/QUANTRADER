@@ -15,6 +15,7 @@ dependencies = [
     "fastapi>=0.110",  # M10.2 thin API — account mode switch
     "uvicorn>=0.27",  # serve app.main + frontend
     "pyarrow>=14",  # M2.8 parquet lake (spec Step 5)
+    "redis>=5.0",  # M2.9 HOT cache — redis-py client for Valkey (driver locked by human 2026-09-25)
 ]
 
 [project.optional-dependencies]

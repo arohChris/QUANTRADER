@@ -28,8 +28,9 @@ from shared.core.clock import SimulatedClock  # noqa: E402
 class _ReferenceFacade:
     """Thin sync adapter over M2b module facade (spec: injected deps)."""
 
-    def current_snapshot_id(self) -> str:
-        return "REF-2026-09-22-VERIFY"
+    def current_snapshot_id(self) -> str | None:
+        # M2b.2: real facade reads config/reference/snapshot.yaml (no fixture stub)
+        return reference.current_snapshot_id()
 
     def to_canonical(self, native: str, broker: str) -> str:
         return reference.to_canonical(native, broker)

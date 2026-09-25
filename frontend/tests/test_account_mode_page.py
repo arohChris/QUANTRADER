@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-_APP = Path(__file__).resolve().parents[2]  # financial_analyst_app/
-_REPO = _APP.parent  # QUANTRADER2/
+_REPO = Path(__file__).resolve().parents[2]  # QUANTRADER2/
+_APP = _REPO / "financial_analyst_app"
 _FE = _REPO / "frontend"
 _INDEX = _FE / "features" / "account_mode" / "index.html"
 _MAIN_JS = _FE / "features" / "account_mode" / "main.js"
@@ -43,7 +43,10 @@ def test_frontend_folder_structure_matches_m104() -> None:
 
 
 def test_frontend_is_decoupled_from_backend() -> None:
-    assert not list(_FE.rglob("*.py")), "frontend/ must stay pure static — no backend code"
+    stray_py = [
+        p for p in _FE.rglob("*.py") if "node_modules" not in p.parts and "tests" not in p.parts
+    ]
+    assert not stray_py, "frontend/ must stay static — .py only in frontend/tests/"
     main_py = _BACKEND_MAIN.read_text(encoding="utf-8")
     assert "FileResponse" not in main_py
     assert "StaticFiles" not in main_py
@@ -53,6 +56,8 @@ def test_frontend_is_decoupled_from_backend() -> None:
 
 def test_frontend_has_no_backend_module_imports() -> None:
     for f in _FE.rglob("*"):
+        if "node_modules" in f.parts or "dist" in f.parts:
+            continue
         if f.is_file() and f.suffix in {".html", ".js", ".ts", ".css", ".json"}:
             text = f.read_text(encoding="utf-8", errors="ignore").lower()
             assert "from shared" not in text
@@ -96,6 +101,8 @@ def test_no_god_file_and_day1_stays_toolchain_free() -> None:
     """
     # God-file bans
     for f in _FE.rglob("*"):
+        if "node_modules" in f.parts or "dist" in f.parts:
+            continue
         if not f.is_file() or f.suffix not in {".html", ".jsx", ".tsx", ".js", ".ts"}:
             continue
         if f.stat().st_size > 40_000 and f.suffix in {".html", ".jsx", ".tsx"}:

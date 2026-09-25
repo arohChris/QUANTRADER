@@ -1,0 +1,9 @@
+# M2b.2 — effective reference snapshot (lineage stamped on every MarketData).
+# WHY: bible modules/02b_M2b_Reference.md §6 — reference_snapshot_id = REF-YYYY-MM-DD-NNN
+#      for audit/replay (M8 re-runs the same REF). Immutable: code NEVER writes this file.
+# Rotation: human edits snapshot_id (+ effective_from) → restart the process (I03).
+# Validated by modules/reference/reference.py:load_snapshot_id (format + tz-aware date).
+# Quoted so yaml.safe_load keeps it a str (unquoted ISO timestamps load as datetime —
+# loader requires str + parses with datetime.fromisoformat, spec Inputs).
+snapshot_id: REF-2026-09-25-001
+effective_from: "2026-09-25T00:00:00+00:00"

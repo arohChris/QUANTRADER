@@ -4,10 +4,18 @@ WHY: sync pure dict/cache lookups (spec: no await, no I/O in hot path); YAML is 
 single source of truth (no hard-coded symbol ifs); typed errors from shared.contracts.errors.
 
 Gate: to_canonical("frxEURUSD", "deriv") == "FX.EURUSD"
+
+M2b.2 (additive, 2026-09-25) — snapshot lineage: current_snapshot_id() feeds
+M2.2 normalize.py:96 (MarketData.reference_snapshot_id, bible 02b §6).
+Never raises: no try/except at the call site → None = Drop(missing_field) fail-safe.
 """
 from __future__ import annotations
 
+import functools
+import logging
+import re
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +26,8 @@ from shared.contracts.errors import (
     UnknownBrokerError,
     UnknownInstrumentError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # Empty broker must raise BOTH ValidationError-style AND UnknownBrokerError
@@ -131,3 +141,54 @@ def get_instrument(instrument_id: Any) -> dict[str, Any]:
     if entry is None:
         raise UnknownInstrumentError(instrument_id)
     return deepcopy(entry)
+
+
+# --- M2b.2 — snapshot lineage (spec: docs/specs/m2b.2_reference_snapshot.spec.md) ---
+
+_SNAPSHOT_PATH = Path(__file__).resolve().parents[2] / "config" / "reference" / "snapshot.yaml"
+_SNAPSHOT_ID_RE = re.compile(r"REF-\d{4}-\d{2}-\d{2}-\d{3}")
+
+
+def load_snapshot_id(path: Any) -> str | None:
+    """Read + validate one snapshot file → REF-YYYY-MM-DD-NNN, else None. NEVER raises.
+
+    WHY broad except (spec Correct): M2.2 normalize.py:96 calls the facade with no
+    try/except — an escaped exception would crash ingestion; None → Drop(missing_field)
+    keeps lineage mandatory (no MarketData without a valid snapshot), and the WARNING
+    keeps the failure visible (AGENTS §3.9: never silent).
+    """
+    try:
+        data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            logger.warning("M2b.2 snapshot: top-level not a mapping in %s", path)
+            return None
+        snapshot_id = data.get("snapshot_id")
+        if not isinstance(snapshot_id, str):
+            logger.warning("M2b.2 snapshot: snapshot_id missing/not a str in %s", path)
+            return None
+        snapshot_id = snapshot_id.strip()
+        if not _SNAPSHOT_ID_RE.fullmatch(snapshot_id):
+            logger.warning("M2b.2 snapshot: snapshot_id format invalid in %s", path)
+            return None
+        effective_from = data.get("effective_from")
+        if not isinstance(effective_from, str):
+            logger.warning("M2b.2 snapshot: effective_from missing/not a str in %s", path)
+            return None
+        parsed = datetime.fromisoformat(effective_from)  # raises ValueError → below
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            logger.warning("M2b.2 snapshot: effective_from must be tz-aware in %s", path)
+            return None
+        return snapshot_id
+    except Exception as exc:  # noqa: BLE001 — spec: OSError/Unicode/YAML/ValueError/unexpected → None
+        logger.warning("M2b.2 snapshot: cannot load %s: %s", path, exc)
+        return None
+
+
+@functools.lru_cache(maxsize=1)
+def current_snapshot_id() -> str | None:
+    """Effective snapshot id for lineage stamping — cached per process (I08 determinism).
+
+    Rotation (M2b-I03 immutability): code never writes snapshot.yaml; a new snapshot =
+    human edits the file + restart (or current_snapshot_id.cache_clear()).
+    """
+    return load_snapshot_id(_SNAPSHOT_PATH)

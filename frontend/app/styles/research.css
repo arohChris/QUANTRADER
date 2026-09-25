@@ -1,0 +1,389 @@
+/* Research surface: command-style chat, preset questions, context blocks. */
+.research-view {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  max-width: 62rem;
+}
+
+.research-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+.research-head p {
+  margin: 0;
+  max-width: 54rem;
+  line-height: 1.7;
+}
+
+.research-mock-badge {
+  justify-self: start;
+  margin: 0.35rem 0 0 !important;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--accent-amber);
+  border-radius: 999px;
+  color: var(--accent-amber);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+}
+
+.chat-log {
+  display: grid;
+  gap: 0.75rem;
+  min-height: 18rem;
+  max-height: 60vh;
+  padding: 1rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface-soft);
+}
+
+.chat-empty {
+  display: grid;
+  gap: 0.35rem;
+  place-items: start;
+  align-content: center;
+  min-height: 16rem;
+  color: var(--muted);
+}
+
+.chat-empty p {
+  margin: 0;
+}
+
+/* Structured answer, not a chat bubble: question, lead, sections, evidence,
+   read-only actions, provenance footer. */
+.answer {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+}
+
+.answer-you {
+  justify-self: end;
+  max-width: 80%;
+  padding: 0.5rem 0.7rem;
+  background: var(--hover);
+}
+
+.answer-question {
+  margin: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+}
+
+.answer-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.answer-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--accent-violet);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.answer-lead {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.answer-section h3 {
+  margin: 0 0 0.35rem;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Status vocabulary: COMPLETE vs UNVERIFIED / INSUFFICIENT_CONTEXT */
+.status-chip {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+}
+
+.status-chip.is-complete {
+  color: var(--positive);
+  border-color: var(--positive);
+}
+
+.status-chip.is-partial {
+  color: var(--accent-amber);
+  border-color: var(--accent-amber);
+}
+
+.evidence-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  font-size: 0.68rem;
+}
+
+.evidence-label {
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evidence-track {
+  position: relative;
+  width: 6rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.evidence-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-cyan);
+}
+
+.evidence-count {
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 700;
+}
+
+.evidence-item {
+  color: var(--dim);
+}
+
+.evidence-item.is-met {
+  color: var(--muted);
+}
+
+.answer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.9rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--accent-violet);
+  background: var(--surface-soft);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.action-chip:hover {
+  border-color: var(--accent-violet);
+}
+
+.answer-provenance {
+  margin: 0;
+  color: var(--dim);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.64rem;
+}
+
+.chat-row {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 90%;
+}
+
+.chat-row-you {
+  justify-self: end;
+}
+
+.chat-row-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent-violet);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chat-command {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  color: var(--accent-cyan);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+}
+
+.chat-bubble {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.chat-bubble-you {
+  border-color: var(--accent-cyan);
+  background: var(--hover);
+}
+
+/* Context blocks: label/value pairs the assistant surfaces, not prose. */
+.chat-blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+}
+
+.chat-blocks div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--surface-soft);
+}
+
+.chat-blocks dt {
+  color: var(--muted);
+}
+
+.chat-blocks dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.chat-followups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.command-bar,
+.preset-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.command-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--accent-cyan);
+  background: var(--surface-soft);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.command-chip:hover {
+  border-color: var(--accent-cyan);
+  background: var(--hover);
+}
+
+.command-label {
+  color: var(--muted);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.7rem;
+}
+
+.preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.9rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.72rem;
+  text-align: left;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.preset-chip:hover {
+  color: var(--text);
+  border-color: var(--accent-cyan);
+  border-style: solid;
+}
+
+.chat-input {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.chat-input input {
+  flex: 1;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  color: var(--text);
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+
+.chat-input button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  color: var(--muted);
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.chat-hint {
+  position: absolute;
+  right: 3.25rem;
+  bottom: 0.35rem;
+  color: var(--dim);
+  font-size: 0.66rem;
+}

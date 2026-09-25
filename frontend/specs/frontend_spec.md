@@ -1,7 +1,7 @@
 # Frontend Design Spec — QUANTRADER2 Institutional Workstation
 
 Status: **FROZEN REV2.3 2026-09-23** — human `lgtm frontend spec` (**ACTION 16F DONE**).  
-Location: `QUANTRADER2/docs/frontend_spec.md` (bible). Implementation at `QUANTRADER2/frontend/` under human-opened M10.4.  
+Location: `QUANTRADER2/frontend/specs/frontend_spec.md` (bible). Implementation at `QUANTRADER2/frontend/` under human-opened M10.4.  
 Backend contract: M1.3 2-gate **MODE + AUTO** complete; kill = M5.5 reference; JSON-only REST under `/api/v1/…`.  
 Supersedes cockpit-only REV1 sketch; REV2 folds human workstation vision 2026-09-23 (27-point brief).  
 REV2.3 (2026-09-23 review): **Manual Trade Session**, **calculation boundary**, **LIVE manual confirm**, **MODE ≠ AUTO authorization**, layout `Dashboard`→`Workspace`.  

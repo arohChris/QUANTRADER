@@ -1,0 +1,93 @@
+/* Responsive breakpoints and reduced-motion handling. */
+@media (min-width: 900px) {
+  .viewer-dashboard {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace,
+  .trader-dashboard,
+  .trade-pane {
+    grid-template-columns: 1fr;
+  }
+
+  .app-body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .footer-main {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .footer-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbar-group-end {
+    margin-left: 0;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header,
+  .app-footer {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .panel {
+    padding: 0.85rem;
+  }
+
+  .chart-panel,
+  .experiment-chart canvas {
+    min-height: 15rem;
+    height: 15rem;
+  }
+
+  .footer-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-legal {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .market-toolbar {
+    gap: 0.6rem;
+  }
+
+  .toolbar-select {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

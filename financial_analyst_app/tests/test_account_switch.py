@@ -1,7 +1,7 @@
 """
 M1.3 Account Mode Switch — BACKEND tests only (service + thin API).
 WHY: docs/specs/m1.3_account_switch.spec.md — one runtime mode for bot + API.
-Frontend/page tests live in tests/m10_experience/ (frontend itself is at project-root frontend/).
+Frontend/page tests live in frontend/tests/ (frontend itself is at project-root frontend/).
 Default demo; live requires live.enabled arm; thin API JSON-only.
 """
 from __future__ import annotations

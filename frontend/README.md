@@ -2,7 +2,7 @@
 
 **Location:** `QUANTRADER2/frontend/` — **project root**, not inside `financial_analyst_app/`.
 
-**Design bible:** [`docs/frontend_spec.md`](../docs/frontend_spec.md) — **FROZEN REV2.3** (**ACTION 16F DONE** 2026-09-23).
+**Design bible:** [`frontend/specs/frontend_spec.md`](specs/frontend_spec.md) — **FROZEN REV2.3** (**ACTION 16F DONE** 2026-09-23).
 
 ## Architecture lock (§0.1 REV2.2 — one stack)
 
@@ -35,7 +35,7 @@ frontend/
 - **Zero backend imports** — no `.py`, no shared/, no modules/.
 - Talks to API over HTTP only: `http://127.0.0.1:8000/api/v1/...`
 - Backend never serves these files (JSON-only app under `financial_analyst_app/app/`).
-- Tests: `financial_analyst_app/tests/m10_experience/` (architecture enforced there).
+- Tests: `frontend/tests/` (architecture enforced there — run `python -m pytest` inside `frontend/`).
 - **Philosophy:** information before decoration · context before navigation · evidence before conclusions · risk before execution · provenance on everything · panels not SaaS cards · command layer as front door.
 
 ## Current feature — account_mode (breaker panel)

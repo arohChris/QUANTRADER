@@ -1,0 +1,41 @@
+/* Light mode only: heavier headings and labels so text keeps its authority. */
+.theme-light .panel h2,
+.theme-light .panel h3,
+.theme-light .market-card-head h3,
+.theme-light .brand h1,
+.theme-light .markets-view-head h1 {
+  color: var(--text);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.theme-light .toolbar-label,
+.theme-light .footer-heading,
+.theme-light .footer-group label,
+.theme-light .market-card-stats dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.theme-light .panel p,
+.theme-light .muted,
+.theme-light .footer-note,
+.theme-light .footer-legal,
+.theme-light .market-card-note {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.theme-light .footer-group a,
+.theme-light .footer-legal-links a,
+.theme-light .primary-nav a {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.theme-light .data-large,
+.theme-light .market-card-stats dd,
+.theme-light .clock {
+  color: var(--text);
+  font-weight: 700;
+}

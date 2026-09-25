@@ -1,0 +1,182 @@
+/* Panels, workspaces, trade pane, ticket, and the public Viewer panels. */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+
+.viewer-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.trade-pane {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+}
+
+.trade-pane-main {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.trader-dashboard {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+}
+
+.workspace-main {
+  min-width: 0;
+}
+
+.workspace-side {
+  padding: 1rem;
+  background: var(--bg);
+}
+
+.panel {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--surface);
+}
+
+/* Panel headings carry an accent rule so surfaces read apart at a glance. */
+.panel h2,
+.panel h3 {
+  margin: 0 0 0.75rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--accent-violet);
+  color: var(--text);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chart-panel h2 {
+  border-left-color: var(--accent-cyan);
+}
+
+.trading-ticket h2 {
+  border-left-color: var(--accent-lime);
+}
+
+.trade-pane .panel h2 {
+  border-left-color: var(--accent-magenta);
+}
+
+.chart-panel {
+  min-height: 25rem;
+}
+
+.data-large {
+  margin: 0 0 0.35rem;
+  color: var(--text) !important;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--text-lg);
+}
+
+.chart-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.65rem;
+}
+
+.side-panels {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.signal {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.signal > span:first-child {
+  color: var(--accent-violet);
+}
+
+.signal:last-child {
+  border-bottom: 0;
+}
+
+.signal .positive {
+  color: var(--accent-lime);
+}
+
+.signal .warning {
+  color: var(--accent-amber);
+}
+
+.state-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+}
+
+.state-row span {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  color: var(--accent-amber);
+}
+
+.access-placeholder {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.trading-ticket {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.trading-ticket h2 {
+  margin-bottom: 0.4rem;
+}
+
+.trading-ticket label {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.trading-ticket input,
+.trading-ticket select {
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--text);
+  background: var(--bg);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--text-sm);
+}
+
+.ticket-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.ticket-actions button {
+  flex: 1;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--dim);
+  background: var(--surface-soft);
+}

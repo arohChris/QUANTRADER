@@ -30,3 +30,11 @@ FX.GBPUSD:
   broker_native:
     deriv: frxGBPUSD
     mt5: GBPUSD
+
+# M3.1 profiles (bible §4) — per-asset-class analytic params; precedence:
+# request param_overrides > this profile > analytic REQUIREMENTS.defaults.
+# WHY rsi_14 only: profile entries are per-asset overrides, not a feature list —
+# ema_20 intentionally absent so it runs on its analytic defaults (test 11 pins both).
+analytics:
+  rsi_14:
+    period: 14

@@ -13,3 +13,8 @@ CRYPTO.BTCUSD:
   broker_native:
     deriv: cryBTCUSD
     mt5: BTCUSD
+
+# M3.1 profiles (bible §4) — same shape as forex.yaml (see comment there).
+analytics:
+  rsi_14:
+    period: 14

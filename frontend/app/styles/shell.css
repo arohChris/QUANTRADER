@@ -1,0 +1,251 @@
+/* Application shell: sticky header, collapsible sidebar, content area. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.04), transparent 32%), var(--bg);
+  transition: background 200ms ease, color 200ms ease;
+}
+
+/* Header pattern: sticky bar, brand left, icon actions right. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+  min-height: 4rem;
+  padding: 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-header);
+  backdrop-filter: blur(16px);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* 40px visual control, 44px hit area via padding, per icon-button guidance. */
+.icon-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  color: var(--muted);
+  background: var(--surface-soft);
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.icon-button:hover:not(:disabled) {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  background: var(--hover);
+}
+
+.icon-button:disabled {
+  color: var(--dim);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.icon-button.has-badge::after {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--negative);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--surface-soft);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--accent-cyan);
+  border-radius: 0.45rem;
+  color: var(--accent-cyan);
+  background: var(--surface-soft);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+}
+
+.app-body {
+  display: flex;
+  align-items: stretch;
+  flex: 1 0 auto;
+  min-height: calc(100vh - 4rem);
+  transition: padding 160ms ease;
+}
+
+.app-body.sidebar-collapsed .content-area {
+  width: 100%;
+}
+
+.sidebar {
+  flex: 0 0 15.5rem;
+  border-right: 1px solid var(--border);
+  background: var(--surface-strong);
+  overflow: hidden;
+  animation: sidebar-in 160ms ease;
+}
+
+@keyframes sidebar-in {
+  from {
+    flex-basis: 0;
+    opacity: 0;
+  }
+
+  to {
+    flex-basis: 15.5rem;
+    opacity: 1;
+  }
+}
+
+.sidebar-toggle,
+.theme-toggle {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--muted);
+  background: var(--surface-soft);
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.sidebar-toggle:hover {
+  color: var(--focus-ring);
+  border-color: var(--focus-ring);
+}
+
+.theme-toggle:hover {
+  color: var(--cyan-demo);
+  border-color: var(--cyan-demo);
+}
+
+/* Vertical menu; the sidebar hides itself entirely when collapsed. */
+.primary-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  padding: 0.75rem 0.6rem;
+  border-right: 1px solid var(--border);
+}
+
+.primary-nav a,
+.entry-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.3rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.primary-nav a:hover,
+.entry-nav a:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.primary-nav a.is-active {
+  color: var(--text);
+  background: var(--hover);
+  box-shadow: inset 2px 0 0 var(--accent-cyan);
+}
+
+.entry-nav {
+  display: flex;
+  gap: 0.35rem;
+}
+
+/* Access bar lives in the footer; kept here for the footer select styling hook. */
+.access-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 0.65rem;
+  padding-right: 0.75rem;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.access-bar label {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.access-bar select {
+  min-width: 7.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--text);
+  background: var(--panel);
+}
+
+.content-area {
+  flex: 1;
+  min-width: 0;
+}
