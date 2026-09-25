@@ -269,6 +269,10 @@ M3 AnalyticsResult + M2 MarketData → M4.1 Registry → M4.2 Families → Signa
 
 ---
 
+## 9b. Analytical Requirements — Strategy Library [NEW v1.5]
+
+> **[NEW v1.5]** Full `Strategy Library ~45 strategies` with `Requires Analytics + Required Data + Timeframe + Minimum history as_of T + Capability` added as `Annex A` in `System_Development_Manual §8b` and `System_Development_Manual/docs_strategy_library_with_analytics_v1.5.md`. Example `Donchian Breakout 4H` → `donchian_50+atr_14+adx_14` → `50×4H OHLC as_of T` → `DependencyReport ELIGIBLE` before `Signal`. `FULLY_SUPPORTED` 8 Tier-1 first, `UNAVAILABLE` Tier-3 disabled via `M3.0`.
+
 ## 10. Open Questions for M4
 
 - [ ] Phase 1 ship only `trend_following::ema_trend` as proof, or also `momentum`?

@@ -1,24 +1,51 @@
 # USER_ACTIONS — WHAT YOU (HUMAN) MUST DO
 # ALL CAPS. UPDATED CONSTANTLY. READ THIS FIRST.
 
-## CURRENT STATUS (UPDATED 2026-09-23)
+## CURRENT STATUS (UPDATED 2026-09-24)
 # GATE: G0 ENTRY
-# M1 COMPLETE | M2b.1 COMPLETE | M2.1 Ingestion/Normal/Valid/Trans COMPLETE
-# M2.1 Connection (P08) COMPLETE @ 367a85f + 759b0c5 — LGTM + HUMAN TEST OK 2026-09-23
-#   You: "tested and all parts are working" → real-human verify recorded in BUILD_STATUS.
-# M1.3 ACCOUNT MODE CONFIG ADDED @ 13969ec — suite was 256/256.
-# M1.3 2-GATE COMPLETE 2026-09-23 — spec+tests+impl all LGTM
-#   A13 spec | A14 tests (30) | A15 impl "lgtm" → BUILD_STATUS complete
-#   Full suite 306/306. Frontend design bible DRAFT: docs/frontend_spec.md
-# BACKEND: A16-A26 DONE. **M2.8 Storage COMPLETE 2026-09-23** — suite 386/386 · verify EXIT 0.
-#   Commits: frontend 467a42c · backend/specs/status 93c1f07 · (status note may need re-commit if edited after).
-#   Next open: ACTION 24 (unpark M10.1 spec) or ACTION 16F (frontend) — you choose.
-# FRONTEND: ACTION 16F **DONE** — bible **FROZEN REV2.3** (`lgtm frontend spec` 2026-09-23)
-#   REV2.3: Manual Trade Session (§4.1) · calc boundary (§0.2) · LIVE manual confirm · MODE≠AUTO auth
-#   Day-1 panel: left rail QUANTRADER + Role/X-Role in side menu · status chips top rail
-#   layouts: Terminal · Workspace · Fullscreen · SplitView
-#   ONE stack: Vite + React + TypeScript — Day-1 static until M10.4 open.
-#   UI redesign + browser WS: AFTER M10.1 complete.
+# M1 COMPLETE | M2b.1 COMPLETE | M2.1 COMPLETE | M2.6/2.7/2.8 COMPLETE
+# M1.3 2-GATE COMPLETE | Frontend design FROZEN A16F
+# ACTION 27 DONE — LGTM on M3.0 Capability spec (conditional: AGENTS.md critical)
+# ACTION 28 DONE — LGTM on CI guard scripts
+# ACTION 29 OPEN — LGTM on M3.0 TESTS (Step 4) — builder STOPPED here
+# ACTION 24 (M10.1) still PARKED — backend first per you.
+
+==================================================
+ACTION 29 — LGTM ON M3.0 TESTS (Step 4) — OPEN
+==================================================
+# STATUS: [OPEN] 2026-09-24 — Step 3 tests written, NOT approved yet.
+#   FILE: financial_analyst_app/tests/m3_analytics/test_m3.0_spec.py
+#   24 tests = 20 spec §Test plan names exact + 4 edge extras (empty_requires,
+#   override_requires_no_status, missing_version_or_features, malformed_yaml)
+#   — AGENTS.md §2 Step 3: one test per stated edge in §Edges.
+#   Written against docs/specs/m3.0_capability.spec.md only.
+#   Collection RED until Step 5 (no modules/m3_analytics yet) — honest, expected.
+#   Gate test name frozen: test_order_book_unavailable_on_deriv
+#   Reply: "LGTM on tests for M3.0" (or request changes)
+#   After LGTM: Builder may write implementation (§12 Critical Thinking Gate first).
+
+==================================================
+ACTION 28 — LGTM ON CI GUARD SCRIPTS + tests/ci — DONE
+==================================================
+# STATUS: [DONE] 2026-09-24 — human "all lgtm if agents.md is followed critically".
+#   Scripts (financial_analyst_app/scripts/):
+#     check_pit_guard.py   — no alpha lake bypass (exit 0 pre-P22)
+#     check_retention.py   — no AnalyticsResult cold parquet
+#     check_build_order.py — G0 before M6; M3.0 before M4.1
+#     check_naming.py      — mX.Y specs / test_mX.Y_spec / verify_mX.Y
+#   Tests: financial_analyst_app/tests/ci/ (31 passed)
+#   Live: all four [OK] on current tree
+
+==================================================
+ACTION 27 — LGTM ON M3.0 CAPABILITY SPEC (P15) — DONE
+==================================================
+# STATUS: [DONE] 2026-09-24 — human "all lgtm if agents.md is followed critically"
+#   → conditional LGTM on spec. Condition: AGENTS.md §0–§13 followed critically
+#   (serial steps, hard stop at ACTION 29 for tests, §12 before impl).
+#   SPEC: docs/specs/m3.0_capability.spec.md (DRAFT → LGTM'd)
+#   Gate test name frozen: test_order_book_unavailable_on_deriv
+#   Blocks: M3.1 Feature Engine, M3.2 RSI, M4.1 (build order P15 first)
+#   Day-1: broker lookup only; user_id accepted but ignored; no DB/I/O in get()
 
 ==================================================
 ACTION 26 — IMPL LGTM ON M2.8 STORAGE — DONE

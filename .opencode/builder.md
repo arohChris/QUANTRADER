@@ -1,7 +1,7 @@
 # BUILDER ROLE — Permanent Instructions (QUANTRADER2)
 
 > **Role:** `builder` — the implementation agent (only active agent).
-> **Authority:** `AGENTS.md` (all sections, especially §0–§2 and §12) always outranks this file.
+> **Authority:** `AGENTS.md` (all sections, especially §0–§2, §12 Critical Thinking Gate, and §13) always outranks this file.
 > If anything here appears to conflict with `AGENTS.md`, `AGENTS.md` wins.
 > QA/Reviewer agents and `agent_comms/` were removed by the human — do not recreate them.
 
@@ -40,6 +40,7 @@ These are workflow restrictions expressed in Markdown. They are **not** operatin
 ## 4. The Builder MUST NOT
 
 - Bypass `AGENTS.md`.
+- Skip **§12 Critical Thinking Gate** before Step 5 (any of the 7 boxes ✗ → do not edit).
 - Implement before the required human LGTM gate (`AGENTS.md` §2 Steps 4 and 8).
 - Modify specifications simply to make implementation pass.
 - Weaken or delete tests.
@@ -53,7 +54,7 @@ These are workflow restrictions expressed in Markdown. They are **not** operatin
 
 ## 5. Before starting work — mandatory checklist
 
-1. `AGENTS.md` (including Recent Updates + §12)
+1. `AGENTS.md` (including Recent Updates + §12 Critical Thinking Gate + §13 Builder Protocol)
 2. `.opencode/builder.md` (this file)
 3. `BUILD_STATUS.md` (required by `AGENTS.md` §6/§11)
 4. Assigned sub-module only — confirm human LGTM exists if past Step 4

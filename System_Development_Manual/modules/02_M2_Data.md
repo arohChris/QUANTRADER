@@ -206,7 +206,7 @@ def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sy
 |------|----------|---------|----------|
 | `source_sequence` | Broker → M2.1 captures | `845921` (Deriv) | Detect broker-level gaps (if broker provides seq) |
 | `source_event_id` | Broker → M2.1 captures | `tick-id-123` | Dedup (exactly-once) — hash + id |
-| `watermark / processing_sequence` | **M2.7 owns & generates** | `1001, 1002...` per `instrument_id+broker` | **Gap detection & recovery** (M2.7's key), not M2b |
+| `watermark / processing_sequence` | **M2.2 owns & generates — M2.7 observes only [FROZEN v1.5 — BUILD_STATUS Discrepancy]** | `1001, 1002...` per `instrument_id+broker` | **Gap detection & recovery** (M2.7's key, disjoint runs only — never invents seqs), not M2b |
 | `reference_snapshot_id` | M2b owns, M2 stamps | `REF-2026-09-22-014` | Historical reproducibility |
 
 **M2b knows nothing about `source_sequence/watermark`.** It only maps `frxXAUUSD → COMMODITY.XAUUSD`.
@@ -251,18 +251,21 @@ Dedup by `source_event_id + instrument_id` (not watermark alone). `quality` stil
 
 ---
 
-## 8. M2.7 — RECOVERY — Watermark is processing seq (M2's)
+## 8. M2.7 — RECOVERY — Watermark is processing seq (M2's) — observes only [FROZEN v1.5]
+
+**Allocator: M2.2 `WatermarkRegistry.next()` sole; M2.7 observes gaps + backfills only.**
 
 **Pseudocode (clarified):**
 
 ```python
-# watermark_registry — global per instrument+broker (not per-user, since storage global)
-def next_watermark(instrument_id: str, broker: str) -> int:  # sync
+# M2.2 WatermarkRegistry — sole allocator — global per instrument+broker
+def next_watermark(instrument_id: str, broker: str) -> int:  # sync — M2.2 only
     key = (instrument_id, broker)
     last = db.get(f"watermark:{key}") or 0  # global
     db.set(f"watermark:{key}", last+1)
     return last+1
 
+# M2.7 observes only — never invents seqs
 def on_gap(instrument_id, broker, missing_watermarks=[1001]):
     interval = gap_analyzer.to_interval(missing_watermarks)
     source = selector.choose(instrument_id, broker)
@@ -358,3 +361,5 @@ pytest modules/data --fixtures=recorded_raw_ticks.parquet --mock-reference
 - [x] New broker `ctrader` → new `broker_feeds/ctrader/` + `config/brokers/ctrader.yaml` — `MarketData(instrument_id)` unchanged
 - [x] `order_book` stay inside M2 (reads `has_depth` via M2b)
 - [ ] Should `watermark` also be stored per `source` (Deriv WS vs REST backfill) or single global?
+
+> **Synced to `System_Development_Manual v1.5` (2026-09-24):** `§6a` Temporal Resolver + `PIT Data Service as_of T` + `Dependency Graph` gate `M2` → `M3` → `M4`. `M2.7` frozen as disjoint observer only — `WatermarkRegistry.next()` sole allocator (`BUILD_STATUS` Discrepancy). Market-data global vs private lineage clarified — `M2.8` path has no `user_id`. Retention minimalism: keep `RAW+candle+Decision lineage`, recompute not per-tick cold.

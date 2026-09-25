@@ -1,7 +1,8 @@
 # System Development Manual — Modular Bible
 
-**Master:** `System_Development_Manual.md` v1.3 (2,455 lines, 140 KB, LOCKED — 10-MODULE + 55 SUB-MODULES + INSTITUTIONAL) — **THE LAW**
-**Working copies:** `modules/` — discuss / improve / add / remove **by Module *and* Sub-Module** in isolation, then patch back to master.
+**Master:** `System_Development_Manual.md` (**4,300 lines, ~270 KB**, LOCKED — **12 modules / 33 sub-modules / 57 phases** per `AGENTS.md`) — **THE LAW**
+**Working copies:** `modules/` (2,841 lines, 166 KB) — discuss / improve / add / remove **by Module *and* Sub-Module** in isolation, then patch back to master.
+> **Counts corrected 2026-09-24 (S0):** this file previously claimed "2,455 lines / 140 KB / 10-MODULE + 55 SUB-MODULES" and "55 phases"; `AGENTS.md` says **12 modules, 33 sub-modules, 57 phases**. AGENTS wins; the sub-module/phase count disagreement is logged in `BUILD_STATUS.md → Discrepancies` rather than silently resolved.
 
 > **v1.3 — Institutional (99.8% automated, multi-user, broker-diff):** Multi-user tenant isolation (`user_id+broker_id`), high-speed budgets (<50ms ingest, <10ms risk), broker DBs remain diff per user per broker but `M3-M6` calc shared (no per-broker rewrite) — see `System_Development_Manual.md` Executive Summary + §4 + §36 + §M2/M5 details.
 > **v1.2 — 55 Sub-Modules inline:** Each Module is split into 3-8 Sub-Modules **inside its own file** (no separate blueprint). Each Sub-Module can be worked on by a different person — `M3.2 Per-Asset` 17 indicator files are parallel, `M6.4 Broker Adapters` per-broker is parallel.
@@ -20,24 +21,24 @@ Each module file is **self-contained** — you can change `M5 Portfolio & Risk` 
 
 ## Module Files (12, all from Bible Sections 4-45)
 
-| # | File | Module | Lines | Source Sections |
+| # | File | Module | Lines (actual) | Source Sections |
 |---|------|--------|-------|-----------------|
-| 0 | `00_README.md` | Index + workflow | 47 | — |
-| 1 | `01_M1_Foundation.md` | Foundation (4 sub: Contracts, Core, Config, Security) | 138 | §4, §5, §29, §39 | **M1.1-M1.4** |
-| 2 | `02_M2_Data.md` | Data Platform | 95 | §6, §31, §35 |
-| 2b| `02b_M2b_Reference.md` | Reference KB | 50 | §7 |
-| 3 | `03_M3_Analytics.md` | Analytics | 77 | §8 |
-| 4 | `04_M4_Alpha.md` | Alpha (Strategy+Signal) | 83 | §9+§10 |
-| 5 | `05_M5_Portfolio_Risk.md` | Portfolio & Risk (atomic) | 85 | §11+§12 |
-| 6 | `06_M6_Execution.md` | Execution (Order+Execution) | 79 | §13+§14 |
-| 7 | `07_M7_Trust.md` | Trust (Reconciliation+Accounting) | 71 | §15+§16 |
-| 8 | `08_M8_Validation.md` | Validation (Backtest+Sim+Paper+Canary) | 54 | §17-§20 |
-| 9 | `09_M9_Research.md` | Research | 37 | §21 |
-| 10| `10_M10_Experience.md` | Experience (Sync+API+Command+Frontend) | 60 | §22+§27+§28+§32 |
-| 11| `11_M11_Intelligence.md` | Intelligence | 50 | §25 |
-| 12| `12_M12_Ops.md` | Ops (Monitoring+Testing+Deploy) | 46 | §26+§30+§36+§37 |
+| 0 | `00_README.md` | Index + workflow | 65 | — |
+| 1 | `01_M1_Foundation.md` | Foundation (4 sub: Contracts, Core, Config, Security) | 457 | §4, §5, §29, §39 — **M1.1-M1.4** |
+| 2 | `02_M2_Data.md` | Data Platform | 365 | §6, §31, §35 |
+| 2b| `02b_M2b_Reference.md` | Reference KB | 353 | §7 |
+| 3 | `03_M3_Analytics.md` | Analytics | 242 | §8 |
+| 4 | `04_M4_Alpha.md` | Alpha (Strategy+Signal) | 300 | §9+§10 |
+| 5 | `05_M5_Portfolio_Risk.md` | Portfolio & Risk (atomic) | 196 | §11+§12 |
+| 6 | `06_M6_Execution.md` | Execution (Order+Execution) | 176 | §13+§14 |
+| 7 | `07_M7_Trust.md` | Trust (Reconciliation+Accounting) | 141 | §15+§16 |
+| 8 | `08_M8_Validation.md` | Validation (Backtest+Sim+Paper+Canary) | 149 | §17-§20 |
+| 9 | `09_M9_Research.md` | Research | 68 | §21 |
+| 10| `10_M10_Experience.md` | Experience (Sync+API+Command+Frontend) | 136 | §22+§27+§28+§32 |
+| 11| `11_M11_Intelligence.md` | Intelligence | 89 | §25 |
+| 12| `12_M12_Ops.md` | Ops (Monitoring+Testing+Deploy) | 104 | §26+§30+§36+§37 |
 
-Total working-copy size: ~76 KB — each Module <100 lines of *decision* (not prose) — built for discussion.
+Total working-copy size: **166 KB / 2,841 lines** — each file was expanded from the original <100-line summaries to full "EXPANDED DISCUSSION" form (the old "each Module <100 lines / ~76 KB" claim was stale).
 
 ## Tree Now
 

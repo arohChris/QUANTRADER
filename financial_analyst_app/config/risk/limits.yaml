@@ -4,4 +4,9 @@ max_exposure_per_symbol: 0.1  # 10% equity per symbol
 max_leverage: 10
 min_free_margin: 100
 max_drawdown: 0.2
-# Hard safety boundaries (never overridable): max_leverage 50 enforced in code
+# Hard safety boundary: NONE IS ENFORCED YET.
+# TODO(correctness) 2026-09-24 (BUILD_STATUS Discrepancies): shared/core/config.py validates
+# `max_leverage: float = Field(default=10, ge=1)` — a LOWER bound only. The old comment
+# "max_leverage 50 enforced in code" was FALSE. AGENTS §3.13 requires sane hard bounds
+# (leverage 1-1000) with the system refusing to start on absurd values; a stricter cap
+# (50) is a policy decision still to be added as `le=50` + startup validation test.

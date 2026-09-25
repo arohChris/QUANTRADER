@@ -33,7 +33,7 @@ We are building an **institutional-grade, highly profitable, multi-asset, 99.8% 
 **Institutional Expectations (explicitly designed):**
 1. **Multi-User Platform — Strict Tenant Isolation:** Every user = isolated tenant (`user_id` + `broker_id` composite). A Deriv user sees/stores/processes ONLY Deriv streams, Deriv account, Deriv risk/account-info calculations. An MT5 user sees ONLY MT5. No cross-broker or cross-user leakage (`ContextVar[user_id, broker_id]` + row-level `WHERE user_id=:uid AND broker_id=:bid` + per-tenant lake partition). Same `Shared Kernel` + same calculation Modules serve all tenants — no per-broker rewrite.
 2. **High-Speed Calculation & Operation — 99.8% Automation:** P95 budgets: Ingestion→Storage <50ms, MarketData→AnalyticsResult <20ms, RiskDecision <10ms, Order→BrokerAck <500ms (broker-bound). Vectorized `numpy/pandas` + `feature_engine` caching + `Redis` + async ingestion. Target 99.8% algo-handled (minimal manual = only `emergency/kill_switch` + `unknown_state` human triage).
-3. **Multi-Broker, DBs Remain Diff, Calc Shared:** Raw & normalized data remain **diff per broker, per user** (`data/lake/brokers/{deriv,mt5,headway}/` + DB `WHERE broker_id` + per-user namespace). *Canonical* `MarketData` + `AnalyticsResult` are broker-agnostic, so `M3 Analytics`, `M4 Alpha`, `M5 Risk`, `M6 Execution Intelligence` (algos/costs) are **written once, reused for every broker** via `M2b Reference` mapping (`frxEURUSD` → `EURUSD`, `frxXAUUSD` → `Gold` + `contract_specs` per broker). Account management (`M5 PortfolioState`, `M7 Trust`) is per-`user_id+broker_id` — risk/account-info calc is per-tenant but engine code is shared.
+3. **Multi-Broker, DBs Remain Diff, Calc Shared:** Raw & normalized **market** data remain **diff per provider** (`data/lake/market-data/provider={deriv,mt5,headway}/instrument=<id>/` — stored **once, no `user_id`**, fanned out to all tenants of that broker — AGENTS §4.3/Appendix B) + DB `WHERE broker_id` for **private** tables only + per-user namespace for private data (`lake/private/broker=.../user_id=...`). *Canonical* `MarketData` + `AnalyticsResult` are broker-agnostic, so `M3 Analytics`, `M4 Alpha`, `M5 Risk`, `M6 Execution Intelligence` (algos/costs) are **written once, reused for every broker** via `M2b Reference` mapping (`frxEURUSD` → `EURUSD`, `frxXAUUSD` → `Gold` + `contract_specs` per broker). Account management (`M5 PortfolioState`, `M7 Trust`) is per-`user_id+broker_id` — risk/account-info calc is per-tenant but engine code is shared.
 
 
 **The platform is NOT a monolith.** It is a **Modular Monolith** composed of **Bounded Engines**.
@@ -1040,7 +1040,7 @@ def normalize(raw: RawDerivTick, user_id: str, broker: str) -> MarketData:  # sy
 |------|----------|---------|----------|
 | `source_sequence` | Broker → M2.1 captures | `845921` (Deriv) | Detect broker-level gaps (if broker provides seq) |
 | `source_event_id` | Broker → M2.1 captures | `tick-id-123` | Dedup (exactly-once) — hash + id |
-| `watermark / processing_sequence` | **M2.7 owns & generates** | `1001, 1002...` per `instrument_id+broker` | **Gap detection & recovery** (M2.7's key), not M2b |
+| `watermark / processing_sequence` | **M2.2 WatermarkRegistry.next() sole allocator; M2.7 observes/backfills disjoint only [FROZEN v1.5]** | `1001, 1002...` per `instrument_id+broker` | **Gap detection & recovery** (M2.7 observes gaps, never invents seqs), not M2b |
 | `reference_snapshot_id` | M2b owns, M2 stamps | `REF-2026-09-22-014` | Historical reproducibility |
 
 **M2b knows nothing about `source_sequence/watermark`.** It only maps `frxXAUUSD → COMMODITY.XAUUSD`.
@@ -1085,18 +1085,21 @@ Dedup by `source_event_id + instrument_id` (not watermark alone). `quality` stil
 
 ---
 
-## 8. M2.7 — RECOVERY — Watermark is processing seq (M2's)
+## 8. M2.7 — RECOVERY — Watermark is processing seq (M2's) — observes only [FROZEN v1.5]
+
+**Allocator lives in M2.2 `WatermarkRegistry.next()` (sole). M2.7 only observes gaps + backfills — never invents sequence numbers** (`BUILD_STATUS` Discrepancy FROZEN).
 
 **Pseudocode (clarified):**
 
 ```python
-# watermark_registry — global per instrument+broker (not per-user, since storage global)
-def next_watermark(instrument_id: str, broker: str) -> int:  # sync
+# M2.2 WatermarkRegistry — sole allocator — global per instrument+broker
+def next_watermark(instrument_id: str, broker: str) -> int:  # sync — call from M2.2 only
     key = (instrument_id, broker)
     last = db.get(f"watermark:{key}") or 0  # global
     db.set(f"watermark:{key}", last+1)
     return last+1
 
+# M2.7 observes only — never calls next_watermark to invent seqs
 def on_gap(instrument_id, broker, missing_watermarks=[1001]):
     interval = gap_analyzer.to_interval(missing_watermarks)
     source = selector.choose(instrument_id, broker)
@@ -1192,6 +1195,178 @@ pytest modules/data --fixtures=recorded_raw_ticks.parquet --mock-reference
 - [x] New broker `ctrader` → new `broker_feeds/ctrader/` + `config/brokers/ctrader.yaml` — `MarketData(instrument_id)` unchanged
 - [x] `order_book` stay inside M2 (reads `has_depth` via M2b)
 - [ ] Should `watermark` also be stored per `source` (Deriv WS vs REST backfill) or single global?
+
+---
+
+## 6a. Temporal Requirement Resolution — Point-in-Time Validated Versioned Configurable Market State [NEW v1.5 — Canonical Law §§1-115]
+
+> **[NEW v1.5 — Institutional Core]** This section makes the bible **institutional legit per Canonical Prompt §§1-115** and blocks the amateur `"keep a rolling 50-candle table, strategy does take last 50"` pattern. **Requirements are hard-coded in versioned manifests (static), required data is never hard-coded (dynamic as_of T).** Never hard-code `take rows 100-300` in strategy — platform resolves.
+
+### 6a.1 The Law — Point-in-Time Market State
+
+> `EMA(200) means strictly last 200 completed bars as_of decision time T — not forming bar, not future bar.`
+
+**Definitions:**
+- **Event time** — when tick occurred on exchange (`provider_event_time`).
+- **Availability time** — when tick became *knowable* to platform (`availability_time <= T` is eligible, `> T` is future leak). Economic data released `Feb 15` for `Jan` period is not available on `Feb 10`.
+- **Processing time** — when platform wrote it (`processed_time`).
+
+**Point-in-Time (PIT) rule:** `get_market_state(instrument, timeframe, as_of T)` returns **only** observations with `availability_time <= T`, `validated == true`, `effective_at <= T` for reference specs, and correct `reference_snapshot_id`. Query `Feb 10` never sees `Feb 15` revision — preserve revision history, not silent replace (`Wang PIT integrity`, `CFA AI & Big Data § available date`).
+
+**Version Everything:** `dataset_version`, `analytics_version`, `strategy_version`, `config_version`, `reference_snapshot_id` are all stored on `AnalyticsSnapshot` and `Decision Record` — replay requires exact versions.
+
+### 6a.2 Temporal Requirement — What Is Declarative [NEW v1.5]
+
+Each analytic and each strategy declares a **Temporal Requirement manifest** (versioned YAML + contract, not ad-hoc IF):
+
+```yaml
+# analytics/donchian.yaml  v3
+analytics_id: donchian_50
+version: "3.0"
+requires:
+  timeframe: "4H"
+  fields: [high, low]          # close not needed
+  lookback: 50                  # hard-coded requirement — static, versioned
+  minimum_history: 50           # hard gate: <50 → INSUFFICIENT, no Signal
+  warmup: 0                     # extra beyond minimum for stability (EMA200 warmup 50)
+  bar_completion: completed     # never use forming bar
+  freshness_limit: "4H"
+  availability_lag: "0s"        # wait for availability_time <= T
+```
+
+```yaml
+# strategies/donchian_breakout.yaml  v7
+strategy_id: donchian_breakout
+version: "7.0"
+requires:
+  analytics: [donchian_50, atr_14, adx_14]
+  timeframe: "4H"
+  instrument_scope: ["CRYPTO.BTCUSDT", "FX.EURUSD"]  # effective-dated via M2b
+  minimum_history: 50           # max of analytics minima
+  warmup: 0
+  bar_completion: completed
+  data_quality: VALID           # REJECT if GAPPED/SUSPECT unless override
+```
+
+**Static vs dynamic split (canonical §3-7):**
+- **Hard-coded (versioned manifest):** `period 50, warmup 50, timeframe 4H, required analytics list` — known before runtime, goes in `config`/`manifest` vX.
+- **Never hard-coded (resolved dynamically as_of T):** `start = T - 50*4H, end = latest completed 4H bar ≤ T, which 50 bars` — changes every T, resolved by Temporal Engine.
+
+### 6a.2b Timeframe Is Config, Not Code [NEW v1.5]
+
+**`4H` is strategy-config, not platform hard-code; `SMA` is timeframe-dependent by design:**
+
+| Layer | `4H` hard-coded? | Where | Change path |
+|-------|------------------|-------|-------------|
+| Strategy requirement `Donchian Breakout 4H` | **Yes — correctly once** in versioned manifest `v7` (`timeframe: 4H`, `lookback: 50`) | `strategies/donchian_breakout.yaml` — not `if timeframe=="4H"` in Python | New manifest `v8` (`timeframe: 1D`) → version bump, no code change |
+| Analytics `SMA(20)` | **Not fixed to 4H** — each call gets `timeframe` from caller manifest | `analytics/sma.yaml` `timeframe: "{{caller.timeframe}}"` | M4 4H strategy asks `SMA(20, 4H)`; M5 risk may ask `SMA(20, 1D)` |
+| Which bars | **Never** — resolved dynamically every `T` | `temporal_resolver.resolve(timeframe, as_of T)` → `window_end = latest completed bar ≤ T` | Changes every bar close |
+
+**SMA depends on BOTH price change and timeframe — timeframe decides *which* prices:**
+```
+1H SMA20 = avg(last 20×1H closes)   # 20 hours
+4H SMA20 = avg(last 20×4H closes)   # 80 hours — different series
+1D SMA20 = avg(last 20×1D closes)   # 20 days
+```
+`SMA = sum(closes)/n` — price gives `closes`, **timeframe selects which `closes`**. `M3.2` is `compute(candles, params)` and never hard-codes `4H`; caller passes already-resolved `n×TF` candles from `PIT Data Service as_of T`.
+
+**Ban:** no `candles[-50:]` / `take last 50 rows` magic in Python — `period 50` static in manifest, `which 50 bars` dynamic via `availability_time <= T`. Same `Donchian(50)` runs `4H` for crypto and `1D` for commodities — manifest picks. Provenance: `AnalyticsResult(timeframe, features, provenance.window)`.
+
+### 6a.3 Central Temporal Resolution Engine [NEW v1.5]
+
+**Single service `shared/temporal/temporal_resolver.py`** — stateless pure function, called by `M3` before calc and by `M4` before generate:
+
+```python
+def resolve(requirement: TemporalRequirement, as_of: datetime, instrument_id: str, broker: str) -> TemporalResolution:
+    # Pure, deterministic, no I/O except reading manifests — <1ms
+    latest_completed = market_calendar.latest_completed_bar(instrument_id, requirement.timeframe, as_of)
+    end = latest_completed.interval_end   # e.g., 2026-09-24T12:00:00Z for 4H 12:00 bar
+    start = end - requirement.lookback * timeframe_to_delta(requirement.timeframe)
+    warmup_start = start - requirement.warmup * delta
+    return TemporalResolution(
+        instrument_id=instrument_id,
+        timeframe=requirement.timeframe,
+        as_of=as_of,                 # decision time T
+        window_start=start,          # data window to fetch
+        window_end=end,              # inclusive, completed only
+        warmup_start=warmup_start,   # if warmup>0
+        minimum_history=requirement.minimum_history,
+        freshness_limit=requirement.freshness_limit,
+    )
+```
+
+**It answers:** *which exact candle interval `as_of T` should be used?* Not *what the values are* — that is `PIT Data Service`.
+
+**Connects:** `M3.1 FeatureEngine` calls `resolve(analytic.requirement, T)` → then `PIT Data Service.get_candles(window_start, window_end, as_of T)` → then `M3.2 compute`. `M4.2 Strategy` calls `resolve(strategy.requirement, T)` → `Dependency Resolver` checks all analytics resolved windows.
+
+### 6a.4 Point-in-Time Data Service [NEW v1.5]
+
+```python
+async def get_candles(instrument_id: str, timeframe: str, window_start: datetime, window_end: datetime, as_of: datetime, broker: str) -> list[Candle]:
+    # Returns ONLY rows where availability_time <= as_of AND exchange_timestamp in [window_start, window_end]
+    # WHERE instrument_id=:id AND timeframe=:tf AND interval_end <= :window_end AND availability_time <= :as_of
+    # Returns empty if freshness_limit exceeded → caller marks STALE
+    pass
+
+async def get_market_state(instrument_id: str, timeframe: str, as_of: datetime, broker: str) -> MarketState:
+    # Composes: candles as above + quality + reference_snapshot effective_at=as_of
+    pass
+```
+
+**No strategy may do `lake.list(limit=50)` — must go through `get_market_state(..., as_of T)`.** `M8 Backtest` uses same service with `SimulatedClock` — backtest ≡ live.
+
+### 6a.5 Dependency Graph & Statuses [NEW v1.5]
+
+**Declarative dependency manifest per strategy/analytic + resolver evaluates:**
+
+```
+Donchian Breakout BTC/USDT 4H requires Donchian(50) → requires 50x 4H OHLC ———→ Market State 4H 50 bars
+                                      ATR(14)       → requires 14x 4H OHLC ———┘
+                                      ADX(14)       → requires 28x 4H OHLC (warmup)
+```
+
+**Statuses (fail-closed, never silent):**
+- `AVAILABLE` — data exists, validated, PIT-eligible
+- `GENERATABLE` — data not stored but can be computed deterministically from AVAILABLE inputs (e.g., `Donchian from 50 candles`)
+- `MISSING` — required input not in Lake and not fetchable within `freshness_limit`
+- `INSUFFICIENT` — `< minimum_history` (e.g., 49/50 bars) → hard reject
+- `INVALID` — data failed validation / wrong spec version / `STALE`
+- `INCOMPATIBLE` — instrument/adapter cannot provide field (e.g., `order_book on Deriv has_depth=false`)
+- `WARMUP_INCOMPLETE` — `200 ≤ n < 250` for `EMA200 warmup 50` (see 8b.5)
+
+**Resolver output per `as_of T`:**
+```python
+DependencyReport(
+    as_of=T,
+    requirements=[donchian_50, atr_14],
+    inputs={candles_4H: AVAILABLE (50/50), reference_snapshot: AVAILABLE (REF-...)},
+    derived={donchian_50: GENERATABLE, atr_14: GENERATABLE},
+    strategy: ELIGIBLE  # only if all INSUFFICIENT==0 AND no MISSING/INVALID
+    # else INELIGIBLE with reason: "REQUIRED 50 AVAILABLE 49 FAILED Donchian"
+)
+```
+
+**M3 gates analytics: if `M3` minimum_history not met → `INVALID` → not passed to `M4`. `M4` gates signal: if `DependencyReport != ELIGIBLE` → no Signal, no TradePlan, audit reason.**
+
+### 6a.6 Six Layers of Truth & Event-Driven Monitoring [NEW v1.5]
+
+```
+MARKET DATA (M2 global) → PIT DATASET (as_of T, availability_time ≤ T) → ANALYTICS/FEATURES (M3 pure)
+        ↓
+STRATEGY STATE (M4 eligibility) → DECISION/SIGNAL (M4 Signal → M4.5 TradePlan) → EXECUTION (M6 Order/Fill)
+        ↘ cross-cutting: LINEAGE (correlation_id + reference_snapshot_id + dataset_version + analytics_version)
+                        VERSIONING (effective-dated config preserves history)
+                        TIMESTAMPS (event/availability/processing separated)
+                        VALIDATION (tiered as above)
+                        REPRODUCIBILITY (same as_of T + same versions → same Decision Record)
+                        AUDIT TRAIL (immutable Decision Record per signal)
+```
+
+**Event-driven:** Do not blind-poll. **On `new completed bar` event** (`M2.4` emits `BarClosed(instrument, timeframe, interval_end)`), `M3.1` resolves `as_of interval_end` → computes analytics → emits `AnalyticsReady` → `M4.4` checks eligibility → if `ELIGIBLE` emits `Signal` → `TradePlan` → `Risk`. No artificial timer needed.
+
+**How it connects:** `M2` → `M6a Resolver/PIT` → `M3` → `M4` → `M5` (validates `TradePlan` expiry/SL/TP/RR/quality/spread) → `M6` → `M7` (writes immutable `Decision Record`). `M8` replays via same `M6a + PIT` to prove no leak.
+
+---
 
 ## 7. Reference Data Service — `backend/services/reference_data/` — The Knowledge Base — EXPANDED (M2b Reference, v1.3 Institutional)
 
@@ -1634,10 +1809,10 @@ class CapabilityStatus(str, Enum):
 **Does:** Given `symbol=EURUSD, timeframe=1m, user_id=42, broker=deriv`, it figures dependency graph `returns → momentum → RSI` and cache: `cache.get(user_42:deriv:EURUSD:1m:RSI_14) or compute`.
 **Pseudocode:**
 ```python
-async def get_features(symbol, timeframe, user_id, broker):  # async: Redis + Lake I/O, pure compute sync, cache per-tenant, well-commented WHY cache key includes user_id+broker
-    key = f"{user_id}:{broker}:{symbol}:{timeframe}"
+async def get_features(symbol, timeframe, broker):  # async: Redis + PIT I/O, pure compute sync, cache per provider+instrument (NO user_id — candles are global)
+    key = f"{broker}:{symbol}:{timeframe}:RSI_14"
     if key in redis: return redis.get(key)  # <1ms
-    candles = lake.get(symbol, broker, user_id, timeframe)  # from M2.8
+    candles = pit.get_market_state(instrument=symbol, broker=broker, as_of=T)  # Temporal Resolver - availability_time <= T (NO lake.get, NO user_id)
     params = profiles.get(symbol)  # forex → {rsi_period:14, vol_window:20}
     features = {}
     features["returns"] = returns.compute(candles)  # M3.2
@@ -1788,6 +1963,109 @@ M2 MarketData → M3.0 Capability (per-tenant gate, <1ms) → M3.0 Capability (s
 - [ ] Phase 1 cut: 5 features (returns, MA, RSI, vol, spread) vs full 17 — lock 5 as v0.3?
 - [ ] Should `portfolio/margin` compute stay in `M3` or move to `M5`? Keep compute vs decide split?
 - [ ] `M3.2` 17 files parallel — assign 3 devs × 5 each?
+---
+
+## 8b. Analytics & Strategy Data Validation — Preconditions Before Any Signal [NEW v1.5 — 15-Section Hardened]
+
+> **[NEW v1.5 — Hardened from your 15-section draft]** — Industrial standard, not retail `IF`. All `§` below map to enforceable checks via **manifests + PIT `availability_time <= T` + provenance + tiered statuses**. Money is involved — every `REJECT` must explain `REQUIRED X AVAILABLE Y FAILED <analytic>`.
+
+### 8b.1 Purpose
+
+Ensure every `TradePlan` is born from **sufficient, valid, PIT-eligible, compatible** market data. *Not a calculation of indicators* — a **gate** before calculation and before signal.
+
+### 8b.2 Analytics Validation (before calc) — Does M3 even have the right to compute?
+
+**Check via manifests + Temporal Resolver + PIT Service, not ad-hoc row count:**
+
+| Check | Manifest field | Resolver verifies | On FAIL |
+|-------|----------------|-------------------|---------|
+| **Minimum history** | `minimum_history: 200` (hard-coded v3) | `available_bars as_of T >= 200?` | `INSUFFICIENT — REQUIRED 200 AVAILABLE 143 FAILED EMA200` |
+| **Warmup** | `warmup: 50` (quality gate) | `available >= 200+50?` | `WARMUP_INCOMPLETE — 200/250 pristine (see 8b.5)` — M3 emits `GENERIC` with flag, M4 must not trade until `pristine` unless `allow_warmup=false` |
+| **Timeframe** | `timeframe: 4H` + `bar_completion: completed` | `latest_completed_bar(4H, as_of T)` exists and `as_of - interval_end <= freshness_limit` | `STALE` or `INCOMPLETE` |
+| **Instrument/adapter compatibility** | `fields: [bid_levels]` + `M2b has_depth` | `M3.0 CapabilityRegistry.get(broker).has_depth == true?` | `INCOMPATIBLE — has_depth:false on Deriv` |
+| **Availability** | `availability_lag` | PIT `availability_time <= T` for every candle in window | `UNAVAILABLE — future candle not yet knowable` |
+| **Result correctness** | `AnalyticsResult` contract | `is_finite, not NaN, within sane bounds` | `INVALID` |
+
+**M3 responsibility:** `M3.0 → M3.1` checks `minimum_history`/`capability` **before** calling `M3.2 compute` — if `INSUFFICIENT` → do not compute, return `AnalyticsResult(status=INSUFFICIENT)` with reason. Never fabricate.
+
+### 8b.3 Strategy Validation (before Signal/TradePlan)
+
+**M4 must validate both levels — analytic sufficiency AND strategy-specific thresholds — before emitting:**
+
+1. **Dependency declaration (manifest, declarative — not code):**
+   ```yaml
+   requires_analytics: [ema_fast_20, ema_slow_50, rsi_14, adx_14]
+   requires_data_quality: VALID
+   requires_instrument_scope: [FX.EURUSD]
+   requires_timeframe: 1H
+   ```
+
+2. **Dependency check at `as_of T` (via `Dependency Resolver`):**
+   - Every `requires_analytics` resolves to `AVAILABLE` or `GENERATABLE` with `availability_time <= T`
+   - `DependencyReport.strategy == ELIGIBLE` else `INELIGIBLE`
+
+3. **Strategy-specific precondition checkpoint:**
+   - `IF EMA(fast) crosses EMA(slow) AND ADX > threshold AND volume > min` — each feature must be `VALID`/`pristine` at T, not `WARMUP_INCOMPLETE` unless explicitly allowed.
+
+### 8b.4 No Silent Assumptions — Two Concrete Rules
+
+- **If calendar says market was closed during window (M2b `is_open effective_at`) but candles exist → `SUSPECT`, not `pristine` — strategy `INELIGIBLE`.**
+- **If spec changed at `effective_at` inside window (e.g., `tick_size` changed) → Resolver fetches spec version per candle timestamp, not `current`. If versions diverge → `INVALID` unless strategy manifest says `allow_spec Change=false`.**
+
+### 8b.5 Validation Statuses — Single Vocabulary (fail-closed)
+
+| Status | Meaning | Who emits | Next action |
+|--------|---------|-----------|-------------|
+| `VALID` | Meets all gates `as_of T` | M3/M4 resolver | TradePlan may proceed |
+| `INVALID` | Bad value / failed post-calc check | M3 post-calc | Do not pass to M4 |
+| `INCOMPLETE` | Forming bar not yet closed | Temporal resolver | Wait for `BarClosed` event |
+| `INSUFFICIENT` | `available < minimum_history` hard gate | Resolver | `M4 INELIGIBLE` — no Signal |
+| `STALE` | `as_of - interval_end > freshness_limit` | Resolver | `INELIGIBLE` |
+| `INCOMPATIBLE` | Adapter cannot provide field | `M3.0 Capability` | `DISABLED` family (Tier 3) |
+| `UNAVAILABLE` | PIT `availability_time > T` or gap `MISSING` | PIT service | `INELIGIBLE` |
+| `REJECTED` | Explicit drop with reason & counts | M3/M4 | Audit `REQUIRED X AVAILABLE Y FAILED Z` |
+| `ELIGIBLE` / `INELIGIBLE` / `SUSPENDED` | Strategy-level aggregate | `M4` | `ELIGIBLE → Signal`, else no trade |
+| `WARMUP_INCOMPLETE` | `minimum_history <= n < minimum+warmup` — e.g., `EMA200: 200/250` | Resolver | `GENERATABLE` but M4 must decide: `pristine_only` configs reject, `allow_warmup` emits `GENERIC` with flag |
+
+**Critical nuance — 200 sufficient vs 250 pristine (institutional correctness):**
+- `EMA(200)` `minimum_history: 200` is **hard gate**: `<200 → INSUFFICIENT`, cannot compute.
+- `warmup: 50` is **quality gate**: `200-249 → GENERATABLE WARMUP_INCOMPLETE` — value mathematically computable but not stable (seeded from limited history) → emit `WARNING` provenance, backtests before `250` marked `warmup` not `pristine`.
+- **`≥250 → pristine` — institutional clean.** Strategy configs choose `require_pristine: true` (real money) or `false` (research).
+
+### 8b.6 Rejection Explainability & Provenance Requirement
+
+Every `REJECT`/`INELIGIBLE` must carry **machine-auditable reason**:
+
+```json
+{
+  "as_of": "2026-09-24T12:00:00Z",
+  "strategy": "donchian_breakout@7.0",
+  "instrument": "CRYPTO.BTCUSDT",
+  "timeframe": "4H",
+  "status": "INELIGIBLE",
+  "reason": "INSUFFICIENT",
+  "required": 50,
+  "available": 49,
+  "failed_analytics": ["donchian_50"],
+  "reference_snapshot_id": "REF-2026-09-24-001",
+  "dataset_version": "ds- deriv-btc-4h-2026-09-24",
+  "analytics_versions": {"donchian_50": "3.0"},
+  "window": ["2026-09-15T12:00:00Z", "2026-09-24T12:00:00Z"],
+  "provenance": {"correlation_id": "..."}
+}
+```
+
+**Provenance immutability:** `Decision Record` stored in `ledger/decision_records` (`private/broker/user_id/date/decision.parquet`) — never mutate. `M8` replay must reproduce same status with same `as_of T` and same versions.
+
+### 8b.7 Separation of Responsibilities
+
+| Owner | Owns | Never owns |
+|-------|------|------------|
+| `M3 Analytics` | Check `minimum_history`/`capability`/`result VALID` before/after compute; stamp `AnalyticsResult(status, provenance)` | Strategy threshold |
+| `M4 Strategy` | Declare `requires_analytics`, check `DependencyReport.ELIGIBLE`, monitor checkpoint, decide `ELIGIBLE → Signal → TradePlan` | Computing EMA |
+| `M5 Risk` | Re-validate `TradePlan.valid_until/SL/TP/RR/quality/spread/margin` before `RiskDecision` | Computing indicators |
+| `Shared Temporal Resolver + PIT Service` | Resolve `which window as_of T`, fetch PIT-eligible data, build `DependencyReport` | Trading decision |
+
 ---
 
 ## 9. Strategy + Signal — `backend/engines/alpha/` — The Alpha Factory — EXPANDED (M4 Alpha, v1.3 — BEST APPROACH M4.5 Trade Plan, 5 sub-modules + Institutional)
@@ -2041,7 +2319,8 @@ M3 AnalyticsResult + M2 MarketData → M4.1 Registry → M4.2 Families → Signa
 
 > **No strategy guarantees 99.8% wins.** Win% without `expectancy = win%*avg_win - loss%*avg_loss` is harmful. Our law: target `expectancy>0 after fees, max_drawdown < X, Sharpe > Y, automation 99.8% uptime`. Tier 1 below are price-only `FULLY_SUPPORTED` with Deriv ticks.
 
-**Tier 1 — Build FIRST (price-only, backtestable on M8 tick_replay, 8 families):**
+**Tier 1 — Build FIRST (price-only, backtestable on M8 tick_replay, 8 families) — [NEW v1.5 analytical requirements]:**
+> Each family now has **frozen `requires` manifest** per `Strategy Library + Analytical Requirements v1.5` (see `System_Development_Manual/docs_strategy_library_with_analytics_v1.5.md` + `modules/04_M4_Alpha.md` Annex). E.g., `Donchian Breakout 4H` → `donchian_50 (High/Low 50×4H) + atr_14 + adx_14` → `Temporal Resolver` → `PIT Data Service as_of T` → `DependencyReport ELIGIBLE` before `Signal`. `M3.0` gates `INCOMPATIBLE` (has_depth false → UNAVAILABLE).
 | Family | Uses | Note |
 |--------|------|------|
 | `trend_following` (EMA cross) | `ema_fast/slow, adx, choppiness` | HH/HL structure SL via M4.5 |
@@ -2643,11 +2922,13 @@ pytest modules/trust --internal=PortfolioState --external=BrokerSnapshot --mock-
 ### 3. M8.1 — BACKTESTING — History, No Leakage
 
 ### `backtesting/data/{data_engine, tick_replay, order_book_replay, data_suitability}`
-**Does:** `data_engine` loads `data/lake/brokers/deriv/user_id=42/date=.../EURUSD.parquet` *time-ordered*; `tick_replay` emits ticks with realistic `exchange_timestamp`; `data_suitability` blocks `gapped` unless overridden.
+**Does:** `data_engine` loads `data/lake/market-data/provider=deriv/instrument=FX.EURUSD/date=.../*.parquet` *time-ordered* (GLOBAL market data — **no `user_id=` in the path**); `tick_replay` emits ticks with realistic `exchange_timestamp`; `data_suitability` blocks `gapped` unless overridden.
 **Pseudocode:**
 ```python
-def replay(broker, user_id, symbol, start, end):
-    parquets = lake.list(broker=broker, user_id=user_id, symbol=symbol, start=start, end=end)  # per-tenant
+def replay(provider, instrument, start, end, as_of=None):
+    # PIT: window resolved by Temporal Resolver; availability_time <= as_of (no look-ahead)
+    window = temporal_resolver.resolve(f"{instrument}:{start}:{end}", as_of=as_of)
+    parquets = pit.get_market_state(instrument=instrument, broker=provider, as_of=window.end)  # GLOBAL, no user_id
     for tick in sorted(parquets, key=lambda t: t.timestamp):
         if data_suitability.ok(tick): yield tick  # else skip gapped
 ```
@@ -3018,6 +3299,12 @@ backend/services/
 | **Object Storage + Parquet** | Large history — raw provider ticks (immutable), research datasets, archives | `market-data/provider=deriv/instrument=FX.EURUSD/date=2026-09-22/data_type=ticks/ticks.parquet` |
 | **ClickHouse (optional later)** | Only if you query *billions* of ticks and TimescaleDB gets slow — `5 years EURUSD tick stats` — not needed Day 1 | Add later without rewriting strategies |
 | **OpenSearch (optional)** | Logs, search `signal_id, trade_plan_id` | For debugging, not trading |
+
+**Retention minimalism — do not store every intermediate forever [NEW v1.5 — your “shouldn't keep unnecessary data”]:**
+- **Keep immutably:** `RAW ticks as received` (COLD 7y) + `canonical candles 1m→24h` (WARM 90d → COLD, with `reference_snapshot_id` + `quality`) + `Decision Record` (immutable `as_of T` lineage `correlation_id + dataset_version + analytics_version + strategy_version + config_version`) — enough to **recompute** any analytic/feature on demand deterministically.
+- **Do NOT store every intermediate per-minute per-user:** `feature_cache` is Redis ephemeral (`60s`, `user_id+broker:symbol:timeframe`), `AnalyticsResult` recomputed via `PIT Data Service + M3.2 pure` when needed — not persisted per tick forever. `M8` replay recomputes from `MarketData` + `reference_snapshot_id`.
+- **Policy in `config/storage.yaml`:** `warm_days: 90`, `cold_raw_years: 7`, `recompute: deterministic` — researcher queries `get_candles(...)` without knowing box.
+- **Why:** Terabytes of `RSI` rows waste cost and drift from truth; lineage pointers + canonical candles guarantee reproducibility at lower cost.
 
 **Simple rule:** Analytics/Strategy never does `open parquet file`. It does `repository.get_candles(...)` — storage layer decides which box.
 
@@ -3436,12 +3723,13 @@ API           (may call engines via contracts, never implement logic)
 COMMAND       (may call services + engine read methods via contracts)
 ```
 
-**Forbidden Imports (CI will fail via `import-linter`):**
+**Forbidden Imports (CI will fail via `import-linter` + `check_pit_guard.py`):**
 ```
 ❌ execution  -> strategy, analytics, signal (execution never looks back)
 ❌ risk       -> strategy implementation (risk sees Signal contract, not strategy code)
 ❌ analytics  -> broker_adapters
 ❌ strategy   -> broker APIs (deriv client, mt5 client)
+❌ strategy/alpha -> lake/storage direct (PIT bypass — must go via Temporal Resolver → PIT Data Service as_of T) [NEW v1.5 §6a]
 ❌ intelligence -> order, execution (AI trading)
 ❌ frontend   -> database, engines
 ❌ order      -> execution/broker_adapters
@@ -3703,7 +3991,7 @@ For `engines/<engine>/`:
   - [ ] `testing_suite/contract_tests/engine_contracts/` contract test if it owns a contract
   - [ ] `testing_suite/failure_tests/` scenario for its critical failure
   - [ ] `testing_suite/integration_tests/` if it spans engines
-- [ ] **Docs:** `backend/docs/engines/<engine>/README.md` with Purpose/Inputs/Outputs/Dependencies/Contracts/Config/Failure Modes/Tests/Extension Points
+- [ ] **Docs:** Every `modules/<name>/README.md` must exist and have 9 required headings (Purpose/Inputs/Outputs/Contracts/Failure Modes/Config/Tests/Extension Points/Dependencies).
 - [ ] **Audit:** Every state change writes to `trade_audit` with `correlation_id`
 - [ ] **No Leaks:** No broker-specific code outside `broker_feeds/` or `broker_adapters/` — proven by grep + `import-linter`
 
@@ -3780,7 +4068,7 @@ Detailed runbooks live in `backend/monitoring/runbooks/*.md`. Summary behavior:
 
 ---
 
-## 43. Top 10 Pitfalls to Avoid (Learned from Amateur Review)
+## 43. Top 12 Pitfalls to Avoid (Learned from Amateur Review)
 
 1. **Don’t put margin calc in Order.** It’s in `risk/pre_trade/margin_check.py`. Order just builds.
 2. **Don’t hard-code `frxEURUSD` or `frxXAUUSD`.** Use `symbol_mapping` → canonical.
@@ -3792,6 +4080,8 @@ Detailed runbooks live in `backend/monitoring/runbooks/*.md`. Summary behavior:
 8. **Don’t let AI call execution.** Guard is in code, not just docs.
 9. **Don’t skip `data_quality` filtering.** Gapped data → wrong RSI → wrong Signal → bad Order.
 10. **Don’t add engine-to-engine imports.** Import contracts, not engines.
+11. **Don’t hard-code `take last 50 rows` in strategy.** Use `Temporal Resolver` — `period 50` is hard-coded in manifest vX, `which 50 bars as_of T` is resolved dynamically via `availability_time <= T`.
+12. **Don’t persist every RSI tick forever.** Keep `RAW+canonical candle+Decision Record+lineage IDs` — recompute analytics deterministically (`PIT Data Service`); cache is ephemeral.
 
 ---
 
@@ -3878,15 +4168,17 @@ This bible is **1.0**. Changes follow semver:
 
 ## 45. The Final Rule — The Bible Is Enforceable
 
-This document is not aspirational. It is **CI-enforceable**:
+This document is not aspirational. It is **CI-enforceable** [NEW v1.5 — two extra checks]:
 
-1. **Structure:** `scripts/check_structure.py` verifies folder tree matches Section 3.
-2. **Imports:** `import-linter` verifies Section 33 dependency rules.
-3. **Contracts:** `contract_tests` verify Section 5 immutability.
+1. **Structure:** `scripts/check_structure.py` verifies folder tree matches Section 3 — no `assets/synthetic.yaml` or `INDEX.*` allowed (fail if found).
+2. **Imports:** `import-linter` verifies Section 33 dependency rules + `M2b never imports M2` + `M4 never does lake.list without Temporal Resolver`.
+3. **Contracts:** `contract_tests` verify Section 5 immutability + `TradePlan`/`MarketData.reference_snapshot_id` snapshot.
 4. **Coverage:** `pytest --cov` verifies Section 30 thresholds.
-5. **Docs:** Every `engines/<engine>/README.md` must exist and have 9 required headings.
+5. **Docs:** Every `modules/<name>/README.md` must exist and have 9 required headings.
+6. **Build Status truth [NEW v1.5]:** CI fails if `BUILD_STATUS.md` `Current Gate` absent or `complete` claimed without `BUILD_STATUS` row — manual never wins over status.
+7. **Naming & retention [NEW v1.5]:** `scripts/check_naming.py` verifies `mX.Y_<short>.spec.md / test_mX.Y_spec.py / verify_m2.*.py`; `scripts/check_retention.py` verifies no `AnalyticsResult` parquet written per-tick to cold (lineage only). — **wired + LGTM A28 2026-09-24** under `financial_analyst_app/scripts/` (+ `check_pit_guard.py`, `check_build_order.py`); self-tests `tests/ci/` (31).
 
-If any of the 5 fails, merge is blocked.
+If any check fails, merge is blocked.
 
 ---
 
@@ -3981,6 +4273,23 @@ Each `modules/<name>/` has its own: `README.md`, `contracts` (re-exports), `src/
 - **18) Lake contradiction resolved:** Market-data Lake is **global shared** `market-data/provider=deriv/instrument=FX.EURUSD/...` (no user_id, saves terabytes); private per-tenant remains `private/broker=deriv/user_id=42/{signals,trade_plans,orders,ledger}` (`WHERE user_id+broker_id`). Early draft `brokers/deriv/user_id=42/symbol=EURUSD` for market-data removed.
 - **Contracts updated:** `MarketData` now `instrument_id + reference_snapshot_id + source_sequence + source_event_id` (all optional with defaults for backward compat), `watermark` re-documented as processing seq. Future `AnalyticsResult`/`TradePlan` will propagate `reference_snapshot_id`.
 - **Master patched:** `§6` and `§7` inner bodies repacked from `modules/02*.md v1.4`, master length 3590 → 3959 lines, verified markers `v1.4 CORRECTED`, `reference_snapshot_id`, `canonical_instrument_id`.
+
+## Changelog — v1.4 → v1.5 (2026-09-24) — POINT-IN-TIME + VALIDATION + RETENTION + BUILD-STATUS POINTER [MONEY-GRADE HARDCENING]
+
+- **§0a Current Build Status pointer [NEW — Inventory #1]:** Added `§0a` that points to `BUILD_STATUS.md` as single truth — manual no longer claims `DONE`, it points. Gate `G0 entry 2026-09-22`, last `386/386` snapshot listed. Where manual vs status diverge, status wins (`AGENTS §6`).
+- **M1.3 Account Mode 2-Gate [NEW — Inventory #5]:** Replaced stale `mode: demo|live` with frozen `MODE (demo|live, live.enabled arm) + AUTO (OFF|ON)` 2-gate (`docs/specs/m1.3_account_mode_two_gate.spec.md` `30 tests`, `A13-A15 LGTM`). Truth table + `409 live_not_armed` + `viewer 403` documented in `§5 M1.3` and `§22 M10`. Manual previously allowed 1-gate — now blocked.
+- **M1.3 feature_flags SIGHUP hot-reload [Inventory #3]:** Corrected pseudocode to `signal.SIGHUP → reload_flags() + lifecycle.propagate` (file-watcher fallback) — kill switch without redeploy.
+- **§6a Temporal & Point-in-Time Market State [NEW — Canonical §§1-115 + 6-layer truth]:** Injected `Point-in-Time Validated Versioned Configurable Market State` law: `EMA200 = last 200 completed bars as_of T`, `availability_time <= T`, `Temporal Requirement Resolver` (central, pure, `which window as_of T`), `PIT Data Service` (`WHERE availability_time <= T`), `Dependency Graph` `AVAILABLE/GENERATABLE/MISSING/INSUFFICIENT/INVALID/INCOMPATIBLE/WARMUP_INCOMPLETE`, `6-layer truth MARKET→PIT→ANALYTICS→STRATEGY→DECISION→EXECUTION` + lineage `correlation_id+reference_snapshot_id+versions`. `Requirements hard-coded in versioned manifests (static), required data never hard-coded (dynamic)` — the core anti-pattern fix. **§6a.2b:** `4H` is strategy-config not code; `SMA` timeframe-dependent; ban `candles[-50:]`.
+- **§8b Analytics & Strategy Data Validation [NEW — your 15-section hardened]:** Promoted `Analytics and Strategy Data Validation Requirements` draft to enforceable `§8b` with `minimum_history hard gate (200)` vs `warmup quality gate (250 pristine)` nuance, `INCOMPATIBLE/UNAVAILABLE/REJECTED` vocabulary, `REQUIRED 50 AVAILABLE 49 FAILED Donchian` explainability, and `Separation of Responsibilities` `M3 checks before calc → M4 checks before Signal → M5 re-validates TradePlan`.
+- **Strategy Library analytical requirements [NEW — compiled library ~45 strategies]:** Every strategy now lists `Requires Analytics + Required Data + Timeframe + Minimum history as_of T + Capability (FULLY_SUPPORTED/PROXY_LIMITED/UNAVAILABLE)` — maps to `M4.2` manifests. Tier 3 `funding/on-chain/sentiment/order-book depth` stay `UNAVAILABLE` on Deriv via `M3.0` until adapter exists — no silent failure.
+- **Asset scope lock [Inventory #7]:** Re-asserted `forex|crypto|commodity only` (`AssetClass 2.0.0`) — removed any lingering `synthetic/index/equity` (`synthetic.yaml`, `R_75`, `Volatility 75`) in `§1`, `§3 tree`, `§29 config`.
+- **Data Retention minimalism [NEW — your “shouldn't keep unnecessary data”]:** `§24 + §31 + §45` now say `keep RAW+canonical candle+Decision Record+lineage IDs immutably (HOT→WARM 90d→COLD 7y), recompute analytics deterministically via PIT+M3.2` — do not store every `RSI` tick forever. `AnalyticsResult` cached `60s` Redis ephemeral, not cold-parquet per tick.
+- **M2 watermark ownership freeze [Inventory #4 — Status Discrepancy]:** Re-asserted `M2.2 WatermarkRegistry.next() sole allocator; M2.7 observes/backfills only` — bible previously said `M2.7 owns watermark`; now frozen `§6 M2` table corrected.
+- **M2.5 deferred + M10 repo-root frontend [Inventory #8, #6]:** `M2.5 Order Book has_depth:false` marked deferred; `M10 Experience` `frontend/ at repo root` (not `financial_analyst_app/frontend`) + `REV2.3 FROZEN` noted.
+- **§45 enforceable + pitfalls [NEW]:** Added CI `check_naming.py` (`mX.Y_<short>.spec.md` law) + `check_retention.py` (no per-tick analytic cold write) + `manual never wins over BUILD_STATUS` gate; pitfalls `+2` (no hard-coded window, no perpetual intermediate).
+- **Bump:** `minor` — design for NOT DONE `M3/M4` only; no behavior change to frozen `M1/M2/M2.8` (`386/386`).
+
+**End of Bible — v1.5 POINT-IN-TIME + VALIDATION — 2026-09-24 — LOCKED (12-MODULE + 57 phases + PIT/Temporal/Dependency law + 15-section validation + retention minimalism + 45-strategy analytical requirements + 386/386 pointer)**
 
 **End of Bible — v1.4 CORRECTED — 2026-09-22 — LOCKED (12-MODULE incl. M2b + 57 SUB-MODULES + 18-point M2/M2b audit + reference_snapshot_id)**
 

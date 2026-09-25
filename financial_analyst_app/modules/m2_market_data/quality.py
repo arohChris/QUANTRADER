@@ -3,7 +3,7 @@ M2.6 — quality — exactly-once dedup + quality classifier (pure, no watermark
 WHY: M2.1 frame-dedups; M2.3 bounces hard quality; this is the second line on
 canonical MarketData (P12): identity first (`source_event_id + instrument_id`,
 else fingerprint), then fail-safe DataQuality (never clear gapped, never promote
-suspect). Never allocates watermark — M2.7 owns gaps.
+suspect). Never allocates watermark — M2.2 WatermarkRegistry owns allocation; M2.7 observes gaps only (FROZEN).
 
 Spec: docs/specs/m2.6_data_quality.spec.md (LGTM + 4 minors 2026-09-23).
 Consumes: shared.contracts.{market_data,drop} only — no clock/M2b/registry.

@@ -3,7 +3,7 @@
 
 **Module Type:** Stateful (runs/reports) — 4 modes, one team owns validation.
 **Owns State:** `backtest_runs`, `simulation_reports`, `paper_state` (fake positions per tenant), `canary_state` per `user_id+broker_id`
-**Input:** Historical `MarketData` (Lake per broker per tenant) OR live `MarketData` (paper, per-tenant) + `M3-M6` code as *libraries* (not running services)
+**Input:** Historical `MarketData` (GLOBAL PIT Lake per `provider+instrument`, read `as_of T` — no `user_id`, AGENTS §4.3) OR live `MarketData` (paper, global ticks fanned out) + `M3-M6` code as *libraries* (not running services)
 **Output:** `ValidationReport(Sharpe, maxDD, leakage pass/fail)` → promotion `shadow→canary→prod` per tenant
 
 > **Expanded for M8** — each file simple + pseudocode + connection. This patches into master §17-§20.
@@ -29,11 +29,13 @@
 ## 3. M8.1 — BACKTESTING — History, No Leakage
 
 ### `backtesting/data/{data_engine, tick_replay, order_book_replay, data_suitability}`
-**Does:** `data_engine` loads `data/lake/brokers/deriv/user_id=42/date=.../EURUSD.parquet` *time-ordered*; `tick_replay` emits ticks with realistic `exchange_timestamp`; `data_suitability` blocks `gapped` unless overridden.
+**Does:** `data_engine` loads `data/lake/market-data/provider=deriv/instrument=FX.EURUSD/date=.../*.parquet` *time-ordered* (GLOBAL market data — **no `user_id=` in the path**); `tick_replay` emits ticks with realistic `exchange_timestamp`; `data_suitability` blocks `gapped` unless overridden.
 **Pseudocode:**
 ```python
-def replay(broker, user_id, symbol, start, end):
-    parquets = lake.list(broker=broker, user_id=user_id, symbol=symbol, start=start, end=end)  # per-tenant
+def replay(provider, instrument, start, end, as_of=None):
+    # PIT: window resolved by Temporal Resolver; availability_time <= as_of (no look-ahead)
+    window = temporal_resolver.resolve(f"{instrument}:{start}:{end}", as_of=as_of)
+    parquets = pit.get_market_state(instrument=instrument, broker=provider, as_of=window.end)  # GLOBAL, no user_id
     for tick in sorted(parquets, key=lambda t: t.timestamp):
         if data_suitability.ok(tick): yield tick  # else skip gapped
 ```
@@ -65,7 +67,7 @@ def leakage_detector(strategy_code):
 
 **How Backtest Reuses Live Code (critical):**
 ```
-Lake (per-tenant) → M8 tick_replay → M3 Analytics (real code) → M4 Alpha (real code) → M5 Risk (real code) → M6 Order (real code) → M8 virtual_broker (instead of real M6 broker_adapters) → M5 Portfolio (simulated) → M7 Ledger (simulated) → Report
+PIT Lake (GLOBAL `provider+instrument`, `as_of T`) → M8 tick_replay → M3 Analytics (real code) → M4 Alpha (real code) → M5 Risk (real code) → M6 Order (real code) → M8 virtual_broker (instead of real M6 broker_adapters) → M5 Portfolio (simulated) → M7 Ledger (simulated) → Report
 ```
 **No M6 real broker.** If backtest and paper diverge → `fill_model` bug, not strategy.
 
@@ -87,7 +89,7 @@ def spread_shock(backtest_run, factor=10):
 ## 5. M8.3 — PAPER TRADING — Live Data, Fake Venue (Per-Tenant)
 
 ### `paper_trading/{paper_broker, matching_engine, account_state, execution_simulator}`
-**Does:** Live `M2 ticks (per-tenant)` → same `M3-M6` real code → `paper_broker.matching_engine` (mid±spread, `latency_simulator 50ms`, `rejection_simulator` random) → `paper_state` (fake positions per `user_id+broker_id`). `reconciliation` for paper *should always match* (tests pipeline).
+**Does:** Live `M2 ticks` (GLOBAL fan-out, one platform WS per broker → all tenants of that broker) → same `M3-M6` real code → `paper_broker.matching_engine` (mid±spread, `latency_simulator 50ms`, `rejection_simulator` random) → `paper_state` (fake positions per `user_id+broker_id`). `reconciliation` for paper *should always match* (tests pipeline).
 **Pseudocode:**
 ```python
 # Same as live, only venue changes:

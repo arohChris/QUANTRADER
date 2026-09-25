@@ -27,8 +27,9 @@
 10. [9 — Templates (Copy-Paste)](#9-templates-copy-paste)
 11. [10 — Automatic Rejection — Anti-Patterns](#10-automatic-rejection--anti-patterns)
 12. [11 — How To Work As An AI Builder (Session Loop)](#11-how-to-work-as-an-ai-builder-session-loop)
-13. [Appendix A — Glossary](#appendix-a--glossary)
-14. [Appendix B — Where User Data Lives](#appendix-b--where-user-data-lives-tenant-scope)
+13. [12 — Critical Thinking Gate — THINK BEFORE YOU EDIT (blocking)](#12-critical-thinking-gate--think-before-you-edit-new-v15--blocking-law)
+14. [Appendix A — Glossary](#appendix-a--glossary)
+15. [Appendix B — Where User Data Lives](#appendix-b--where-user-data-lives-tenant-scope)
 
 ---
 
@@ -137,8 +138,8 @@ No gate begins until the prior gate's exit criteria are met **and recorded in th
 AI **must not proceed to Step 5** until this LGTM exists — even if tests already pass.
 
 #### Step 5 — Implementation (blocking)
-**Done when:** Code in `modules/<name>/` or `shared/` satisfies approved tests **and only those tests**:
-- Money → `Decimal`, fixed `ROUND_HALF_UP`, single `quantize` helper, no `float` in path
+**Done when:** Code in `modules/<name>/` or `shared/` satisfies approved tests **and only those tests**, and **§12 Critical Thinking Gate is all ✓ with evidence in the PR**:
+- Money path → `Decimal`, fixed `ROUND_HALF_UP`, single `quantize` helper, no `float` in money path; **all other math type-safe** (exact `Fraction` when rational precision needed — not Decimal-everywhere)
 - I/O → `async def` + `await` + `try/except` + retry with jitter + dead-letter, never blocking
 - Pure calc → `def` + frozen contract + `// WHY, not WHAT` comment
 - No reaching into another module's internals — only via frozen contract + event/bus
@@ -166,17 +167,20 @@ AI **must not proceed to Step 5** until this LGTM exists — even if tests alrea
 
 > **Verbatim — Original §3 expanded with institutional hedge-fund checklist — every bullet is a blocking check.**
 
-### 3.1 Money & Arithmetic
-- [ ] `Decimal`/fixed-point **only** for anything monetary (price, qty, balance, margin, PnL, fees, slippage). **No `float` in money path** — not even for intermediate calc. `Decimal` constructed from `str`, not `float`.
-- [ ] Single rounding rule defined once (`shared/core/money.py: ROUND_HALF_UP`, `quantize(Decimal("0.01"))` for quote ccy, `quantize(Decimal("0.00001"))` for price) and **applied identically everywhere** — never `round()` inline.
+### 3.1 Money, Arithmetic & Type-Safe Math
+- [ ] **Type-safe calculations are mandatory for ALL math** — pick the numeric type that prevents error for that domain; never silent mixing of `float`/`int`/`Decimal`/`Fraction` without explicit conversion. **Math is NOT forced to `Decimal` only** — when exact rational precision is required (ratios, hedge ratios, probability, lot fractions mid-calc), use `fractions.Fraction` (or equivalent exact type) rather than a lossy `float` or a forced `Decimal` that cannot represent the value cleanly. **Answer locked: no Decimal-everywhere.**
+- [ ] **Monetary settlement path uses `Decimal`/fixed-point** (price, qty, balance, margin, PnL, fees, slippage, ledger postings). **No `float` in money path** — not even intermediate. Construct `Decimal` from `str`, not `float`. Convert to `Decimal` only at money boundaries after exact calc if needed (`Fraction` → quantize → `Decimal` is allowed when type-safe).
+- [ ] Single rounding rule defined once (`shared/core/money.py: ROUND_HALF_UP`, `quantize(Decimal("0.01"))` for quote ccy, `quantize(Decimal("0.00001"))` for price) and **applied identically everywhere money settles** — never `round()` inline.
 - [ ] Sign convention defined **once** in contract docstring (`long qty >0, short qty <0, PnL >0 = profit`) and never inferred or flipped per module.
 - [ ] Currency/unit mismatches caught by explicit validation (`assert quote_ccy == base_ccy` else `CurrencyMismatchError`), never assumed from context. `spec.tick_size` effective-dated via M2b.
-- [ ] Golden tests: **2-3 hand-calc asserts with `Decimal("x.xx")` exact**, plus cross-check with second independent implementation for high-risk formulas (e.g., margin, lot conversion).
+- [ ] Golden tests: **2-3 hand-calc asserts with `Decimal("x.xx")` exact for money**, plus cross-check with second independent implementation for high-risk formulas (e.g., margin, lot conversion). Non-money exact tests may assert `Fraction` equality.
 - [ ] **Example hand-calc comment required:**
   ```python
   # Hand calc: 0.4 lots * 100k * (1.08430-1.08400) = 12.00 USD
   # Fees 0.6*2 =1.20, PnL net 10.80, rounded HALF_UP
   assert result.pnl_net == Decimal("10.80")
+  # Type-safe non-money: hedge ratio stays Fraction until money boundary
+  # assert Fraction(3, 4) * notional is exact; then quantize to Decimal at settle
   ```
 
 ### 3.2 Order Execution & Idempotency
@@ -463,7 +467,44 @@ AI **must refuse** (and cite this file) if asked to:
 4. **Follow §2 Steps 1→10 strictly serial** — do not open Step N+1 until Step N closes with human LGTM where required.
 5. **Never offer to build ahead** — if timer idle, ask "Spec for <next> is ready for your review?" not "Want me to build next 3?"
 6. **Before any git push:** run `pytest -q`, `lint-imports`, `gitleaks` locally; paste log in PR.
-7. **End-of-turn report uses §7 template** — not "done".
+7. **Before Step 5 Implementation:** pass **§12 Critical Thinking Gate** (all 7 boxes ✓, logged in PR) — any ✗ → do not start Step 5.
+8. **End-of-turn report uses §7 template** — not "done".
+
+---
+
+## 12. Critical Thinking Gate — THINK BEFORE YOU EDIT [NEW v1.5 — BLOCKING LAW]
+
+> No edit is started until this gate is passed and logged in the PR.
+> Money is involved — every addition must not conflict, not mess what's on ground, pass test first, keep business in line, and provably add value. If you cannot answer the 7 questions with evidence, you are not ready to edit.
+
+### The 7 Questions — Answer in PR Description BEFORE Any Code
+
+### Critical Thinking Gate — Pre-Edit Checklist (must be ✓ before Step 5 Implementation)
+
+- [ ] 1. CONFLICTS — Does this edit conflict with anything on ground?
+      Checked: BUILD_STATUS.md complete rows (M1/M2/M2.8 386/386 frozen), §6a PIT law, §8b validation, §33 dependencies, vault isolation, naming law.
+      Evidence: grep + import-linter preview + BUILD_STATUS diff = 0 — no drift. If YES → stop, propose Change/Why/Impact/Bump and get LGTM.
+
+- [ ] 2. GROUND TRUTH — Have I read BUILD_STATUS.md + the ONE module bible section for this slice?
+      Evidence: Current Gate: G0 + last complete + Known Bugs listed — not rebuilding frozen M1/M2.
+
+- [ ] 3. TEST FIRST — Are spec + tests written AGAINST the spec (not code) and LGTMed before code?
+      Evidence: docs/specs/mX.Y_*.spec.md + tests/test_mX.Y_spec.py (1 per edge + 1 adversarial + hand-calc Decimal) + pytest log + LGTM comment.
+
+- [ ] 4. BUSINESS ALIGNMENT — Is system business still in line after this edit?
+      Checked: tick→parquet <50ms, analytics <20ms, risk <10ms, order→ack <500ms; PIT availability_time ≤ T not bypassed; M3.0 still filters UNAVAILABLE; Risk fail-closed; Ledger append-only.
+      Evidence: scripts/check_pit_guard.py PASS + check_retention.py PASS + DependencyReport ELIGIBLE? still correct.
+
+- [ ] 5. VALUE — Does this addition seriously add value, not just code?
+      Measured: Removes X manual steps / Enables Y strategy / Prevents Z leak / Saves N TB via recompute — not "nice to have". If zero → refuse, it is bloat.
+
+- [ ] 6. REVERSIBILITY — Can this be reverted via config_versions rollback or one commit revert without corrupting MarketData lineage or reference_snapshot_id?
+      Evidence: No parquet rewrite, no DROP of lineage, additive minor bump only.
+
+- [ ] 7. SMALL SLICE — Is this ≤300 lines, one sub-module (P15 OR P22, not both), with correlation_id + WHY comments?
+      Evidence: git diff --stat + pytest --cov + grep shared/core "from modules" = 0.
+
+**Result:** If any box is ✗ → **DO NOT START Step 5.** Fix the box first.
 
 ---
 

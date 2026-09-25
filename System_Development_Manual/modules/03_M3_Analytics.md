@@ -1,9 +1,9 @@
 # M3 — ANALYTICS (Feature Computation) — EXPANDED DISCUSSION
-### Answers “What is mathematically happening?” — never decides to trade. Pure, vectorized, per-tenant inputs but shared code.
+### Answers “What is mathematically happening?” — never decides to trade. Pure, vectorized, GLOBAL market-data inputs, shared code (per-tenant only for `PortfolioState`).
 
 **Module Type:** Stateless pure-computation — deterministic, idempotent, cacheable. `compute(candles)→features` — same code serves Deriv and MT5 tenants.
-**Owns State:** `feature_cache` (Redis LRU, ephemeral per tenant `user_id+broker_id:symbol:timeframe` key) — no durable business state.
-**Input:** `MarketData` (per-tenant per-broker, quality-tagged) + `PortfolioState` (per-tenant, read-only)
+**Owns State:** `feature_cache` (Redis LRU, ephemeral per `provider:symbol:timeframe:indicator` key) — no durable business state.
+**Input:** `MarketData` (GLOBAL per `provider+instrument`, no `user_id` — AGENTS §4.3) + `PortfolioState` (per-tenant, read-only)
 **Output:** `AnalyticsResult(symbol, timeframe, features={rsi:68, vol:0.018}, regime)`.
 
 > **Expanded for M3** — each file simple + pseudocode + connection. This patches into master §8.
@@ -31,7 +31,7 @@
 
 ## 3. M3.0 — CAPABILITY REGISTRY — The Gatekeeper (BEST APPROACH — NOT a separate engine)
 
-> **Why M3.0, not `backend/engines/data_capability/`?** Research proposes cross-cutting service called by Data/Analytics/Strategy. That couples `M2 → capability → M3 → capability` and needs DB/RPC. Our best approach keeps it **pure lookup inside M3**, per-tenant, no DB, `<1ms`.
+> **Why M3.0, not `backend/engines/data_capability/`?** Research proposes cross-cutting service called by Data/Analytics/Strategy. That couples `M2 → capability → M3 → capability` and needs DB/RPC. Our best approach keeps it **pure lookup inside M3**, per-**broker** (optional tenant), no DB, `<1ms`.
 
 ### `capability/capability_registry.py` — The Single Source
 **Does:** `registry.get("order_book_imbalance", broker="deriv", user_id=42) → {status: UNAVAILABLE, reason: "needs bid_levels", required_data:[bid_levels, ask_qty], available_providers:[deriv]}`. Loaded once from `config/capabilities.yaml` (versioned).
@@ -53,7 +53,7 @@ class CapabilityRegistry:
       if not self.is_available(f, broker): return False, f"needs {f} UNAVAILABLE"
     return True, "eligible"
 ```
-**Connects:** `M3.1` checks `registry.is_available(feature)` before `get_features()`; `M4.1 lifecycle` on `registry.load()` disables families → `strategy_health=DISABLED` + UI explains why. **Per-tenant gate:** `WHERE broker_id=:bid` — Deriv user never sees book features.
+**Connects:** `M3.1` checks `registry.is_available(feature)` before `get_features()`; `M4.1 lifecycle` on `registry.load()` disables families → `strategy_health=DISABLED` + UI explains why. **Per-broker gate:** `broker="deriv"` in the YAML lookup (no `WHERE`, no DB) — Deriv tenants never see book features.
 
 ### `capability/capability_types.py`, `provider_capabilities.py`, `strategy_requirements.py`
 **Types:**
@@ -78,13 +78,13 @@ class CapabilityStatus(str, Enum):
 ## 4. M3.1 — FEATURE ENGINE & PROFILES — The Conductor
 
 ### `feature_engine.py`
-**Does:** Given `symbol=EURUSD, timeframe=1m, user_id=42, broker=deriv`, it figures dependency graph `returns → momentum → RSI` and cache: `cache.get(user_42:deriv:EURUSD:1m:RSI_14) or compute`.
+**Does:** Given `symbol=EURUSD, timeframe=1m, broker=deriv`, it figures dependency graph `returns → momentum → RSI` and cache: `cache.get(deriv:EURUSD:1m:RSI_14) or compute`. **Cache key has NO `user_id`** — candles are global, so the same features serve every tenant (AGENTS §4.3).
 **Pseudocode:**
 ```python
-async def get_features(symbol, timeframe, user_id, broker):  # async: Redis + Lake I/O, pure compute sync, cache per-tenant, well-commented WHY cache key includes user_id+broker
-    key = f"{user_id}:{broker}:{symbol}:{timeframe}"
+async def get_features(symbol, timeframe, broker):  # async: Redis + PIT I/O, pure compute sync, cache per provider+instrument
+    key = f"{broker}:{symbol}:{timeframe}:RSI_14"
     if key in redis: return redis.get(key)  # <1ms
-    candles = lake.get(symbol, broker, user_id, timeframe)  # from M2.8
+    candles = pit.get_market_state(instrument=symbol, broker=broker, as_of=T)  # Temporal Resolver — availability_time <= T (NO lake.get, NO user_id)
     params = profiles.get(symbol)  # forex → {rsi_period:14, vol_window:20}
     features = {}
     features["returns"] = returns.compute(candles)  # M3.2
@@ -205,10 +205,10 @@ def correlation(candles_a, candles_b, window=20):
 ## 10. How M3 Connects to Whole System
 
 ```
-M2 MarketData → M3.0 Capability (per-tenant gate, <1ms) → M3.0 Capability (sync check) → M3.1 FeatureEngine (cache) → M3.2-3.6 pure compute (shared code) → AnalyticsResult(features, regime, capability_status, warning) → M4.1 gates families (DISABLED if UNAVAILABLE) + M4 generates → M5 Risk (reads vol/spread + capability)
+M2 MarketData → M3.0 Capability (per-broker gate, <1ms) → M3.0 Capability (sync check) → M3.1 FeatureEngine (cache) → M3.2-3.6 pure compute (shared code) → AnalyticsResult(features, regime, capability_status, warning) → M4.1 gates families (DISABLED if UNAVAILABLE) + M4 generates → M5 Risk (reads vol/spread + capability)
 ```
 
-**High-speed:** `M3.2` vectorized `numpy`, `M3.1` `Redis` cache per `user_id:broker:symbol:timeframe`, p95 <20ms.
+**High-speed:** `M3.2` vectorized `numpy`, `M3.1` `Redis` cache per `broker:symbol:timeframe` (no `user_id` — global candles), p95 <20ms.
 
 
 
@@ -229,6 +229,10 @@ M2 MarketData → M3.0 Capability (per-tenant gate, <1ms) → M3.0 Capability (s
 | **P21** | M3.5 Portfolio (ro) ‖ M3.6 Macro | `portfolio/margin` compute ‖ `rates/event_registry` | `margin` compute vs decide split holds |
 
 **Parallel after M2 Lake + M1:** `M3.0` must be first (gates `M3.2-M3.4`); `M3.2` 17 files embarrassingly parallel after `M3.0`.
+
+## 10b. Data Validation — §8b Hardening [NEW v1.5]
+
+> **[NEW v1.5]** `M3` now validates `minimum_history` hard gate vs `warmup` quality gate before `M3.2 compute`. E.g., `EMA200: <200 INSUFFICIENT (no calc), 200-249 WARMUP_INCOMPLETE (GENERATABLE with flag), ≥250 pristine`. See `System_Development_Manual §8b` for full gate table + `REQUIRED/AVAILABLE` explainability + `PIT availability_time <= T`.
 
 ## 11. Open Questions for M3
 
