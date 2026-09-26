@@ -28,7 +28,7 @@
 ## Next code slice after infra (serial, §2 order)
 1. **M2b.2 slice:** spec `docs/specs/m2b.2_reference_snapshot.spec.md` — `reference.current_snapshot_id()` minting `REF-YYYY-MM-DD-NNN` from `config/reference/snapshot.yaml`; blocker: `modules/m2_market_data/normalize.py:96` calls it but `modules/reference/reference.py` lacks it (stubs only in `tests/m2_market_data/test_m2.2_spec.py:66` + `scripts/verify_m2.2_normalize.py:30`). Spec → tests → human LGTM → impl.
 2. **Live-capture slice:** spec+tests first, then `scripts/verify_m2.1_live_capture.py` — capture real `frxEURUSD` ticks from the **working endpoint** `wss://api.derivws.com/trading/v1/options/ws/public` (tokenless; legacy `wss://ws.derivws.com/websockets/v3` in `config/brokers/deriv.yaml` = dead, HTTP 520) → raw JSONL + canonical parquet via M2.2→M2.8 → read-back assert.
-3. **§5 proposal** for `deriv.yaml` `ws_url` fix — written, **wait for human sign-off** before touching FROZEN M2.1.
+3. **§5 proposal** for `deriv.yaml` `ws_url` fix — **SIGNED OFF + APPLIED 2026-09-25 (ACTION 41, human "alirght lgtm")**: ws_url → `wss://api.derivws.com/trading/v1/options/ws/public` (config-only; zero code readers; legacy `/websockets/v3` dead HTTP 520).
 
 ## Repo state at checkpoint
 - Branch `master`, no remote. **27 files staged** (S0, 2575+/134−, includes proposed commit msg `S0 truth reconciliation: bible PIT-ban fixes + pit-guard docs scan (tests-first) + CI guard slice`); human owns commits.

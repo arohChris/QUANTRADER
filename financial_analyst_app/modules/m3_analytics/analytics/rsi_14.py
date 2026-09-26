@@ -5,7 +5,8 @@ The FIRST indicator file: the formula lives HERE, never in the engine (M3.1
 docs/specs/m3.2_analytics.spec.md §rsi_14; pins: m3.1 §Research pins REV4 —
 Wilder seed = SMA of first `period` changes (bible pseudocode is Cutler-SMA,
 deviation D1/D4 resolved to Wilder); zero branches ARE the spec (no epsilon
-guards, deviation D2); flat 0/0 -> 100 is the PROJECT canonical rule, TradingView
+guards, deviation D2); flat 0/0 -> 50 (mathematically neutral, REV5/A48 2026-09-26,
+supersedes the prior flat->100 rule) is the PROJECT canonical rule, TradingView
 compatibility to be confirmed by golden test, never claimed as doc-verified.
 Isolation Law: compute(candles, params) only — no provider/clock/as_of/timeframe.
 """
@@ -58,9 +59,12 @@ def compute(candles: list[Candle], params: dict[str, float]) -> float:
     for i in range(period, len(changes)):
         avg_gain = (avg_gain * (period - 1) + gains[i]) / period
         avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-    # WHY branch order + no epsilon (REV4): flat RS = 0/0 is undefined, so the
-    # branch IS the specification — avg_loss==0 FIRST so flat -> 100; a 1e-17
-    # float remnant stays > 0 and is correctly NOT treated as zero.
+    # WHY branch order + no epsilon (REV5/A48): flat RS = 0/0 is undefined, so the
+    # branch IS the specification - BOTH zero checked FIRST -> neutral 50; gains-only
+    # -> 100; losses-only -> 0. A 1e-17 float remnant stays > 0 and is correctly
+    # NOT treated as zero (never an epsilon substitution).
+    if avg_gain == 0.0 and avg_loss == 0.0:
+        return 50.0
     if avg_loss == 0.0:
         return 100.0
     if avg_gain == 0.0:

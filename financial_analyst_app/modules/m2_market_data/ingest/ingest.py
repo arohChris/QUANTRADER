@@ -6,7 +6,7 @@ pip_size optional; no ask_size/bid_size). Every valid frame → one InternalTick
 every reject → typed Drop (dead-letter ready).
 
 Dedup (spec processing order): build source identity first —
-tick.id when present (primary); otherwise deterministic fingerprint over
+(tick.id, epoch) pair when tick.id present [REV2]; otherwise fingerprint over
 provider, symbol, epoch, quote, bid if present, ask if present, source_sequence
 if present (canonical serialization, never bare (symbol, epoch, seq) alone).
 Dedup runs BEFORE future-epoch / other business rules so reason is stable.
@@ -156,9 +156,17 @@ class TickIngestor:
         # WHY fingerprint includes provider: same symbol/epoch on Deriv vs MT5 are
         # different feeds — bare (symbol, epoch, seq) would false-positive.
         if source_event_id is not None:
-            if source_event_id in self._seen_source_event_ids:
-                return self._drop(DropReason.duplicate_tick, f"dup tick.id={source_event_id}")
-            self._seen_source_event_ids.add(source_event_id)
+            # WHY id@instant (REV2/A44): the live options endpoint reuses ONE
+            # tick.id for every price update — bare-id dedup dropped 49/50 real
+            # frames on 2026-09-25. Duplicate = same tick AT THE SAME TIME only;
+            # isoformat canonicalizes int-vs-str epoch for the same instant.
+            dedup_key = f"{source_event_id}@{ts.isoformat()}"
+            if dedup_key in self._seen_source_event_ids:
+                return self._drop(
+                    DropReason.duplicate_tick,
+                    f"dup tick.id={source_event_id} epoch={ts.isoformat()}",
+                )
+            self._seen_source_event_ids.add(dedup_key)
         else:
             fp = self._fingerprint(symbol, ts, quote, bid, ask, source_sequence)
             if fp in self._seen_fingerprints:

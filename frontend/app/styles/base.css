@@ -29,8 +29,6 @@ button:focus-visible {
 
 .brand span,
 .muted,
-.panel p,
-.state-row,
-.chart-footer {
+.panel p {
   color: var(--muted);
 }

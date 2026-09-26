@@ -16,6 +16,7 @@ dependencies = [
     "uvicorn>=0.27",  # serve app.main + frontend
     "pyarrow>=14",  # M2.8 parquet lake (spec Step 5)
     "redis>=5.0",  # M2.9 HOT cache — redis-py client for Valkey (driver locked by human 2026-09-25)
+    "asyncpg>=0.29",  # M2.10 WARM durable store — async postgres driver (tests inject fakes; only live verify needs it)
 ]
 
 [project.optional-dependencies]
@@ -39,6 +40,14 @@ addopts = "--import-mode=importlib"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+# WHY pin first-party explicitly: ruff's src detection classifies a package
+# only while it exists on disk — modules.m4_alpha is imported by its spec
+# tests BEFORE Step 5 creates it (AGENTS §2 test-first). Without this pin the
+# import block would silently re-sort the day the package appears, churning a
+# frozen test file mid-slice. Pin = same import order today and after Step 5.
+[tool.ruff.lint.isort]
+known-first-party = ["modules", "shared"]
 
 [tool.coverage.run]
 source = ["shared"]

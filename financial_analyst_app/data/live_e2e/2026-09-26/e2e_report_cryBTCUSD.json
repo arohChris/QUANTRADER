@@ -1,0 +1,31 @@
+{
+  "stages": {
+    "collect": 1.6999983927235007e-06,
+    "process": 0.11215690000244649,
+    "candles": 0.0,
+    "hot": 0.0,
+    "warm": 0.07321429999865359,
+    "readback": 0.0030767999996896833
+  },
+  "counts": {
+    "captured": 50,
+    "accepted": 50,
+    "dropped": 0,
+    "candles_flushed": 2,
+    "warm_inserted": 2
+  },
+  "checks": {
+    "hot_latest_ok": true,
+    "warm_readback_ok": true
+  },
+  "window": {
+    "start": "2026-09-26T01:05:00+00:00",
+    "end": "2026-09-26T01:06:00+00:00"
+  },
+  "instrument_id": "CRYPTO.BTCUSD",
+  "symbol": "BTCUSD",
+  "reference_snapshot_id": "REF-2026-09-25-001",
+  "drops": [],
+  "errors": [],
+  "violations": []
+}

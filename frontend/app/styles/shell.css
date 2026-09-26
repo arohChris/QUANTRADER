@@ -88,7 +88,7 @@
   color: var(--text);
   background: var(--surface-soft);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   letter-spacing: 0.04em;
 }
 
@@ -110,7 +110,7 @@
   color: var(--accent-cyan);
   background: var(--surface-soft);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   font-weight: 700;
 }
 
@@ -122,7 +122,7 @@
 
 .brand h1 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: var(--type-body);
   font-weight: 800;
   letter-spacing: 0.16em;
   line-height: 1.2;
@@ -140,24 +140,159 @@
   width: 100%;
 }
 
+/* Static rail: pinned under the header, viewport height, content clipped rather than
+   scrolled. Collapse shrinks it to a glyph rail; it is never removed from the DOM.
+   WHY a column flex: the Access control is pinned to the end of the rail with
+   `margin-top: auto`, so it stays at the bottom on a short window instead of drifting
+   down with the nav. */
 .sidebar {
+  position: sticky;
+  top: 4rem;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 15.5rem;
+  height: calc(100dvh - 4rem);
+  overflow: hidden;
   border-right: 1px solid var(--border);
   background: var(--surface-strong);
-  overflow: hidden;
-  animation: sidebar-in 160ms ease;
+  transition: flex-basis 160ms ease;
 }
 
-@keyframes sidebar-in {
-  from {
-    flex-basis: 0;
-    opacity: 0;
-  }
+/* Frozen spec:114 — collapsed is a glyph rail, and hover expands it. */
+.sidebar.is-collapsed {
+  flex-basis: 2.6rem;
+}
 
-  to {
-    flex-basis: 15.5rem;
-    opacity: 1;
-  }
+.sidebar.is-collapsed .primary-nav {
+  gap: 0.15rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.sidebar.is-collapsed .primary-nav a {
+  justify-content: center;
+  padding: 0.5rem 0.2rem;
+}
+
+.sidebar.is-collapsed .nav-label {
+  display: none;
+}
+
+/* Group headings collapse to nothing in the rail — a 4-character label in a 2.6rem
+   column is noise. The group name stays available to assistive technology, because the
+   heading element carries it in the markup rather than here. */
+.sidebar.is-collapsed .nav-group-label {
+  display: none;
+}
+
+.sidebar.is-collapsed .nav-group + .nav-group {
+  margin-top: 0.15rem;
+  padding-top: 0.15rem;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar.is-collapsed:hover {
+  flex-basis: 15.5rem;
+}
+
+.sidebar.is-collapsed:hover .primary-nav {
+  gap: 0.2rem;
+  padding: 0.75rem 0.6rem;
+}
+
+.sidebar.is-collapsed:hover .primary-nav a {
+  justify-content: flex-start;
+  padding: 0.55rem 0.7rem;
+}
+
+.sidebar.is-collapsed:hover .nav-label {
+  display: inline;
+}
+
+.sidebar.is-collapsed:hover .nav-group-label {
+  display: block;
+}
+
+.sidebar.is-collapsed:hover .nav-group + .nav-group {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+/* --- Grouped navigation -------------------------------------------------------
+   The nav config has always carried `group`; rendering it turns a 9-item list into
+   named sections, which is the single biggest readability win in the rail. */
+.primary-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.nav-group-label {
+  margin: 0 0 0.3rem;
+  padding: 0 0.7rem;
+  color: var(--dim);
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nav-group + .nav-group {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+/* --- Access, at the end of the rail --------------------------------------------
+   Display-only: a role switch for previewing surfaces. It is not authentication, and
+   the backend stays authoritative for authorisation.
+   No caption and no visible label — the select's value already states the role, and the
+   accessible name lives on the control itself. */
+.sidebar-access {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding: 0.7rem 0.6rem 0.8rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.sidebar-access select,
+.sidebar-access .theme-toggle {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  background: var(--panel);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--type-body-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sidebar-access .theme-toggle:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* In the rail the whole control is hidden and revealed on hover, exactly like the
+   labels — a select cannot usefully shrink to 2.6rem. */
+.sidebar.is-collapsed .sidebar-access {
+  visibility: hidden;
+  padding: 0;
+  border-top: 0;
+}
+
+.sidebar:hover .sidebar-access {
+  visibility: visible;
+  padding: 0.7rem 0.6rem 0.8rem;
+  border-top: 1px solid var(--border);
 }
 
 .sidebar-toggle,
@@ -199,7 +334,7 @@
   padding: 0.55rem 0.7rem;
   border-radius: 0.3rem;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: var(--type-body-sm);
   white-space: nowrap;
 }
 

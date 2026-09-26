@@ -1,6 +1,7 @@
 # M2.1 + M6.4 — Deriv broker
 name: deriv
-ws_url: wss://ws.derivws.com/websockets/v3
+# 5 change A41 2026-09-25 (human LGTM "alirght lgtm"): legacy /websockets/v3 dead (HTTP 520)
+ws_url: wss://api.derivws.com/trading/v1/options/ws/public
 rest_url: https://api.deriv.com
 # Platform public-feed app id (NOT a per-user vault token). Env DERIV_APP_ID overrides in deploy.
 app_id: "1089"

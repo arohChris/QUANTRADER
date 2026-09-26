@@ -63,11 +63,6 @@ export default function TradePane({
             <MarketToolbar market={market} {...controls} />
           </div>
           <ExperimentChart markets={markets} theme={theme} />
-          <div className="chart-footer">
-            <span>as_of: {market.asOf}</span>
-            <span>assets: {markets.length}</span>
-            <span>mode: {tradeMode}</span>
-          </div>
         </section>
         <section className="panel">
           <h2>Execution checklist</h2>

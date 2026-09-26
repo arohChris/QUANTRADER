@@ -1,9 +1,10 @@
 # USER_ACTIONS — WHAT YOU (HUMAN) MUST DO
 # ALL CAPS. UPDATED CONSTANTLY. READ THIS FIRST.
 
-## CURRENT STATUS (UPDATED 2026-09-25)
+## CURRENT STATUS (UPDATED 2026-09-26)
 # GATE: G0 ENTRY
-# M1 COMPLETE | M2b.1 COMPLETE | M2.1 COMPLETE | M2.6/2.7/2.8 COMPLETE
+# M1 COMPLETE | M2b.1 COMPLETE | M2.1 COMPLETE (+live capture, A47) | M2.6/2.7/2.8 COMPLETE
+# M2.9 HOT + M2.10 WARM COMPLETE (A47) | **M2.9-ext RING COMPLETE (A53 "lg" 2026-09-26)** | **M4.1 SPEC LGTM'd (A54 "lgtm") + STEP 3 TESTS WRITTEN (honest RED)** | NEXT: **ACTION 55 — LGTM ON M4.1 TESTS (Step 4)**
 # M1.3 2-GATE COMPLETE | Frontend design FROZEN A16F
 # ACTION 27 DONE — LGTM on M3.0 Capability spec (conditional: AGENTS.md critical)
 # ACTION 28 DONE — LGTM on CI guard scripts
@@ -87,6 +88,307 @@
 #   M3.2 P18 + M4.2 rows = `complete`. NEXT per queue: M4.1 Strategy Registry
 #   spec (P22) — its Step 2 must re-LGTM/freeze the M4.2 contract — then G0
 #   walk-forward (one strategy end-to-end).
+# ACTION 41 DONE — §5 ws_url SIGN-OFF + APPLIED (you, 2026-09-25) —
+#   human verbatim: "alirght lgtm" (in reply to: surface the §5 proposal for
+#   your sign-off). §5 change record (M2.1 frozen → human sign-off required):
+#   Change: config/brokers/deriv.yaml ws_url
+#     wss://ws.derivws.com/websockets/v3 (DEAD, HTTP 520) →
+#     wss://api.derivws.com/trading/v1/options/ws/public (working tokenless
+#     endpoint, recorded SESSION_STATE:30 from prior-session probing).
+#   Why: legacy endpoint serves 520 — blocks live capture + m2.11 live e2e.
+#   Impact: CONFIG ONLY — `grep *.py ws_url|ws.derivws|websockets/v3` = 0 code
+#     hits (connect_factory injected; all M2.1 tests use FakeWS + fixture URLs)
+#     ⇒ no frozen M2.1 Python touched; app_id 1089 unchanged.
+#   Bump: n/a (config value, not contract schema).
+#   Consumers notified: future live-capture wiring (`scripts/
+#     verify_m2.1_live_capture.py`) + m2.11 live e2e (Deriv→HOT→WARM→parquet).
+#   Sign-off: HUMAN LGTM "alirght lgtm" @ 2026-09-25 (this action) → applied
+#     same turn; full suite re-run green (see A41 verification line in the
+#     BUILD_STATUS Last Updated segment).
+#   A41 LIVE PROBE EVIDENCE (read-only temp scripts, not repo artifacts):
+#     - legacy wss://ws.derivws.com/websockets/v3?app_id=1089 → HTTP 520
+#       rejected (confirms "dead" basis for this §5 change).
+#     - new endpoint → WS OPEN (local DNS flaky: retry loop needed; IP-pin
+#       gives Cloudflare 403 on Host mismatch → must connect by hostname).
+#     - active_symbols brief = 89 (key = underlying_symbol, has
+#       exchange_is_open); open now: synthetic_index + cryptocurrency only.
+#     - LIVE IN-SCOPE TICKS: cryBTCUSD px=83668.324 bid=83667.536
+#       ask=83669.111 epoch=1790371322; cryETHUSD px=2677.515
+#       epoch=1790371323 (crypto = in-scope, trades 24/7).
+#     - frxEURUSD accepted (schema correct) → MarketIsClosed, opens
+#       2026-09-28 00:00 UTC (weekend) — retry Monday for forex ticks.
+#     - subscribe schema that works: {"ticks": "<underlying_symbol>",
+#       "subscribe": 1} with app_id in URL ONLY (app_id in body →
+#       InputValidationFailed).
+#     - Not yet: capture → store → read-back (live-capture slice = next).
+# ACTION 42 DONE — TIMESCALEDB STORAGE DIRECTIVE (you, 2026-09-25) —
+#   human verbatim: "please every lake data should be converted to timecalsdb
+#   as we will be using that for now and we use enale compression and other
+#   thing to make our dat efficient in timescaledb" + restated same day:
+#   "we will be using timescaldb until i explictly say otherwise ... atleast
+#   for 1 year data".
+#   STANDING LAW until explicit human change: TimescaleDB is THE store of
+#   record (compression enabled, sized for >= 1 year of data); the parquet
+#   lake is demoted to frozen M2.8 lineage artifact only — NOT the growth
+#   path. Consequences: (1) m2.10 WARM spec (currently DEFERRED) must be
+#   amended to absorb lake → Timescale conversion of existing captures +
+#   compression settings + 1-year retention sizing; (2) capture verify
+#   script store target re-points to Timescale when m2.10 lands (it writes
+#   the M2.8 lake today only because that is the sole built store —
+#   interim, allowed); (3) m2.11 e2e should terminate in Timescale.
+#   Open point for human: does A42 promote m2.10 to NEXT slice (jump the
+#   D3 analysis-first queue)?
+# ACTION 43 DONE — STEP 4 LGTM ON M2.1 LIVE-CAPTURE TESTS (you, 2026-09-25) —
+#   human verbatim: "lgtm" → tests/m2_market_data/test_m2.1_live_capture_spec.py
+#   (30 cases: edges E1-E11 + adversarial + retry/JSONL roundtrip) APPROVED
+#   → Step 5 authorized. Post-impl: 30/30 GREEN, ruff 0, full suite
+#   779/779 0 skipped, 5 guards PASS (naming/pit/retention/build_order).
+# ACTION 44 DONE — DEDUP AMENDMENT APPROVED + QUEUE OPTION B (you, 2026-09-25) —
+#   human verbatim (answers to both builder questions): "option b and the
+#   other goo ahead provided that two ticks doesnt arrive at the same time".
+#   (1) M2.1 dedup AMENDMENT APPROVED with the governing rule: a tick is a
+#     duplicate ONLY if it is the same tick at the SAME time — dedup key
+#     `tick.id` -> `(tick.id, tick.epoch)`; same id at a newer epoch = ACCEPT
+#     (fixes the 49/50 real-update drop seen in the first live run);
+#     same id + same epoch = still Drop(duplicate_tick), first frame wins.
+#     Covers Step 4: amended spec REV2 + amended tests approved ("the other
+#     goo ahead") for this change; amended-test diff to be pasted in the
+#     completion report for the record. Frozen M2.1 -> builder did NOT
+#     self-approve; human LGTM = this action.
+#   (2) QUEUE: "option b" = m2.10/Timescale STAYS behind the analysis slices
+#     (D3 order preserved; no queue jump). A42 storage law itself unchanged:
+#     Timescale = store of record >= 1yr, compression on, until human says
+#     otherwise; capture script re-points when m2.10 lands.
+#   A44 VERIFICATION (same day, builder): spec REV2 + 3 test amendments
+#     (RED-first: test_same_id_newer_epoch_accepts FAILED against old code,
+#     52 pass) -> impl `ingest.py` dedup key id@instant -> 53/53 slice,
+#     full suite **781/781** 0 skipped, ruff 0 NEW (3 pre-existing debt
+#     hits at untouched lines), 5 guards PASS -> LIVE RE-RUN
+#     `verify_m2.1_live_capture.py` **EXIT 0: 50 captured / 50 accepted /
+#     0 drops / 50 rows stored + read back** (first=84064.7
+#     last=84057.45) + `verify_m2.1_ingest.py` EXIT 0 (sample same-id-
+#     same-epoch dup still drops). G0 data-layer bug RESOLVED with full
+#     fidelity; capture row = implemented, not verified pending your
+#     eyeball of the PASS output.
+# ACTION 45 — m2.10 WARM SPEC LGTM + QUEUE ACTIVATION (you, 2026-09-25) —
+#   human verbatim: "lgtm warm" -> m2.10 WARM spec APPROVED -> §2 Step 3
+#   (tests) opens NOW. QUEUE CHANGE: this SUPERSEDES the earlier Option B
+#   ruling (A44): new order = m2.10 WARM -> m2.11 live e2e -> analysis/
+#   M4.1 remainder. Spec amendments applied same turn under existing A42
+#   law: Timescale compression ON (segmentby provider+instrument, policy
+#   7d, if_not_exists), >=1yr retention (v1 no auto-prune; bible
+#   storage.yaml WARM=90d CONFLICTS -> Discrepancies, A42 wins), one-time
+#   lake->ticks_live conversion driven by the verify script.
+#   NOTE: A45 covers the WARM spec only. The M2.1-live capture row stays
+#   `implemented, not verified` until you eyeball the 50/50 PASS output.
+# ACTION 46 — DONE (2026-09-25, Step 4 LGTM + amendments, applied same turn) —
+#   human verbatim: "lgtm" at end of full M2.10 boundary review vs the PIT/as_of
+#   rule. Amendments received AND applied BEFORE Step 5:
+#   A46a SPEC — Responsibility boundary section: WARM = durable finalized-1m
+#     range reader only; caller above WARM (PIT/HistoricalDataService, UI
+#     history svc, strategy at explicit as_of) owns history depth + as_of;
+#     read_1m keeps (window_start, window_end), NO as_of param, no depth
+#     heuristics; window_hours=4 / flush_batch_size=240 = WARM flush ops
+#     params, NOT platform history-depth limit; canon rule block locked
+#     (WARM / Historical-PIT svc / UI-history svc / Strategy roles).
+#   A46b TESTS — 3 range-boundary cases added (uses_exact_requested_window:
+#     args verbatim $3/$4; does_not_expand_window; does_not_return_rows_
+#     outside_requested_window = defensive filter window_start<=interval_
+#     start<=window_end) -> 75 cases (54 fns, 6 parametrize); honest
+#     collection RED re-captured; ruff 0.
+#   A46c OBSERVED (non-blocking, logged in BUILD_STATUS Open Questions):
+#     M3.1 draft get_candles(instrument_id, timeframe, as_of) with
+#     engine-internal window — required-strategy-window vs optional-UI-
+#     expansion must be explicit BEFORE that PIT provider is implemented.
+#   Step 5 (impl) AUTHORIZED under §12 Critical Thinking Gate.
+# ACTION 55 - LGTM ON M4.1 STRATEGY REGISTRY TESTS (Step 4) (you, 2026-09-26) -
+#   STATUS: [OPEN] tests WRITTEN BEFORE CODE: `tests/m4_alpha/test_m4.1_spec.py`
+#   (35 test fns / 49 cases = spec edges E1-E18 + B-group B1-B6; spec LGTM A54).
+#   HONEST RED captured pre-impl (re-runnable): `python -m pytest
+#   tests\m4_alpha\test_m4.1_spec.py -q` -> ModuleNotFoundError: No module named
+#   'modules.m4_alpha', EXIT 2 (collection interrupt, never skipped).
+#   ruff 0 on the file (repo-wide pre-existing debt baseline UNCHANGED: 192
+#   errors before == 192 after the pin below).
+#   WHAT YOU ARE REVIEWING:
+#   - 1:1 spec-edge mapping + hand-calc comments: trend fast=101>slow=100 gap
+#     1% full -> evaluate +1.0 -> Signal long strength 1.0; rsi 85/ob 70 ->
+#     progress 0.5 -> -0.75 short; mid rsi 50 -> 0.0 -> no Signal.
+#   - Adversarial B1-B6: env="live"/broker="" rejected BEFORE any I/O (engine
+#     call count 0); features=None -> ValueError; evaluate returning 2.0/None/
+#     'x' -> StrategyContractError (never clamped); failure run does not poison
+#     the next run; unknown strategy -> UnknownStrategyError.
+#   - Contract-notes declared in the test file docstring (flag, not silent):
+#     (1) StrategyEntry = (name, module, slots, defaults, evaluate) — spec's
+#     strategy_id/version list AMENDED (those are yaml-owned, ParameterRegistry);
+#     (2) duplicate-NAME edge unreachable while NAME==module-stem enforced
+#     (one dir cannot hold two same-stem files) — runtime check kept as
+#     defense-in-depth, review-only; (3) discovery returns SORTED names;
+#     (4) capability gate keys are bare NAMEs (capabilities.yaml `strategies:`
+#     block), not `family::sub`; (5) ParameterRegistry.version normalizes yaml
+#     float 2.1 -> str "2.1" (Signal.version is str per frozen contract).
+#   - pyproject.toml +9 lines: `[tool.ruff.lint.isort] known-first-party =
+#     ["modules", "shared"]` — freezes import classification so this frozen
+#     test file cannot silently re-sort the day modules/m4_alpha exists on
+#     disk (evidence: `git stash pyproject` baseline 192 == after 192).
+#   - Flow if "lgtm": §12 Critical Thinking Gate 7/7 -> Step 5 impl
+#     (modules/m4_alpha/strategy/ 6 files <=450 lines) -> 100% pass 0 skipped
+#     -> verify_m4.1_registry.py -> ACTION 56 eyeball.
+# ACTION 54 — DONE (human "lgtm" 2026-09-26, M4.1 STRATEGY REGISTRY SPEC Step 1) -
+#   STATUS: [DONE] spec APPROVED: `docs/specs/m4.1_strategy_registry.spec.md`
+#   (P22; suite green 904/904 before this slice; naming guard OK).
+#   WHAT YOU ARE REVIEWING:
+#   - Scope: registry.load() discovery of the 7 D4 strategy files + capability
+#     gate (is_strategy_eligible) + lifecycle + param precedence (request >
+#     yaml > PARAM_DEFAULTS) + fail-closed shadow allowlist + async
+#     StrategyRunner.run -> Signal | None (the ONLY Signal constructor).
+#   - Contract: m4.2 evaluate contract declared FROZEN at this slice Step 2
+#     (content unchanged, PROVISIONAL flag lifted).
+#   - Discrepancies vs bible flagged (not silent): (1) families are D4
+#     function files in m3_analytics/strategies, not classes in an alpha
+#     tree; (2) versioning migrations deferred (no v2 exists, 12.5);
+#     (3) registry discovers the m3 strategies package.
+#   - Line budget 450 impl target; ~42 tests; verify = real registries +
+#     real capabilities.yaml + realistic canned AnalyticsResult (m4.2 hands).
+#   - Flow if "lg": Step 3 tests written (honest RED) -> ACTION 55 tests
+#     LGTM -> 12 7/7 -> impl -> verify -> ACTION 56 eyeball.
+# ACTION 52 - BLANKET LGTM ON M2.9 EXTENSION E1 RING (you, 2026-09-26) -
+#   human verbatim: "so go on and build it... it will be an extension...
+#   serious business addition it makes the strategy calculations faster
+#   instead of reading from db"
+#   SCOPE: covers E1 spec (m2.9 spec REV2 §Extension E1) + 22 tests +
+#   impl (hot.py ring_push/ring_read/ring_len/RingPush) + verify script —
+#   Steps 1/3/5/7 under one blanket (A40 precedent). Step 7 eyeball is
+#   SEPARATE = ACTION 53 (not covered by A52).
+#   FLUSH RULING (you, 2026-09-26, asked when a minute is written to
+#   Timescale): answer verbatim "On eviction (4h later)" — the evicted
+#   (oldest) bar IS the WARM handoff; ring eviction = the flush path,
+#   NOT a cache trim; Timescale lags live by 4h on this path. Spec REV2
+#   already states this (no patch needed). Producer wiring (pipeline
+#   finalized -> ring_push) still lands with the M4.1 live-loop slice;
+#   how it coexists with m2.11's flush-on-close is logged as an OPEN
+#   QUESTION in BUILD_STATUS (flag, not silently resolved).
+# ACTION 53 — DONE (human "lg" 2026-09-26, E1 LIVE RING VERIFY Step 7 eyeball) —
+#   [DONE] human saw PASS: `python scripts/verify_m2.9_ring.py` -> **ALL OK,
+#   EXIT 0** (re-runnable): phase A 16 checks vs live Valkey :6379
+#   (cap 240 exact / FIFO evict returns exact oldest bar / A33 dup+stale
+#   / A46 window 240 full + 30 subset exact / server TTL ~86400s /
+#   dead-endpoint fail-open sentinels + loud naive-window ValueError /
+#   cleanup) + advisory full-window read latency median ~4ms p95 ~5ms
+#   + phase B real roundtrip: 2 finalized 1m candles built from the
+#   committed Deriv sample ticks (first O=1.0854 C=1.08548 start
+#   2026-03-22T19:46Z; last start 20:06Z), pushed+read back exact.
+#   RESULT: M2.9-ext Ring row -> `complete` (2026-09-26); queue =
+#   analysis/M4.1 Strategy Registry (P22) Step 1 spec next.
+# ACTION 51 — DONE (human "lg" 2026-09-26, M2.11 LIVE E2E Step 7 eyeball) —
+#   [DONE] human saw PASS: `python scripts/verify_m2.11_live_e2e.py` ->
+#   **[PASS] C1-C7 hold, EXIT 0** (re-runnable).
+#   WHAT WAS EYEBALLED: captured=50 accepted=50 dropped=0 candles=2 warm_inserted=2
+#   hot_ok=True · lake lineage 50/50 · DDL 7/7 idempotent · C6 rerun inserted 0/2
+#   + read-back True + cursor monotonic · C7 no password in artifacts ·
+#   advisory timings process=0.112s warm=0.073s readback=0.003s ·
+#   artifacts data/live_e2e/2026-09-26/{raw,drops}_cryBTCUSD.jsonl +
+#   e2e_report_cryBTCUSD.json.
+#   RESULT: M2.11 row -> `complete` (2026-09-26); queue = analysis/M4.1 remainder.
+#   STILL OPEN (non-blocking, not ruled on by "lg"): line-count deviation —
+#     pipeline.py 388 vs <=220, verify script 335 vs ~250 (docstrings/protocols;
+#     logic LGTM'd via A50 tests 1:1) — trim or accept + amend spec target.
+# ACTION 50 — DONE (human "lgtm" 2026-09-26, M2.11 tests Step 4 LGTM) —
+#   STATUS: [DONE] 26/26 test plan APPROVED as written -> Step 5 pipeline.py
+#   authorized now (§12 7/7 logged). Original request kept below.
+# ACTION 50 ORIG — LGTM ON M2.11 LIVE-E2E TESTS (Step 4) (you, 2026-09-26) —
+#   STATUS: [OPEN] Step 3 tests written BEFORE pipeline.py (§2 Step 3) —
+#   honest collection RED captured this turn: ModuleNotFoundError: No module
+#   named 'modules.m2_market_data.pipeline' (pytest EXIT 2), ruff 0 on file.
+#   FILE: tests/m2_market_data/test_m2.11_live_e2e_spec.py (26 cases = spec §6)
+#   MAP: T1-5 process_frame chain (valid / junk-json / unknown-symbol /
+#     negative-price / future-timestamp — T4/T5 ingest-stage reasons per A49-a)
+#     · T6-7 CandleBuilder hand-calc (O=1.08540 H=1.08545 L=1.08540
+#     C=1.08545, tick_count=2) + late-tick Drop propagated with detail ·
+#     T8-11 HOT wiring per accepted md + forming NEVER written (A49-a/A33) +
+#     boundary candle flushed-not-stored-hot · T12-15 flush FIFO ascending +
+#     A46 verbatim inclusive window + strict match + LeakyWarm defensive
+#     filter · T16-19 C1 reconcile (True/False/empty/zero-drop reasons) ·
+#     T20-21 Valkey-down fail-loud + DSN-redacted flush error (C7) ·
+#     T22-23 rerun idempotent (inserted 1 then 0) + monotonic cursor ·
+#     T24-26 empty-drops artifact + exact 6-stage report + adversarial "".
+#   GROUND TRUTH: HOT/WARM faked; real ingest+normalize+CandleBuilder+real
+#   reference facade+WatermarkRegistry; no money math (spec §6 n/a, market
+#   data floats per frozen contracts). Repo test-dir lint debt (86) untouched.
+#   Reply "lgtm tests" (or changes) -> Step 5 pipeline.py (§12 7/7 + §9.3
+#   diff-cap logged) -> Step 6 suite 856+26 -> Step 7
+#   verify_m2.11_live_e2e.py (needs Valkey :6379 + Timescale :5432 up) ->
+#   your eyeball -> row `complete`.
+# ACTION 49 — DONE (human "lg tm" 2026-09-26, M2.11 live-e2e SPEC LGTM'd;
+#   A49-a amendments applied same turn) —
+#   STATUS: [DONE] -> Step 3 tests WRITTEN (26, honest RED) -> ACTION 50 (test
+#   LGTM) now open. Original request kept below.
+# ACTION 49 ORIG — LGTM ON M2.11 LIVE-E2E SPEC (Step 1) (you, 2026-09-26) —
+#   STATUS: [OPEN] spec DRAFTED this turn, ready for your review.
+#   FILE: docs/specs/m2.11_live_e2e.spec.md
+#   WHAT IT IS: the last data-layer slice - ONE script proving live Deriv ticks
+#   traverse the ENTIRE built chain with zero silent loss: WS collect ->
+#   ingest -> normalize -> validate -> 1m CandleBuilder -> HOT set_latest
+#   (Valkey) -> flush_batch (Timescale) -> read-back reconcile (C1-C7),
+#   incl. rerun idempotency + DSN redaction + fail-loud-if-infra-down.
+#   NEW CODE: modules/m2_market_data/pipeline.py (~220 lines, injected deps,
+#   testable on fakes) + scripts/verify_m2.11_live_e2e.py (~250). ZERO edits
+#   to frozen M2 components (spec table).
+#   TEST PLAN in spec: ~26 cases (each edge E1-E12 + 2 adversarial), fakes
+#   only, honest collection RED; no money math (stated n/a).
+#   OUT OF SCOPE: gate0_walkforward (G0 exit, separate), PIT as_of provider,
+#   4h flush timer, higher-TF folds, analytics/strategies.
+#   Reply "lgtm" (or changes) -> Step 3 tests written BEFORE pipeline.py
+#   (collection RED) -> Step 4 test LGTM -> Step 5 impl -> Step 7 live verify
+#   (needs Valkey + Timescale up) -> your eyeball -> row `complete`.
+# ACTION 48 — CANON CORRECTIONS RECEIVED (you, 2026-09-26, re-checked vs current
+#   TradingView/Pine + TA-Lib docs) — APPLIED 2026-09-26 (tests-first: RED captured
+#   → impl → 856/856 + verify EXIT 0):
+#   (a) **RSI flat 0/0 -> 50** (mathematically neutral) — SUPERSEDES your 2026-09-25
+#       flat->100 ruling. Zero branches now: avg_loss=0 AND avg_gain>0 -> 100;
+#       avg_gain=0 AND avg_loss>0 -> 0; both 0 -> 50; NO epsilon (unchanged).
+#       NOTE: AGENTS §9.1 example already says flat -> rsi=50 — canon now agrees
+#       with it (the old "§9.1 edit pending" note is void).
+#   (b) Min-history rows: canonical = calculated from the mathematical definition;
+#       reference-library lookbacks used for VERIFICATION ONLY, never as canonical.
+#       (m3.1 REV4 already separated math-lookback-warmup — wording strengthened.)
+#   (c) EMA seed canon sentence locked: "EMA initialization must be explicitly
+#       pinned to the selected reference implementation and verified by golden
+#       tests. No implementation may assume a seed merely from the indicator name."
+#   (d) Indicator canon structure recorded (math def / min history / warm-up /
+#       pristine / recursive / forming-bar / PIT policy / reference impl TV+TA-Lib)
+#       — reference compatibility SEPARATED from mathematical definition.
+#   UNCHANGED by this ruling: Wilder smoothing, no-epsilon policy, BB ddof=0,
+#   TV-style TR first bar (high-low), ATR/ADX smoothing, MACD 12/26/9,
+#   min-history numbers (15/15/28/34/20/20), choppiness flat->100 (its own
+#   canonical), other flat canonicals (zscore 0, bb 0.5, hurst 0.5, vol_regime 1).
+#   Touchpoints: m3.1 spec (REV5) + m3.2 spec + rsi_14.py + test_m3.2_spec.py +
+#   verify_m3.2_analytics.py. Slice rows stay `complete` (re-verified same turn).
+# ACTION 47 — DONE (human "lg" 2026-09-26, eyeballed both PASS outputs) —
+#   STATUS: [DONE] both rows marked `complete` in BUILD_STATUS; queue =
+#   m2.11 live e2e → analysis/M4.1 remainder. Original request kept below.
+#   EYEBALL TWO PASS OUTPUTS (you, next reply) —
+#   Two slices are `implemented, not verified` only because YOU have not
+#   yet looked at their real-data outputs (§2 Step 7 requires your eyes):
+#   (a) M2.10 WARM live verify — run: `python scripts/verify_m2.10_warm.py`
+#       (needs Docker Timescale :5432 + QUANTRADER2/.env TIMESCALE_DEV_PASSWORD;
+#       already ran 2026-09-26: **22/22 checks OK, RESULT: PASS, exit 0**).
+#       EYEBALL block shows: 2 bars from real sample via M2.4 (O=1.0854
+#       H=1.08548 hand-checkable vs sample ticks), M2.3 door dropped the
+#       2 adversarial rows (negative price, ask='x'), flush cursor stops
+#       at the real 19:46→20:06 gap (never leaps), re-flush inserted=0,
+#       A46 range reads inclusive + no auto-expand, A42 segmentby=
+#       [provider,instrument_id] + 7d policy job, conversion 50/50 kept,
+#       dead-endpoint error leaks no password.
+#   (b) M2.1 LIVE CAPTURE (A44) — `python scripts/verify_m2.1_live_capture.py`
+#       PASS output: 50/50 accepted, 0 drops, 50 rows stored + read back.
+#   Reply (i) "eyeballed both" + any nits → both rows go `complete`;
+#       (ii) nits → builder fixes then re-asks; (iii) separate LGTMs welcome.
+#   Builder-side work done this turn: impl `modules/m2_market_data/warm.py`
+#   (§12 7/7 logged), suite 856/856 0 skipped, ruff 0, 5 guards OK,
+#   lint-imports 3/3, asyncpg>=0.29 added to pyproject + installed,
+#   verify script written + PASS. NOTE: Timescale .env password was
+#   realigned via ALTER ROLE (container was created before your 00:48
+#   .env edit; .env remains the single source, no password logged).
 # ACTION 38 PENDING (superseded by DONE above — original request kept for history) —
 #   docs/specs/m3.2_analytics.spec.md — DRAFT 2026-09-25. First 3 D4 compute
 #   files (rsi_14 Wilder / ema_20 Pine-seed / tick_rate mean) + test plan 24 +

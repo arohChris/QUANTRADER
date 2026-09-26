@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Bell, ChevronLeft, ChevronRight, LayoutDashboard, Moon, Search, Sun } from "lucide-react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { mockSurfaces, mockUser } from "./mock_data";
@@ -15,10 +15,29 @@ import type { MarketControls, Theme } from "./MarketPanel";
 import MarketsGrid from "./MarketsGrid";
 import ResearchChat from "./ResearchChat";
 import TradePane, { type TradeMode } from "./TradePane";
-import { NAV_BY_ROLE, NAV_ICONS, type AccessRole } from "./nav_config";
+import OrdersSurface from "./OrdersSurface";
+import PortfolioSurface from "./PortfolioSurface";
+import SettingsSurface from "./SettingsSurface";
+import { ACCESS_ROLES, NAV_BY_ROLE, NAV_ICONS, type AccessRole, type NavItem } from "./nav_config";
+import SiteFooter from "./SiteFooter";
+import AdminTradingSurface from "./AdminTradingSurface";
+import AdminRiskSurface from "./AdminRiskSurface";
+import AdminSystemSurface from "./AdminSystemSurface";
+import AdminAuditSurface from "./AdminAuditSurface";
+import AdminConfigurationSurface from "./AdminConfigurationSurface";
+import AdminKillSurface from "./AdminKillSurface";
 
-const ACCESS_ROLES = ["Viewer", "Trader", "Admin"] as const;
 const THEME_CLASS: Record<Theme, string> = { dark: "theme-dark", light: "theme-light" };
+
+// Social channels, listed by name only. WHY no href: the account handles have not been
+// supplied yet, and a guessed profile URL is a wrong link shipped to users. These render
+// as labelled, non-navigating chips until the real handles land. The spec fails if
+// anyone invents a domain in the meantime.
+const SOCIAL_CHANNELS = ["Instagram", "Facebook", "TikTok"] as const;
+
+// First topics for the beginners path. Also name-only for now: there is no written guide
+// behind any of them, so linking would be a dead end.
+const BEGINNER_TOPICS = ["What is a pip", "Position sizing", "Reading a candlestick", "Risk per trade"] as const;
 
 function AccessPreview({ role }: { role: AccessRole }) {
   return (
@@ -41,6 +60,21 @@ export default function App() {
   const sidebar = useRef<HTMLElement>(null);
   const location = useLocation();
   const items = NAV_BY_ROLE[role];
+  // The nav config has always carried `group`; nothing rendered it, so a 9-item rail read
+  // as one undifferentiated list. Grouped in first-appearance order so the config stays
+  // the single source of order.
+  const navGroups = useMemo<[string, NavItem[]][]>(() => {
+    const grouped = new Map<string, NavItem[]>();
+    for (const item of items) {
+      const bucket = grouped.get(item.group);
+      if (bucket) {
+        bucket.push(item);
+      } else {
+        grouped.set(item.group, [item]);
+      }
+    }
+    return [...grouped.entries()];
+  }, [items]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setMarket((current) => stepExperimentMarket(current)), 1000);
@@ -103,7 +137,7 @@ export default function App() {
             type="button"
             aria-expanded={!sidebarCollapsed}
             aria-label="Toggle navigation"
-            title={sidebarCollapsed ? "Show navigation" : "Hide navigation"}
+            title={sidebarCollapsed ? "Expand navigation" : "Collapse to icon rail"}
             onClick={() => setSidebarCollapsed((current) => !current)}
           >
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -140,111 +174,106 @@ export default function App() {
         </div>
       </header>
       <div className={`app-body ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
-        {sidebarCollapsed ? null : (
-          <aside className="sidebar" ref={sidebar}>
-            <nav className="primary-nav" aria-label="Primary navigation">
-              {items.map((item) => {
-                const Icon = NAV_ICONS[item.href] ?? LayoutDashboard;
-                return (
-                  <Link
-                    key={item.href}
-                    className={location.pathname === item.href ? "is-active" : undefined}
-                    to={item.href}
-                    aria-current={location.pathname === item.href ? "page" : undefined}
-                  >
-                    <Icon size={17} />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </aside>
-        )}
+        <aside className={sidebarCollapsed ? "sidebar is-collapsed" : "sidebar"} ref={sidebar}>
+          <nav className="primary-nav" aria-label="Primary navigation">
+            {navGroups.map(([group, groupItems]) => (
+              <div className="nav-group" key={group} role="group" aria-label={group}>
+                <p className="nav-group-label">{group}</p>
+                {groupItems.map((item) => {
+                  const Icon = NAV_ICONS[item.href] ?? LayoutDashboard;
+                  const active = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      className={active ? "is-active" : undefined}
+                      to={item.href}
+                      title={item.label}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      <Icon size={17} />
+                      <span className="nav-label">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
+          {/* Access sits at the END of the rail, next to the navigation it changes.
+              Hidden in glyph-rail mode and revealed on hover with the labels.
+              No caption and no visible label: the select's own value already states the
+              role. The accessible name stays, because a bare select is unusable with a
+              screen reader. */}
+          <div className="sidebar-access">
+            <select
+              id="role"
+              aria-label="Role"
+              value={role}
+              onChange={(event) => setRole(event.target.value as AccessRole)}
+            >
+              {ACCESS_ROLES.map((access) => (
+                <option key={access} value={access}>
+                  {access}
+                </option>
+              ))}
+            </select>
+            <button
+              className="theme-toggle"
+              type="button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? "Light" : "Dark"} theme
+            </button>
+          </div>
+        </aside>
         <section className="content-area">
           <Routes>
             <Route path="/" element={role === "Viewer" ? <HomeDashboard market={market} theme={theme} controls={controls} markets={markets} /> : <AccessPreview role={role} />} />
             <Route path="/login" element={<AccessPreview role={role} />} />
             <Route path="/markets" element={<MarketsGrid base={market} theme={theme} />} />
-            <Route path="/research" element={<ResearchChat base={market} symbol={selectedSymbols[0]} />} />
-            <Route path="/app/research" element={<ResearchChat base={market} symbol={selectedSymbols[0]} />} />
+            <Route path="/research" element={role === "Viewer" ? <AccessPreview role={role} /> : <ResearchChat base={market} symbol={selectedSymbols[0]} />} />
+            <Route path="/app/research" element={<ResearchChat withCommands={role !== "Viewer"} base={market} symbol={selectedSymbols[0]} />} />
             <Route path="/app/markets" element={<MarketsGrid base={market} theme={theme} />} />
             <Route path="/app/trading" element={role === "Viewer" ? <AccessPreview role={role} /> : <TradePane market={market} theme={theme} controls={controls} markets={markets} tradeMode={tradeMode} onTradeMode={setTradeMode} />} />
+            <Route path="/app/portfolio" element={role === "Viewer" ? <AccessPreview role={role} /> : <PortfolioSurface />} />
+            <Route path="/app/orders" element={role === "Viewer" ? <AccessPreview role={role} /> : <OrdersSurface />} />
+            <Route path="/app/settings" element={role === "Viewer" ? <AccessPreview role={role} /> : <SettingsSurface />} />
             <Route path="/app" element={role === "Viewer" ? <AccessPreview role={role} /> : <HomeDashboard market={market} theme={theme} controls={controls} markets={markets} />} />
             <Route path="/app/*" element={role === "Viewer" ? <AccessPreview role={role} /> : <HomeDashboard market={market} theme={theme} controls={controls} markets={markets} />} />
-            <Route path="/admin" element={<AccessPreview role={role} />} />
+            {/* Admin: global control surfaces. Viewer AND Trader are both refused —
+                navigation hiding is a UX measure, this is the actual gate. */}
+            {/* Admin's Trading item is the GLOBAL view; a Trader keeps the private trade
+                pane at /app/trading. */}
+            <Route
+              path="/admin/trading"
+              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminTradingSurface />}
+            />
+            <Route
+              path="/admin/risk"
+              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminRiskSurface />}
+            />
+            <Route
+              path="/admin/system"
+              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminSystemSurface />}
+            />
+            <Route
+              path="/admin/audit"
+              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminAuditSurface />}
+            />
+            <Route
+              path="/admin/configuration"
+              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminConfigurationSurface />}
+            />
+            <Route
+              path="/admin/kill"
+              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminKillSurface />}
+            />
+            <Route path="/admin" element={<AdminSystemSurface />} />
             <Route path="/admin/*" element={<AccessPreview role={role} />} />
             <Route path="*" element={<AccessPreview role={role} />} />
           </Routes>
         </section>
       </div>
-      <footer className="app-footer" aria-label="Site footer">
-        <div className="footer-inner">
-          <button
-            className="back-to-top"
-            type="button"
-            title="Back to top"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          >
-            <ArrowUp size={14} />
-            Back to top
-          </button>
-          <section className="footer-story" aria-label="Project story">
-            <p className="story-beat">
-              <strong>Built</strong> Research-grade scaffolding: data contracts, risk gates, and a workspace
-              where a market is read once and reused everywhere.
-            </p>
-            <p className="story-beat">
-              <strong>Challenge</strong> One trader, one strategy, one honest number — expectancy after fees.
-              Until that is proven out-of-sample, nothing here is allowed to trade.
-            </p>
-            <p className="story-beat">
-              <strong>Need</strong> Time and real data to validate the edge, then capital to size it.
-            </p>
-          </section>
-          <div className="footer-main">
-            <nav className="footer-nav" aria-label="Footer navigation">
-              <div className="access-bar footer-group">
-                <h2 className="footer-heading">Access</h2>
-                <label htmlFor="role">Role</label>
-                <select id="role" value={role} onChange={(event) => setRole(event.target.value as AccessRole)}>
-                  {ACCESS_ROLES.map((access) => (
-                    <option key={access} value={access}>
-                      {access}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="footer-group">
-                <h2 className="footer-heading">Workspace</h2>
-                <Link to="/app/trading">Trade pane</Link>
-                <Link to="/app/markets">Markets</Link>
-                <Link to="/app/research">Research</Link>
-              </div>
-              <div className="footer-group">
-                <h2 className="footer-heading">Build</h2>
-                <p className="muted">{mockSurfaces.join(" · ")}</p>
-                <p className="muted">Mock data · no broker connected</p>
-              </div>
-              <div className="footer-group">
-                <h2 className="footer-heading">Legal</h2>
-                <Link to="/legal/privacy">Privacy</Link>
-                <Link to="/legal/terms">Terms</Link>
-                <Link to="/legal/status">Status</Link>
-              </div>
-            </nav>
-          </div>
-          <div className="footer-legal">
-            <span className="muted">
-              © {new Date().getFullYear()} QUANTRADER. Research build — no broker connection, no trade is submitted.
-            </span>
-            <nav className="footer-legal-links" aria-label="Legal">
-              <Link to="/legal/privacy">Privacy</Link>
-              <Link to="/legal/terms">Terms</Link>
-              <Link to="/legal/status">Status</Link>
-            </nav>
-          </div>
-        </div>
-      </footer>
+        <SiteFooter />
     </main>
   );
 }

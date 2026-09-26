@@ -133,10 +133,11 @@ def test_rsi_golden_wilder_recursive_last_value():
     assert value == pytest.approx(85.71428571428571, abs=1e-12)
 
 
-def test_rsi_flat_prices_exactly_100():
+def test_rsi_flat_prices_exactly_50():
     # Hand calc: changes 0,0,0 -> avg_gain=0, avg_loss=0 -> RS=0/0 undefined ->
-    # project canonical rule (REV4 pins): the avg_loss==0 BRANCH is the spec -> 100.0
-    assert rsi_14.compute(_series([5.0] * 4), {"period": 2.0}) == 100.0
+    # REV5/A48 canonical: mathematically NEUTRAL flat -> 50.0 (both-zero branch
+    # checked FIRST; supersedes the 2026-09-25 flat->100 rule)
+    assert rsi_14.compute(_series([5.0] * 4), {"period": 2.0}) == 50.0
 
 
 def test_rsi_avg_loss_zero_with_gains_exactly_100():

@@ -5,6 +5,24 @@
   }
 }
 
+/* Short windows: compact the rail so the tallest role (Admin, 9 items) still fits
+   without clipping or scrolling. */
+@media (max-height: 700px) {
+  .primary-nav {
+    gap: 0.1rem;
+    padding: 0.5rem 0.5rem;
+  }
+
+  .primary-nav a {
+    padding: 0.4rem 0.55rem;
+    font-size: var(--type-caption);
+  }
+
+  .sidebar.is-collapsed .primary-nav a {
+    padding: 0.4rem 0.2rem;
+  }
+}
+
 @media (max-width: 900px) {
   .workspace,
   .trader-dashboard,
@@ -17,10 +35,93 @@
   }
 
   .sidebar {
+    position: static;
     flex: 0 0 auto;
     width: 100%;
+    height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar.is-collapsed {
+    flex-basis: auto;
+  }
+
+  .sidebar.is-collapsed .primary-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .sidebar.is-collapsed .primary-nav a {
+    justify-content: flex-start;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .sidebar.is-collapsed .nav-label {
+    display: inline;
+  }
+
+  /* The rail becomes a horizontal band, so the groups must flow with it: a vertical
+     group block inside a wrapping row would stack the whole nav into one column. */
+  .primary-nav,
+  .sidebar.is-collapsed .primary-nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.75rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .nav-group,
+  .sidebar.is-collapsed .nav-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+  }
+
+  .nav-group + .nav-group,
+  .sidebar.is-collapsed .nav-group + .nav-group {
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+  }
+
+  /* Group headings are useful in the band — they are the only thing separating the
+     sections once everything is on one line. */
+  .nav-group-label,
+  .sidebar.is-collapsed .nav-group-label {
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Access sits inline at the end of the band, and is always visible here because the
+     rail no longer collapses to glyphs. */
+  .sidebar-access,
+  .sidebar.is-collapsed .sidebar-access {
+    visibility: visible;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0;
+    padding: 0.5rem;
+  }
+
+  .sidebar:hover .sidebar-access {
+    padding: 0.5rem;
+  }
+
+  .sidebar-access select,
+  .sidebar-access .theme-toggle {
+    width: auto;
+    min-width: 7rem;
   }
 
   .app-header {
@@ -32,13 +133,24 @@
     justify-content: flex-start;
   }
 
-  .footer-main {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
   .footer-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* The mirrored pair needs real width for the legal line; below 900px it stacks
+     rather than squeezing two long blocks into halves. */
+  .footer-base {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .footer-social {
+    justify-self: start;
+  }
+
+  .footer-copy {
+    justify-self: start;
+    text-align: left;
   }
 
   .toolbar-group-end {
@@ -68,9 +180,38 @@
     grid-template-columns: 1fr;
   }
 
-  .footer-legal {
-    flex-direction: column;
-    align-items: flex-start;
+  .footer-base {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-copy {
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    text-align: center;
+  }
+
+  /* Phone: the footer stacks, breathes a little less, and stops reserving room for a
+     control row that is now a single column. */
+  .app-footer {
+    padding: 2rem 0.85rem 1.5rem;
+  }
+
+  .footer-inner {
+    gap: 1.5rem;
+  }
+
+  .footer-story {
+    gap: 1.25rem 1.5rem;
+  }
+
+  .footer-nav {
+    gap: 1.5rem;
+  }
+
+  .footer-group select,
+  .footer-group .theme-toggle {
+    min-width: 0;
   }
 
   .market-toolbar {

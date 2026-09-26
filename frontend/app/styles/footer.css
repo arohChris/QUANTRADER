@@ -1,33 +1,60 @@
-/* Footer: sitemap-lite. No surface of its own — no fill, no border slab, no
-   shadow. It is the page background continuing, divided only by the legal strip. */
+/* ==========================================================================
+   Site footer — pairs with app/SiteFooter.tsx.
+   Sitemap-lite: no surface of its own. No fill, no border slab, no shadow. It is the
+   page background continuing, divided only by the legal strip.
+
+   WHY the tokens: the bands used to carry five different measures (84/72/68/62rem),
+   so the story sat inset inside the nav on both sides and the footer read as
+   misaligned. One measure plus one gap per level fixes it and keeps the numbers in
+   one place when the type scale moves again.
+
+   Band order matches the DOM exactly: back-to-top, story, nav, base.
+   ========================================================================== */
+
+/* --- 1. Tokens and base band ------------------------------------------------ */
+
 .app-footer {
+  /* Space: one measure, one gap per level. */
+  --footer-band-gap: 2.25rem;
+  --footer-group-gap: 0.7rem;
+  --footer-column-gap: 2rem;
+
   display: grid;
   margin-top: auto;
   padding: 2.75rem 1.25rem 1.75rem;
   background: var(--bg);
   color: var(--muted);
-  font-size: var(--text-sm);
+  font-size: var(--type-body);
+  font-weight: 500;
+  text-align: center;
 }
+
+/* --- 2. Inner container ----------------------------------------------------- */
 
 .footer-inner {
   display: grid;
-  gap: 1.75rem;
-  max-width: 84rem;
+  gap: var(--footer-band-gap);
+  justify-items: center;
+  width: 100%;
+  max-width: var(--page-measure);
   margin: 0 auto;
 }
+
+/* --- 3. Band: back to top --------------------------------------------------- */
 
 .back-to-top {
   display: inline-flex;
   align-items: center;
+  justify-self: center;
   gap: 0.35rem;
-  justify-self: start;
-  min-height: 1.9rem;
-  padding: 0.3rem 0.6rem;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--muted);
   background: var(--surface-soft);
-  font-size: 0.72rem;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  font-weight: 600;
   cursor: pointer;
   transition: color 140ms ease, border-color 140ms ease;
 }
@@ -37,63 +64,69 @@
   border-color: var(--accent-cyan);
 }
 
-.footer-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.75rem;
-}
+/* --- 4. Band: the story ----------------------------------------------------- */
 
-.footer-about {
-  margin: 0;
-  max-width: 68rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-  line-height: 1.8;
-}
-
-/* The story: progress, the challenge, what we need to grow. Three beats, no filler. */
+/* WHY left-aligned inside the row: each beat carries a left accent rule, so centring
+   a beat in its own column pushed the cyan borders to ragged x positions. The row is
+   still centred by equal columns — only the prose inside a beat stays left. */
 .footer-story {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1.5rem 2rem;
-  max-width: 72rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  justify-items: stretch;
+  gap: 1.5rem var(--footer-column-gap);
+  width: 100%;
+  max-width: var(--page-measure);
+  margin: 0 auto;
 }
 
 .story-beat {
   margin: 0;
-  padding-left: 0.75rem;
+  padding-left: 0.85rem;
   border-left: 2px solid var(--accent-cyan);
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--type-body);
+  font-weight: 500;
   line-height: 1.75;
+  text-align: left;
 }
 
 .story-beat strong {
   display: block;
   margin-bottom: 0.15rem;
   color: var(--text);
-  font-size: 0.7rem;
+  font-size: var(--type-caption);
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-/* Footer spacing follows the researched rhythm: 8px link steps inside a group,
-   32px gutters between columns, legal row spread edge to edge. */
+/* --- 5. Band: link groups --------------------------------------------------- */
+
+/* Columns flow rather than being pinned to a count: the footer carries five groups
+   (Access, Workspace, Build, Trading for beginners, Legal) and a fixed `repeat(4)`
+   left the fifth wrapping into a quarter-width orphan. responsive.css still steps
+   2-up then 1-up on narrow screens. */
 .footer-nav {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
+  justify-items: center;
+  gap: var(--footer-column-gap);
+  width: 100%;
+  max-width: var(--page-measure);
+  margin: 0 auto;
 }
 
 .footer-group {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.6rem;
+  align-items: center;
+  gap: var(--footer-group-gap);
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
+  text-align: center;
+  font-weight: 500;
   line-height: 1.7;
   white-space: normal;
 }
@@ -101,8 +134,8 @@
 .footer-group .footer-heading {
   margin: 0 0 0.15rem;
   color: var(--text);
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: var(--type-body-sm);
+  font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -113,6 +146,8 @@
   gap: 0.5rem;
   min-height: 2rem;
   color: var(--muted);
+  font-size: var(--type-body-sm);
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -120,68 +155,105 @@
   color: var(--accent-cyan);
 }
 
-.footer-group-note {
-  margin: 0.35rem 0 0;
-  max-width: 26rem;
-  color: var(--muted);
-  font-size: 0.75rem;
-  line-height: 1.7;
-}
-
-.footer-label {
-  color: var(--muted);
-  font-size: 0.7rem;
-}
-
 .access-bar label {
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: var(--type-caption);
+  font-weight: 600;
 }
 
+/* max-width keeps a select from blowing past its column next to shrink-to-fit links. */
 .footer-group select,
 .footer-group .theme-toggle {
   width: 100%;
+  max-width: 100%;
   min-width: 8rem;
-  min-height: 2.25rem;
+  min-height: 2.35rem;
   padding: 0.4rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 0.3rem;
-  color: var(--text);
   background: var(--surface);
-  font-size: var(--text-sm);
+  color: var(--text);
+  font-size: var(--type-body-sm);
+  font-weight: 600;
 }
 
-.footer-note {
+.theme-toggle {
+  cursor: pointer;
+}
+
+/* --- 6. Band: mirrored base row (social | legal) ----------------------------- */
+
+/* WHY `1fr 1fr` and not space-between: space-between pins each side to its own edge
+   and leaves the two halves different widths, so the pair reads as accidental. Equal
+   halves make social and copyright a mirrored pair that aligns in length. */
+.footer-base {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: var(--footer-band-gap) var(--footer-column-gap);
+  width: 100%;
+  max-width: var(--page-measure);
+  margin: 0 auto;
+}
+
+.footer-social {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  justify-self: start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.footer-social-label {
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer-social-chip {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--type-body);
+  font-weight: 600;
+}
+
+.footer-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  gap: 0.5rem var(--footer-column-gap);
+  width: 100%;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* --- 7. Beginners list ------------------------------------------------------ */
+
+/* A short topic list, not another essay. Name-only until the guides are written. */
+.footer-beginners {
+  display: grid;
+  gap: 0.25rem;
   margin: 0;
-  max-width: 62rem;
+  padding: 0;
+  list-style: none;
   color: var(--muted);
-  font-size: 0.75rem;
-  line-height: 1.8;
+  font-size: var(--type-body);
+  font-weight: 500;
+  line-height: 1.6;
 }
 
-.footer-legal {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 2rem;
-  font-size: 0.75rem;
-}
-
-.footer-legal-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.75rem;
-}
-
-.footer-legal-links a {
-  color: var(--muted);
-  min-height: 1.75rem;
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-.footer-legal-links a:hover {
-  color: var(--accent-cyan);
+.footer-pending {
+  margin: 0.2rem 0 0;
+  font-size: var(--type-body-sm);
+  font-weight: 500;
 }

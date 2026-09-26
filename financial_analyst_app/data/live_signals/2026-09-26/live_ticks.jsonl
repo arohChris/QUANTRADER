@@ -1,0 +1,1 @@
+{"raw":"{\"echo_req\":{\"subscribe\":1,\"ticks\":\"frxEURUSD\"},\"error\":{\"code\":\"MarketIsClosed\",\"code_args\":[\"2026-09-28 00:00:00\"],\"message\":\"This market is presently closed. Market will open at 2026-09-28 00:00:00.\",\"subcode\":\"MarketIsClosed\"},\"msg_type\":\"tick\"}"}

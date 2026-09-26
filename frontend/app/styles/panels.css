@@ -51,7 +51,7 @@
   padding-left: 0.5rem;
   border-left: 2px solid var(--accent-violet);
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: var(--type-body-sm);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -79,59 +79,10 @@
   font-size: var(--text-lg);
 }
 
-.chart-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  margin-top: 0.85rem;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.65rem;
-}
-
 .side-panels {
   display: grid;
   gap: 1rem;
   align-content: start;
-}
-
-.signal {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.78rem;
-}
-
-.signal > span:first-child {
-  color: var(--accent-violet);
-}
-
-.signal:last-child {
-  border-bottom: 0;
-}
-
-.signal .positive {
-  color: var(--accent-lime);
-}
-
-.signal .warning {
-  color: var(--accent-amber);
-}
-
-.state-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.66rem;
-}
-
-.state-row span {
-  padding: 0.3rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 0.25rem;
-  color: var(--accent-amber);
 }
 
 .access-placeholder {

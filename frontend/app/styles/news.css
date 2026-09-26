@@ -1,0 +1,147 @@
+﻿
+/* Overview news section. Reads as a list of claims, so every row carries its source and
+   its age — a headline alone is not usable and not trustworthy. */
+.news-panel {
+  gap: 0.6rem;
+}
+
+.news-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.news-item {
+  display: grid;
+  gap: 0.15rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.news-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.news-publisher {
+  color: var(--accent-violet);
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.news-title {
+  color: var(--text);
+  font-size: var(--type-body-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.news-title:hover {
+  color: var(--accent-cyan);
+}
+
+.news-title.is-link-only {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.news-meta {
+  color: var(--dim);
+  font-size: var(--type-micro);
+}
+
+/* A non-fresh snapshot is labelled with its age. Silence would read as a quiet news day. */
+.news-stale {
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border-left: 2px solid var(--accent-amber);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: var(--type-caption);
+  font-weight: 600;
+}
+
+.news-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.5rem 0;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  font-weight: 600;
+}
+
+.news-sources {
+  margin-top: 0.2rem;
+  font-size: var(--type-caption);
+}
+
+.news-sources summary {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.news-sources ul {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.news-sources li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: var(--type-micro);
+}
+
+/* Thumbnails. A reserved aspect ratio keeps a slow image from shifting the list as it
+   arrives, and a failed image collapses the row to text instead of leaving a torn gap. */
+.news-item.has-thumb {
+  grid-template-columns: 4.5rem 1fr;
+  align-items: start;
+  column-gap: 0.6rem;
+}
+
+.news-item.has-thumb .news-publisher,
+.news-item.has-thumb .news-title,
+.news-item.has-thumb .news-meta {
+  grid-column: 2;
+}
+
+.news-thumb {
+  grid-row: 1 / span 3;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  object-fit: cover;
+  background: var(--surface-soft);
+}
+
+.news-thumb.is-missing {
+  display: block;
+  border-style: dashed;
+}
+
+/* The cap is disclosed, not silent: a reader must be able to tell the list is the newest
+   ten rather than everything the snapshot holds. */
+.news-count {
+  margin: 0.15rem 0 0;
+  font-size: var(--type-caption);
+  line-height: 1.5;
+}

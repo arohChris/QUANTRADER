@@ -104,7 +104,7 @@
 .asset-option-symbol {
   color: var(--dim);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.66rem;
+  font-size: var(--type-micro);
 }
 
 /* Auto / manual switch: the decision that gates the manual ticket. */
@@ -147,7 +147,7 @@
   margin: 0.4rem 0 0;
   padding-left: 1.1rem;
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: var(--type-caption);
   line-height: 1.6;
 }
 
@@ -162,7 +162,7 @@
 
 .toolbar-label {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -195,22 +195,10 @@
 .toolbar-note {
   color: var(--dim);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.66rem;
+  font-size: var(--type-micro);
 }
 
-.phase-chip {
-  padding: 0.2rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--positive);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.66rem;
-}
 
-.phase-chip.is-drawdown {
-  color: var(--negative);
-  border-color: var(--negative);
-}
 
 .experiment-chart {
   min-height: 20rem;
@@ -235,7 +223,7 @@
   padding: 0;
   list-style: none;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
 }
 
 .series-legend li {
@@ -260,28 +248,100 @@
 
 .markets-view-head h1 {
   margin: 0 0 0.25rem;
-  font-size: 1.1rem;
+  font-size: var(--type-h1);
   letter-spacing: 0.04em;
 }
 
-.markets-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+/* Active trading sections: one per frozen AssetClass, replacing the old
+   Leader / Laggard / Widest-drawdown chip row. */
+.active-trading {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
 }
 
-.summary-chip {
+.active-trading-card {
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.active-trading-card.is-open {
+  border-color: color-mix(in srgb, var(--positive) 40%, var(--border));
+}
+
+.active-trading-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.active-trading-card h2 {
   margin: 0;
-  padding: 0.5rem 0.85rem;
+  padding: 0;
+  border: 0;
+  font-size: var(--type-body);
+  letter-spacing: 0.04em;
+}
+
+.session-chip {
+  padding: 0.2rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
-.summary-chip strong {
+.session-chip.is-open {
+  border-color: var(--positive);
+  color: var(--positive);
+}
+
+.session-chip.is-closed {
+  color: var(--muted);
+}
+
+.session-window {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--type-caption);
+}
+
+.session-countdown {
+  margin: 0;
+  font-size: var(--type-body-sm);
+  font-weight: 700;
+}
+
+.session-countdown.is-open {
+  color: var(--accent-cyan);
+}
+
+.session-breadth {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-caption);
+  line-height: 1.6;
+}
+
+.session-breadth strong {
   color: var(--text);
   font-weight: 700;
+}
+
+/* Three sections stay three across on a wide viewport, then stack. The cards never
+   shrink below a readable width, so the session text cannot collide. */
+@media (max-width: 1100px) {
+  .active-trading {
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
 }
 
 /* Heatmap: one tile per instrument, tinted by the trend of the day. */
@@ -318,12 +378,12 @@
 }
 
 .heat-symbol {
-  font-size: 0.66rem;
+  font-size: var(--type-caption);
   letter-spacing: 0.04em;
 }
 
 .heat-value {
-  font-size: 0.95rem;
+  font-size: var(--type-lead);
   font-weight: 700;
 }
 
@@ -341,7 +401,7 @@
   padding: 0;
   border: 0;
   color: var(--text);
-  font-size: 0.78rem;
+  font-size: var(--type-caption);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -360,7 +420,7 @@
   align-items: center;
   gap: 0.6rem;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
 }
 
 .leaderboard-rank {
@@ -422,6 +482,9 @@
   border: 1px solid var(--border);
   border-radius: 0.4rem;
   box-shadow: var(--shadow-card);
+  /* Clip: a chart sized wrong must never bleed over the card below it. This is the
+     belt to the single-source sparkline height's braces. */
+  overflow: hidden;
 }
 
 .market-card-head {
@@ -438,18 +501,18 @@
   margin: 0;
   padding: 0;
   border: 0;
-  font-size: 0.8rem;
+  font-size: var(--type-body-sm);
   letter-spacing: 0.06em;
 }
 
 .market-card-alias {
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: var(--type-caption);
   font-weight: 400;
   letter-spacing: 0.02em;
 }
 
-.market-trend {
+.market-card-trend {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
@@ -458,17 +521,19 @@
 
 .trend-value {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 1rem;
+  font-size: var(--type-lead);
   font-weight: 800;
 }
 
 .trend-caption {
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: var(--type-caption);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+/* The height comes from SPARKLINE_HEIGHT_PX in MarketsGrid.tsx, applied inline, so the
+   chart and its box can never disagree. min-height is the pre-paint floor only. */
 .market-sparkline {
   min-height: 4.5rem;
   border: 1px solid var(--border);
@@ -478,12 +543,10 @@
 
 .market-sparkline canvas {
   display: block;
-  width: 100% !important;
-  height: 4.5rem !important;
 }
 
-/* Day range bar: fill to the last price, marker on the last price,
-   red width shows how deep the drawdown runs below the high. */
+/* Day range bar: fill to the last price, marker on the last price. Two children, both
+   positioned inside the track — the old third overlay was drawn on top of the fill. */
 .range-bar {
   position: relative;
   height: 0.4rem;
@@ -492,7 +555,7 @@
   overflow: hidden;
 }
 
-.range-fill {
+.range-bar > .range-fill {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: 999px;
@@ -500,49 +563,10 @@
   opacity: 0.5;
 }
 
-.range-marker {
+.range-bar > .range-marker {
   position: absolute;
   top: 0;
   width: 2px;
   height: 100%;
   background: var(--text);
-}
-
-.range-drawdown {
-  position: absolute;
-  inset: 0 0 0 auto;
-  background: var(--negative);
-  opacity: 0.55;
-}
-
-.market-card-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem 0.9rem;
-  margin: 0;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.68rem;
-}
-
-.market-card-stats div {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.4rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.market-card-stats dt {
-  color: var(--muted);
-}
-
-.market-card-stats dd {
-  margin: 0;
-  color: var(--text);
-}
-
-.market-card-note {
-  margin: 0;
-  font-size: 0.68rem;
-  line-height: 1.6;
 }

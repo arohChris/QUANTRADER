@@ -376,16 +376,30 @@ def test_adversarial_far_future_epoch_drops_not_fixed_later() -> None:
 
 # --- Edges: duplicate (tick.id primary) ---
 
-def test_duplicate_tick_id_drops() -> None:
+def test_same_id_newer_epoch_accepts() -> None:
+    # REV2/A44 (the real-feed case): same tick.id at a NEWER epoch is a
+    # genuine new update, NOT a duplicate — the options endpoint reuses one
+    # id for every price change (live run 2026-09-25: 50 frames / 1 id / 43 quotes).
     ing = _ing()
     first = _as_internal(ing.ingest(_deriv_frame(id="dup-1")))
-    second = _as_drop(ing.ingest(_deriv_frame(id="dup-1", epoch=EPOCH + 1, bid=9.99)))
+    second = _as_internal(ing.ingest(_deriv_frame(id="dup-1", epoch=EPOCH + 1, bid=9.99)))
+    assert first.processing_sequence == 1
+    assert second.processing_sequence == 2
+    assert second.bid == Decimal("9.99")
+
+
+def test_same_id_same_epoch_drops() -> None:
+    # A44 rule: duplicate ONLY at the SAME time — same id + same epoch
+    # (byte-identical replay) → second Drop(duplicate_tick), first wins.
+    ing = _ing()
+    first = _as_internal(ing.ingest(_deriv_frame(id="dup-1")))
+    second = _as_drop(ing.ingest(_deriv_frame(id="dup-1")))
     assert first.processing_sequence == 1
     assert second.reason == DropReason.duplicate_tick
 
 
 def test_adversarial_same_tick_id_twice_second_drops() -> None:
-    # Spec Adversarial: same tick.id twice → second Drop(duplicate_tick)
+    # Spec Adversarial (REV2): same tick.id twice AT THE SAME EPOCH → second Drop(duplicate_tick)
     ing = _ing()
     assert isinstance(ing.ingest(_deriv_frame(id="adv-dup")), InternalTick)
     d = _as_drop(ing.ingest(_deriv_frame(id="adv-dup")))
@@ -393,7 +407,7 @@ def test_adversarial_same_tick_id_twice_second_drops() -> None:
 
 
 def test_same_id_different_prices_still_drops() -> None:
-    # Primary key wins: same id → duplicate even if bid/ask differ
+    # Same TIME wins (REV2/A44): same id + same epoch → duplicate even if bid/ask differ
     ing = _ing()
     assert isinstance(ing.ingest(_deriv_frame(id="same-id")), InternalTick)
     d = _as_drop(ing.ingest(_deriv_frame(id="same-id", ask=1.09, bid=1.08)))
@@ -404,6 +418,16 @@ def test_different_ids_not_duplicate() -> None:
     ing = _ing()
     assert isinstance(ing.ingest(_deriv_frame(id="id-a", epoch=EPOCH)), InternalTick)
     assert isinstance(ing.ingest(_deriv_frame(id="id-b", epoch=EPOCH + 1)), InternalTick)
+
+
+def test_different_ids_same_epoch_both_accept() -> None:
+    # REV2/A44 edge: two DISTINCT ticks at the same instant are both kept —
+    # the rule dedupes on (id, time), never on time alone.
+    ing = _ing()
+    a = _as_internal(ing.ingest(_deriv_frame(id="same-time-a", epoch=EPOCH)))
+    b = _as_internal(ing.ingest(_deriv_frame(id="same-time-b", epoch=EPOCH)))
+    assert a.processing_sequence == 1
+    assert b.processing_sequence == 2
 
 
 # --- Edges: sequence gap (only when provider sends seq) ---

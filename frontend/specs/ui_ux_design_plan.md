@@ -240,12 +240,22 @@ right. The former top status strip (`Market: experiment`, `as_of`, `sequence`) i
 **removed** — that telemetry belongs to the market panel footer where it is shown
 next to the data it describes, not in global chrome.
 
-Primary navigation is a **collapsible vertical sidebar**:
-- **expanded** — menu items render as a vertical list down the left edge, each with a
+Primary navigation is a **static, collapsible vertical sidebar**:
+- **static** - pinned under the header (`position: sticky`, `height: calc(100dvh - 4rem)`,
+  `overflow: hidden`), so the rail never scrolls and never leaves the DOM; page scroll
+  is unchanged;
+- **expanded** - menu items render as a vertical list down the left edge, each with a
   Lucide icon from `NAV_ICONS` (`frontend/app/nav_config.ts`) plus its text label;
-- **collapsed** — the sidebar hides itself entirely and the content area takes the
-  full width; the toggle lives in the header so it is always reachable
-  (`aria-expanded`, label `Toggle navigation`).
+- **collapsed** - a 2.6rem **glyph rail that hover-expands**, exactly as
+  `frontend_spec.md:114` requires. Labels live in `.nav-label` and return on hover;
+  every link also carries `title`, so no menu item is ever lost;
+- **outside click or Escape** collapses to the glyph rail - it no longer removes the
+  rail from the page;
+- a `@media (max-height: 700px)` pass compacts padding, font size and gap so the
+  tallest role (Admin, 9 items ~361px) fits a short window without clipping;
+- the header toggle keeps `aria-expanded` and the `Toggle navigation` label, with the
+  tooltip changing between "Collapse to icon rail" and "Expand navigation".
+
 
 The **access bar** (role context) lives in the **footer**, not in the
 navigation, so it never competes with the menu for rail space. The footer opens
@@ -354,7 +364,44 @@ hardcoded outside the token set.
 not "Owner/Admin" — to match the vocabulary used in navigation, footers, and the
 integration proposal.
 
-### 5.3 Owner/Admin dashboard
+### 5.3 Trader surfaces — Portfolio, Orders, Settings
+
+Built from the **frozen contracts** so the surface survives the real endpoints without
+a redesign (`frontend/app/mock_trader_data.ts` maps every field):
+
+| Surface | Contract source | What is shown |
+|---|---|---|
+| Portfolio | `portfolio.py` (`Position`, `PortfolioState`), `risk.py` (`RiskDecision`) | cash by currency · equity · margin used · margin available · leverage · positions table (symbol, side, qty, avg entry, unrealised, realised, last trade plan) · exposure by symbol · last risk decision with its limit checks |
+| Orders | `order.py` (`Order`, `OrderIntent`), `execution.py` (`ExecutionResult`, `Fill`) | trade chain · the eight-state machine with legal transitions · orders table (client_order_id, symbol, side, type, qty, filled, price, SL, TP, state, capability check, timestamp) · execution detail (broker order id, avg fill price, latency, slippage) · fill rows with commission |
+| Settings | `account_mode.py` + `docs/specs/m1.3_account_mode_two_gate.spec.md`, `shared/core/config.py` | two execution gates (MODE / AUTO / live armed / bot will trade) · three-layer risk limits with hard boundaries · broker account references · kill switch status · display density L1–L3 |
+
+Rules the surfaces obey, taken from the manual rather than invented:
+
+- **Side is the sign of `qty`** — there is no `side` field on a position
+  (`portfolio.py:14`).
+- **No `filled_qty`** — filled quantity is summed from `ExecutionResult.fills`,
+  because the order contract has no such field (`execution.py:34`).
+- **UNKNOWN is never resolved client-side** — the state chip says *query before
+  retry*, because an ambiguous broker response must be re-queried, not guessed
+  (`AGENTS.md §3.2`).
+- **client_order_id is the idempotency key** — a retry of the same trade plan reuses
+  it so the broker deduplicates (`order.py:44`).
+- **Money, margin, exposure and risk percentages are backend-owned**
+  (`frontend_spec.md:61`) — displayed read-only, badge-labelled, never recomputed.
+  Only percent-of-a-known-number and formatting happen in the browser.
+- **Secrets are never displayed, for any role** — account slots show an env **name**,
+  never a value (`config.py:55`).
+- **Kill switch is read-only for Trader** and never auto-resumes after a daily-loss
+  breach (`AGENTS.md §3.3`).
+- **Colour is never the only signal** — every state chip carries its word, every
+  P&L figure carries a sign.
+- **Lineage on hover** — correlation and trace ids on every order row, trade plan on
+  every position (`frontend_spec.md:21`, provenance before price).
+- **Viewer sees none of it** — `/app/portfolio`, `/app/orders` and `/app/settings`
+  resolve to the access preview for Viewer, and Viewer navigation carries no private
+  entry (`FRONTEND_BACKEND_INTEGRATION_PROPOSAL.md:107`, `:233`).
+
+### 5.4 Owner/Admin dashboard
 
 Purpose: operational control across authorized system scope.
 

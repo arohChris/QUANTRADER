@@ -11,7 +11,7 @@
   align-items: center;
   gap: 0.5rem;
   margin: 0 0 0.35rem;
-  font-size: 1.05rem;
+  font-size: var(--type-lead);
   letter-spacing: 0.04em;
 }
 
@@ -29,7 +29,7 @@
   border-radius: 999px;
   color: var(--accent-amber);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.66rem;
+  font-size: var(--type-micro);
 }
 
 .chat-log {
@@ -78,7 +78,7 @@
 .answer-question {
   margin: 0;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.78rem;
+  font-size: var(--type-caption);
 }
 
 .answer-head {
@@ -93,14 +93,14 @@
   align-items: center;
   gap: 0.35rem;
   color: var(--accent-violet);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .answer-lead {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--type-body-sm);
   line-height: 1.7;
 }
 
@@ -109,7 +109,7 @@
   padding: 0;
   border: 0;
   color: var(--text);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -120,7 +120,7 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.62rem;
+  font-size: var(--type-micro);
   letter-spacing: 0.06em;
 }
 
@@ -139,7 +139,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem 0.75rem;
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
 }
 
 .evidence-label {
@@ -194,7 +194,7 @@
   border-radius: 0.3rem;
   color: var(--accent-violet);
   background: var(--surface-soft);
-  font-size: 0.7rem;
+  font-size: var(--type-micro);
   cursor: pointer;
 }
 
@@ -206,7 +206,7 @@
   margin: 0;
   color: var(--dim);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.64rem;
+  font-size: var(--type-micro);
 }
 
 .chat-row {
@@ -224,7 +224,7 @@
   align-items: center;
   gap: 0.4rem;
   color: var(--accent-violet);
-  font-size: 0.7rem;
+  font-size: var(--type-micro);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -235,7 +235,7 @@
   border-radius: 0.25rem;
   color: var(--accent-cyan);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.66rem;
+  font-size: var(--type-micro);
 }
 
 .chat-bubble {
@@ -244,7 +244,7 @@
   border: 1px solid var(--border);
   border-radius: 0.4rem;
   background: var(--surface);
-  font-size: 0.82rem;
+  font-size: var(--type-body-sm);
   line-height: 1.7;
 }
 
@@ -260,7 +260,7 @@
   gap: 0.35rem 0.75rem;
   margin: 0;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
 }
 
 .chat-blocks div {
@@ -306,7 +306,7 @@
   color: var(--accent-cyan);
   background: var(--surface-soft);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   cursor: pointer;
   transition: border-color 140ms ease, background 140ms ease;
 }
@@ -319,7 +319,7 @@
 .command-label {
   color: var(--muted);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.7rem;
+  font-size: var(--type-micro);
 }
 
 .preset-chip {
@@ -332,7 +332,7 @@
   border-radius: 999px;
   color: var(--muted);
   background: transparent;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   text-align: left;
   cursor: pointer;
   transition: color 140ms ease, border-color 140ms ease;
@@ -385,5 +385,5 @@
   right: 3.25rem;
   bottom: 0.35rem;
   color: var(--dim);
-  font-size: 0.66rem;
+  font-size: var(--type-micro);
 }

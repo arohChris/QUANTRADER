@@ -1,0 +1,195 @@
+/* Admin workspace surfaces. Dense, read-only, and deliberately quieter than the trading
+   surfaces: an Admin is reading state, not acting on it. The only loud element here is
+   the danger control on Kill, because that is the one thing that must not be casual. */
+
+.admin-surface {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+/* The scope line every Admin panel inherits: what it acts over, and that the backend is
+   the authority on whether the action is allowed. */
+.admin-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: var(--type-caption);
+}
+
+.admin-scope strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.admin-panel {
+  gap: 0.7rem;
+}
+
+/* --- Status vocabulary -------------------------------------------------------
+   Separate from the OrderState classes on purpose: surface_ui.stateClass is typed to
+   orders and cannot classify a health state. */
+.state-chip.is-healthy,
+.state-chip.is-filled {
+  border-color: var(--positive);
+  color: var(--positive);
+}
+
+.state-chip.is-degraded {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.state-chip.is-unhealthy,
+.state-chip.is-rejected {
+  border-color: var(--negative);
+  color: var(--negative);
+}
+
+.state-chip.is-offline {
+  border-color: var(--dim);
+  color: var(--dim);
+}
+
+.is-accent {
+  color: var(--accent-amber);
+}
+
+.is-dim {
+  color: var(--dim);
+}
+
+/* --- Token rows: permission and code chips ------------------------------------ */
+
+.admin-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.admin-token-row .state-chip {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-micro);
+}
+
+/* --- Numbered flow (kill, resume, precedence) -------------------------------- */
+
+.admin-flow {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.admin-flow li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  color: var(--text);
+  font-size: var(--type-body-sm);
+}
+
+.admin-flow-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--accent-cyan);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-micro);
+  font-weight: 700;
+}
+
+/* --- Bulleted rules ---------------------------------------------------------- */
+
+.admin-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  line-height: 1.65;
+}
+
+.admin-list svg {
+  flex: 0 0 auto;
+  margin-top: 0.2rem;
+  color: var(--accent-cyan);
+}
+
+/* --- Emphasis and emptiness -------------------------------------------------- */
+
+.admin-warn {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border-left: 2px solid var(--accent-amber);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: var(--type-body-sm);
+  line-height: 1.65;
+}
+
+.admin-empty {
+  margin: 0;
+  padding: 0.9rem 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.35rem;
+  color: var(--muted);
+  font-size: var(--type-body-sm);
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* The one deliberately loud control. Disabled, because there is no endpoint — but its
+   presence states that killing is a real, deliberate action rather than a setting. */
+.admin-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--negative);
+  border-radius: 0.35rem;
+  background: none;
+  color: var(--negative);
+  font-size: var(--type-body-sm);
+  font-weight: 700;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.admin-danger:disabled {
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .admin-surface {
+    padding: 0.85rem;
+  }
+}

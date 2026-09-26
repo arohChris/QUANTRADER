@@ -215,7 +215,7 @@ async def main() -> int:
     ema_golden = ema_20.compute(_mk_candles([2.0, 4.0, 6.0, 8.0]), {"period": 3.0})
     rate_golden = tick_rate.compute(_mk_candles([1.0, 1.0, 1.0], ticks=4), {})
     print(f"goldens: flat={flat} loss={losses} ema={ema_golden} tick_rate={rate_golden}")
-    _check("golden: RSI flat -> 100.0 exactly", flat == 100.0)
+    _check("golden: RSI flat -> 50.0 exactly (REV5/A48 neutral)", flat == 50.0)
     _check("golden: RSI all-loss -> 0.0 exactly", losses == 0.0)
     _check("golden: EMA [2,4,6,8] p3 -> 6.25 exactly", ema_golden == 6.25)
     # hand calc for tick_rate: (4+4+4)/3 = 12/3 = 4.0

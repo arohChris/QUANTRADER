@@ -11,30 +11,26 @@
 
 .theme-light .toolbar-label,
 .theme-light .footer-heading,
-.theme-light .footer-group label,
-.theme-light .market-card-stats dt {
+.theme-light .footer-group label {
   color: var(--muted);
   font-weight: 700;
 }
 
 .theme-light .panel p,
 .theme-light .muted,
-.theme-light .footer-note,
-.theme-light .footer-legal,
-.theme-light .market-card-note {
+.theme-light .footer-copy {
   color: var(--muted);
   font-weight: 500;
 }
 
 .theme-light .footer-group a,
-.theme-light .footer-legal-links a,
 .theme-light .primary-nav a {
   color: var(--text);
   font-weight: 600;
 }
 
 .theme-light .data-large,
-.theme-light .market-card-stats dd,
+.theme-light .session-window,
 .theme-light .clock {
   color: var(--text);
   font-weight: 700;

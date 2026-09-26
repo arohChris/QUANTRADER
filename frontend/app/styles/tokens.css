@@ -1,11 +1,43 @@
-/* Theme tokens. Dark is the default; .theme-light overrides the same names. */
+/* Theme tokens. Dark is the default; .theme-light overrides the same names.
+
+   The dark base stays the frozen navy #070A14. A warm "Obsidian Ember" base was
+   built and REJECTED by the human on 2026-09-27: a warm near-black reads consumer /
+   lifestyle rather than instrument-grade, and did not fit a forex product. Do not
+   re-propose a warm base without a new argument. */
 :root {
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
-  --text-sm: 0.78rem;
-  --text-md: 0.95rem;
-  --text-lg: 1.15rem;
+  /* --- Type scale ---------------------------------------------------------
+     Seven named roles, smallest to largest. This file is the ONLY place a raw
+     font-size value is allowed to exist: every partial references these by role, so
+     "the standard size for this part" is decided once and changing the whole app's
+     text is a seven-number edit. The parts that existed before this scale used 22
+     different rem values across 84 declarations; the mapping never shrank anything —
+     each old value took the smallest step that was >= it — and it lifted the micro
+     floor from 0.62rem to 0.7rem.
+
+       --type-micro    mono chips, counts, eyebrows, tool metadata
+       --type-caption  dt labels, table meta, small print, placeholders
+       --type-body-sm  secondary body, links, buttons, table cells
+       --type-body     default body and paragraph text
+       --type-lead     emphasised values, card headings, stat numbers
+       --type-h3       section and panel headings
+       --type-h1       page titles                                                        */
+  --type-micro: 0.7rem;
+  --type-caption: 0.78rem;
+  --type-body-sm: 0.86rem;
+  --type-body: 0.95rem;
+  --type-lead: 1.05rem;
+  --type-h3: 1.15rem;
+  --type-h1: 1.35rem;
+
+  /* Legacy names, kept as aliases so nothing that referenced them breaks. */
+  --text-sm: var(--type-caption);
+  --text-md: var(--type-body);
+  --text-lg: var(--type-h3);
+  --bg: #070a14;
+  --panel: #121a33;
   --surface: rgba(18, 26, 51, 0.72);
   --surface-strong: rgba(10, 16, 34, 0.86);
   --surface-soft: rgba(255, 255, 255, 0.03);
@@ -23,7 +55,12 @@
   /* Financial semantics kept separate from decorative accents. */
   --positive: #34d399;
   --negative: #fb7185;
-  /* Restated here so both themes are readable and comparable in one place. */
+  /* Cool blue-greys, not warm neutrals. */
+  /* One page measure for every full-width band (footer, and anything else that spans
+     the page). Surfaces below it may be narrower, but the outer bands share this so
+     their left and right edges line up instead of each inventing a width. */
+  --page-measure: 84rem;
+
   --text: #e6edf7;
   --muted: #8b9bb4;
   --dim: #5c6b82;

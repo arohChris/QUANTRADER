@@ -1,0 +1,277 @@
+/* Trader surfaces: Portfolio, Orders, Settings. Dense tables, mono for data. */
+.trader-surface {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.surface-head h1 {
+  margin: 0 0 0.3rem;
+  font-size: var(--type-h3);
+  letter-spacing: 0.04em;
+}
+
+.surface-head p {
+  margin: 0;
+  max-width: 60rem;
+  line-height: 1.7;
+}
+
+.surface-badge {
+  justify-self: start;
+  margin: 0.35rem 0 0 !important;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--accent-amber);
+  border-radius: 999px;
+  color: var(--accent-amber);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-micro);
+}
+
+.surface-panel {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+}
+
+.surface-panel h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  font-size: var(--type-caption);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.surface-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-micro);
+  line-height: 1.7;
+}
+
+/* Stat strip: the always-on portfolio summary. */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.stat {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: var(--type-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  color: var(--text);
+  font-size: var(--type-body-sm);
+  font-weight: 700;
+}
+
+/* Dense data table: panels over cards (frontend_spec.md:117). */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-caption);
+}
+
+.data-table th {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.data-table tbody tr:hover {
+  background: var(--hover);
+}
+
+.data-table tbody tr.is-selected {
+  background: var(--hover);
+  box-shadow: inset 2px 0 0 var(--accent-cyan);
+}
+
+.mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.is-positive {
+  color: var(--positive);
+}
+
+.is-negative {
+  color: var(--negative);
+}
+
+/* State chips carry the word as well as the colour. */
+.state-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-micro);
+}
+
+.state-chip.is-filled {
+  color: var(--positive);
+  border-color: var(--positive);
+}
+
+.state-chip.is-live {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.state-chip.is-rejected {
+  color: var(--negative);
+  border-color: var(--negative);
+}
+
+.state-chip.is-unknown {
+  color: var(--accent-amber);
+  border-color: var(--accent-amber);
+}
+
+.state-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chain-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-micro);
+}
+
+.chain-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+}
+
+.chain-arrow {
+  color: var(--dim);
+}
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.35rem 0.75rem;
+  font-size: var(--type-caption);
+}
+
+.kv-grid div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--surface-soft);
+}
+
+.kv-grid span:first-child {
+  color: var(--muted);
+}
+
+.gate-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.6rem;
+}
+
+.gate {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--surface-soft);
+}
+
+.gate-label {
+  color: var(--muted);
+  font-size: var(--type-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gate-value {
+  color: var(--text);
+  font-size: var(--type-body);
+  font-weight: 700;
+}
+
+.gate-source {
+  color: var(--dim);
+  font-size: var(--type-micro);
+}
+
+.mini-button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: var(--type-micro);
+  cursor: pointer;
+}
+
+.mini-button:disabled {
+  color: var(--dim);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.kill-row,
+.density-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--type-caption);
+}
+
+.read-only-note {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-micro);
+}

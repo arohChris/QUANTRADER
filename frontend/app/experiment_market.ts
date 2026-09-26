@@ -118,6 +118,107 @@ export function pathPhase(index: number): "advance" | "drawdown" {
   return index > drawdownStart ? "drawdown" : "advance";
 }
 
+// --- Active trading sections ----------------------------------------------------
+//
+// AssetClass is frozen to forex | crypto | commodity
+// (shared/contracts/instrument.py:9,23-25), so the markets view groups its sections by
+// exactly those three values and invents no category of its own.
+//
+// The session windows below are INDICATIVE market hours, read off the UTC clock so the
+// screen never claims a session is open when it is not. They are not a trading calendar:
+// no holiday calendar, no DST rule, no per-broker override. Presentation only — the
+// authoritative calendar is M2b `TradingCalendar`, which is not built yet. A section
+// states that its market is trading and for how long; it never states a position, an
+// order, or a fill.
+
+export type AssetClass = "forex" | "crypto" | "commodity";
+
+export const ASSET_CLASSES: AssetClass[] = ["forex", "crypto", "commodity"];
+
+// AssetClass comes from the symbol namespace the catalogue already uses.
+export function classOf(symbol: string): AssetClass {
+  if (symbol.startsWith("CRYPTO.")) {
+    return "crypto";
+  }
+  return symbol.startsWith("COMMODITY.") ? "commodity" : "forex";
+}
+
+export type Session = {
+  assetClass: AssetClass;
+  label: string;
+  open: boolean;
+  // Human phrasing of the window, e.g. "open 21:00–21:00 UTC".
+  window: string;
+  // "closes in 3h 20m" or "reopens in 1d 4h"; null for a market that never closes.
+  countdown: string | null;
+};
+
+const SESSION_RULES: Record<AssetClass, { label: string; openDay: number; openHour: number; closeDay: number; closeHour: number; always: boolean }> = {
+  forex: { label: "Forex", openDay: 0, openHour: 21, closeDay: 5, closeHour: 21, always: false },
+  crypto: { label: "Crypto", openDay: 0, openHour: 0, closeDay: 6, closeHour: 0, always: true },
+  commodity: { label: "Commodities", openDay: 0, openHour: 22, closeHour: 22, closeDay: 5, always: false },
+};
+
+// Hours until the next open of a weekly market. The week runs Sun(0) → Fri(5), so the
+// three "closed" shapes each need their own answer:
+//   Saturday                       → tomorrow, Sunday's open hour
+//   Sunday before the open hour    → later the same day
+//   Friday after the early close   → 2 days + the open hour (skips Saturday)
+function hoursUntilOpen(now: Date, rule: (typeof SESSION_RULES)[AssetClass]): number {
+  const day = now.getUTCDay();
+  const hour = now.getUTCHours() + now.getUTCMinutes() / 60;
+
+  if (day === 6) {
+    return 24 + rule.openHour - hour;
+  }
+  if (day === 0 && hour < rule.openHour) {
+    return rule.openHour - hour;
+  }
+  if (day === rule.closeDay && hour >= rule.closeHour) {
+    return 48 + rule.openHour - hour;
+  }
+  // Unreachable for a well-formed rule; report the next full week rather than a wrong answer.
+  return 168;
+}
+
+function formatCountdown(hours: number): string {
+  const whole = Math.floor(hours);
+  const minutes = Math.round((hours - whole) * 60);
+  if (minutes === 60) {
+    return `${whole + 1}h`;
+  }
+  return whole > 0 ? `${whole}h ${minutes}m` : `${minutes}m`;
+}
+
+// Which of the three frozen asset classes is trading right now, and for how much longer.
+export function readSessions(now: Date): Session[] {
+  return ASSET_CLASSES.map((assetClass) => {
+    const rule = SESSION_RULES[assetClass];
+    const day = now.getUTCDay();
+    const hour = now.getUTCHours() + now.getUTCMinutes() / 60;
+    const window = `${pad(rule.openHour)}:00–${pad(rule.closeHour)}:00 UTC`;
+
+    if (rule.always) {
+      return { assetClass, label: rule.label, open: true, window: "24h · never closes", countdown: null };
+    }
+
+    // The week runs Sun(0) → Fri(5); Saturday(6) is closed for every non-crypto class.
+    const weekend = day === 6 || (day === 0 && hour < rule.openHour);
+    const closedEarly = day === rule.closeDay && hour >= rule.closeHour;
+    const open = !weekend && !closedEarly;
+
+    if (open) {
+      const until = day === rule.closeDay ? rule.closeHour : rule.closeHour + 24;
+      return { assetClass, label: rule.label, open: true, window, countdown: `closes in ${formatCountdown(until - hour)}` };
+    }
+    return { assetClass, label: rule.label, open: false, window, countdown: `reopens in ${formatCountdown(hoursUntilOpen(now, rule))}` };
+  });
+}
+
+function pad(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
 // One tick of elapsed time: append the next point of the same path.
 export function stepExperimentMarket(market: ExperimentMarket): ExperimentMarket {
   const nextSequence = market.sequence + 1;

@@ -72,16 +72,29 @@ def test_top_market_experiment_status_chips_are_removed() -> None:
 
 
 def test_viewer_dashboard_is_mock_only_and_public() -> None:
-    app = _read_app_source().lower()
+    # Scope: the PUBLIC Viewer surface only. Private words are legitimate on the Trader
+    # surfaces (Portfolio / Orders / Settings) — what must never happen is the Viewer
+    # dashboard, or any Viewer route, exposing them
+    # (FRONTEND_BACKEND_INTEGRATION_PROPOSAL.md:107, :233).
+    home = (_FRONTEND / "app" / "HomeDashboard.tsx").read_text(encoding="utf-8").lower()
+    app = (_FRONTEND / "app" / "App.tsx").read_text(encoding="utf-8").lower()
     for forbidden in ("fetch(", "websocket", "x-role", "portfolio", "orders", "kill", "secret", "capability", "health"):
+        assert forbidden not in home, f"public Viewer surface must not mention {forbidden}"
+    for forbidden in ("fetch(", "websocket", "x-role", "authorization", "localstorage"):
         assert forbidden not in app
-    assert "estimated accuracy" in app
+    assert "estimated accuracy" in home
 
 
-def test_viewer_dashboard_has_loading_empty_and_provenance_states() -> None:
-    app = _read_app_source().lower()
-    for state in ("loading", "empty", "stale", "as_of", "quality", "reference_snapshot_id"):
-        assert state in app
+def test_viewer_dashboard_has_no_presentation_state_scratch_row() -> None:
+    # AMENDED 2026-09-27 by human directive: the "loading / empty / stale" row is removed.
+    # It was a scratch strip showing the presentation-state vocabulary, not a real surface,
+    # and the states it named now appear where they are actually produced.
+    home = (_FRONTEND / "app" / "HomeDashboard.tsx").read_text(encoding="utf-8")
+    assert "state-row" not in home
+    assert "Presentation states" not in home
+    # And the CSS for it goes with it.
+    styles = _read_styles()
+    assert ".state-row" not in styles, "state-row CSS is now dead and must be deleted"
 
 
 def test_stylesheet_defines_responsive_and_accessible_shell() -> None:

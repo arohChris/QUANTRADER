@@ -1,15 +1,22 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ColorType, LineSeries, createChart, type UTCTimestamp } from "lightweight-charts";
 import {
   MOCK_INSTRUMENTS,
   TIMEFRAME_WINDOW,
+  classOf,
   pathPhase,
+  readSessions,
   withSymbol,
   type ExperimentMarket,
 } from "./experiment_market";
 
 type Theme = "dark" | "light";
 
+// ONE source of truth for the sparkline height. The old defect: the chart was built at
+// 96px inside a 4.5rem (72px) box, so the canvas bled over the card below it.
+const SPARKLINE_HEIGHT_PX = 72;
+
+// Sparkline palette: cool axis neutrals, data accents for lines.
 const CHART_PALETTE: Record<Theme, { text: string; grid: string; border: string }> = {
   dark: { text: "#a5b4fc", grid: "rgba(129, 140, 248, 0.14)", border: "rgba(34, 211, 238, 0.35)" },
   light: { text: "#475569", grid: "rgba(11, 18, 32, 0.08)", border: "rgba(11, 18, 32, 0.16)" },
@@ -48,8 +55,6 @@ type AssetTrend = {
   low: number;
   // The asset's trend of the day: move across the visible window, in percent.
   changePct: number;
-  // Depth below the window high, in percent. Negative while still above the open.
-  drawdownPct: number;
   phase: "advance" | "drawdown";
   window: number;
 };
@@ -73,7 +78,6 @@ function readTrend(base: ExperimentMarket, symbol: string, color: string, index:
     high,
     low,
     changePct: Number((((last - first) / first) * 100).toFixed(2)),
-    drawdownPct: Number((((last - high) / high) * 100).toFixed(2)),
     phase: pathPhase(market.points.length),
     window,
   };
@@ -83,6 +87,7 @@ function readTrend(base: ExperimentMarket, symbol: string, color: string, index:
 // per asset/theme and updated in place, so twelve live panels do not rebuild per tick.
 function MarketSparkline({ trend, theme }: { trend: AssetTrend; theme: Theme }) {
   const container = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
   const series = useRef<ReturnType<ReturnType<typeof createChart>["addSeries"]> | null>(null);
 
   useEffect(() => {
@@ -93,7 +98,7 @@ function MarketSparkline({ trend, theme }: { trend: AssetTrend; theme: Theme }) 
     const palette = CHART_PALETTE[theme];
     const chart = createChart(container.current, {
       width: container.current.clientWidth,
-      height: 96,
+      height: SPARKLINE_HEIGHT_PX,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: palette.text,
@@ -106,9 +111,22 @@ function MarketSparkline({ trend, theme }: { trend: AssetTrend; theme: Theme }) 
       handleScale: false,
       handleScroll: false,
     });
+    chartRef.current = chart;
     series.current = chart.addSeries(LineSeries, { color: trend.color, lineWidth: 2, priceLineVisible: false });
 
+    // The card grid reflows when the viewport changes column count. Without this the
+    // canvas kept its old pixel width and the line was stretched or clipped.
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width && width > 0) {
+        chart.applyOptions({ width: Math.round(width) });
+      }
+    });
+    observer.observe(container.current);
+
     return () => {
+      observer.disconnect();
+      chartRef.current = null;
       series.current = null;
       chart.remove();
     };
@@ -123,14 +141,23 @@ function MarketSparkline({ trend, theme }: { trend: AssetTrend; theme: Theme }) 
     );
   }, [trend]);
 
-  return <div ref={container} className="market-sparkline" aria-label={`${trend.label} price chart`} />;
+  return (
+    <div
+      ref={container}
+      className="market-sparkline"
+      style={{ height: `${SPARKLINE_HEIGHT_PX}px` }}
+      aria-label={`${trend.label} price chart`}
+    />
+  );
 }
 
 // Where price sits inside the day's range, as a bar with a position marker.
+// Two elements only: the fill and the marker. The old third overlay (drawdown) was
+// absolutely positioned on top of the fill, which read as elements floating over
+// each other, and it duplicated a number the card no longer shows.
 function RangeBar({ trend }: { trend: AssetTrend }) {
   const span = trend.high - trend.low;
   const position = span === 0 ? 50 : Math.min(100, Math.max(0, ((trend.last - trend.low) / span) * 100));
-  const depth = Math.min(100, Math.abs(trend.drawdownPct) * 12);
 
   return (
     <div
@@ -139,12 +166,11 @@ function RangeBar({ trend }: { trend: AssetTrend }) {
     >
       <span className="range-fill" style={{ width: `${position}%` }} />
       <span className="range-marker" style={{ left: `${position}%` }} />
-      <span className="range-drawdown" style={{ width: `${depth}%` }} />
     </div>
   );
 }
 
-function MarketCard({ trend, theme, index, total }: { trend: AssetTrend; theme: Theme; index: number; total: number }) {
+function MarketCard({ trend, theme }: { trend: AssetTrend; theme: Theme }) {
   const up = trend.changePct >= 0;
 
   return (
@@ -156,42 +182,14 @@ function MarketCard({ trend, theme, index, total }: { trend: AssetTrend; theme: 
         </h3>
         <span className={trend.phase === "drawdown" ? "phase-chip is-drawdown" : "phase-chip"}>{trend.phase}</span>
       </header>
-      <p className="market-trend">
+      <p className="market-card-trend">
         <span className={up ? "trend-value is-up" : "trend-value is-down"}>
           {up ? "▲" : "▼"} {Math.abs(trend.changePct).toFixed(2)}%
         </span>
-        <span className="trend-caption">trend of the day</span>
+        <span className="trend-caption">trend is {up ? "up" : "down"}</span>
       </p>
       <MarketSparkline trend={trend} theme={theme} />
       <RangeBar trend={trend} />
-      <dl className="market-card-stats">
-        <div>
-          <dt>last</dt>
-          <dd>{formatPrice(trend.last, trend.decimals)}</dd>
-        </div>
-        <div>
-          <dt>from high</dt>
-          <dd className={trend.drawdownPct < 0 ? "is-negative" : "is-positive"}>{trend.drawdownPct.toFixed(2)}%</dd>
-        </div>
-        <div>
-          <dt>day range</dt>
-          <dd>
-            {formatPrice(trend.low, trend.decimals)} – {formatPrice(trend.high, trend.decimals)}
-          </dd>
-        </div>
-        <div>
-          <dt>window</dt>
-          <dd>
-            {trend.window} pts · {trend.market.timeframe}
-          </dd>
-        </div>
-      </dl>
-      <p className="market-card-note">
-        {up
-          ? `Trend of the day is up ${trend.changePct.toFixed(2)}% across the window.`
-          : `Trend of the day is down ${Math.abs(trend.changePct).toFixed(2)}%, ${Math.abs(trend.drawdownPct).toFixed(2)}% below the window high.`}{" "}
-        Panel {index + 1} of {total} · as_of {new Date(trend.market.asOf).toISOString().slice(11, 19)}Z
-      </p>
     </article>
   );
 }
@@ -227,7 +225,7 @@ function Leaderboard({ trends }: { trends: AssetTrend[] }) {
   const peak = Math.max(...ranked.map((trend) => Math.abs(trend.changePct)), 0.01);
 
   return (
-    <section className="leaderboard" aria-label="Ranked leaders and laggards today">
+    <section className="leaderboard" aria-label="Assets ranked by today's move">
       <h2 className="leaderboard-heading">Trend of the day — ranked</h2>
       <ol className="leaderboard-list">
         {ranked.map((trend, rank) => {
@@ -254,40 +252,65 @@ function Leaderboard({ trends }: { trends: AssetTrend[] }) {
   );
 }
 
+// Active trading sections, one per frozen AssetClass. This replaces the old three-chip
+// summary row (best asset, worst asset, widest drawdown) with the question the reader
+// actually has: which markets are trading right now, and for how much longer. Read from
+// the UTC clock, so a section cannot claim to be open when it is not. These are market
+// sessions, never positions, orders, or fills.
+function ActiveTrading({ base, trends }: { base: ExperimentMarket; trends: AssetTrend[] }) {
+  const now = useMemo(() => new Date(), []);
+  const sessions = useMemo(() => readSessions(now), [now]);
+
+  return (
+    <section className="active-trading" aria-label="Active trading sections by asset class">
+      {sessions.map((session) => {
+        const members = trends.filter((trend) => classOf(trend.market.symbol) === session.assetClass);
+        const advancing = members.filter((trend) => trend.changePct >= 0).length;
+        const best = members.reduce<AssetTrend | null>((top, trend) => (!top || trend.changePct > top.changePct ? trend : top), null);
+
+        return (
+          <article className={session.open ? "active-trading-card is-open" : "active-trading-card"} key={session.assetClass}>
+            <header>
+              <h2>{session.label}</h2>
+              <span className={session.open ? "session-chip is-open" : "session-chip is-closed"}>
+                {session.open ? "session open" : "session closed"}
+              </span>
+            </header>
+            <p className="session-window mono">{session.window}</p>
+            <p className={session.open ? "session-countdown is-open" : "session-countdown"}>{session.countdown ?? "continuous"}</p>
+            <p className="session-breadth">
+              {advancing} of {members.length} advancing
+              {best ? (
+                <>
+                  {" · best "}
+                  <strong>{best.market.symbol}</strong> {best.changePct >= 0 ? "+" : ""}
+                  {best.changePct.toFixed(2)}%
+                </>
+              ) : null}
+            </p>
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+
 export default function MarketsGrid({ base, theme }: { base: ExperimentMarket; theme: Theme }) {
   const trends = MOCK_INSTRUMENTS.map((instrument, index) =>
     readTrend(base, instrument.symbol, CARD_COLORS[index % CARD_COLORS.length], index),
   );
-  const advancing = trends.filter((trend) => trend.changePct >= 0).length;
-  const best = trends.reduce((top, trend) => (trend.changePct > top.changePct ? trend : top), trends[0]);
-  const worst = trends.reduce((low, trend) => (trend.changePct < low.changePct ? trend : low), trends[0]);
 
   return (
     <section className="markets-view" aria-label="Markets dashboards">
       <header className="markets-view-head">
         <h1>Markets</h1>
-        <p className="muted">
-          {trends.length} mock dashboards · as_of {base.asOf} · {advancing} advancing / {trends.length - advancing} in drawdown
-        </p>
       </header>
-      <div className="markets-summary">
-        <p className="summary-chip">
-          Leader <strong>{best.market.symbol}</strong> {best.changePct >= 0 ? "+" : ""}
-          {best.changePct.toFixed(2)}%
-        </p>
-        <p className="summary-chip">
-          Laggard <strong>{worst.market.symbol}</strong> {worst.changePct >= 0 ? "+" : ""}
-          {worst.changePct.toFixed(2)}%
-        </p>
-        <p className="summary-chip">
-          Widest drawdown <strong>{worst.market.symbol}</strong> {worst.drawdownPct.toFixed(2)}% from high
-        </p>
-      </div>
+      <ActiveTrading base={base} trends={trends} />
       <MarketsHeatmap trends={trends} />
       <Leaderboard trends={trends} />
       <div className="markets-grid">
-        {trends.map((trend, index) => (
-          <MarketCard key={trend.market.symbol} trend={trend} theme={theme} index={index} total={trends.length} />
+        {trends.map((trend) => (
+          <MarketCard key={trend.market.symbol} trend={trend} theme={theme} />
         ))}
       </div>
     </section>

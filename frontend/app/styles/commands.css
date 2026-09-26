@@ -1,0 +1,135 @@
+/* Command Center. The picker must read as a command list, not a form: rows stay
+   scannable at L1 density and the gate reason is the only loud thing on a row. */
+.command-runner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.command-runner input {
+  min-width: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-caption);
+}
+
+.command-trigger {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--panel);
+  color: var(--text);
+  font-size: var(--type-caption);
+  cursor: pointer;
+}
+
+.command-trigger:hover,
+.command-trigger[aria-expanded="true"] {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.command-picker {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--bg);
+}
+
+.command-group h3 {
+  margin: 0 0 0.35rem;
+  color: var(--muted);
+  font-size: var(--type-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.command-group + .command-group {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+
+.command-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) 1fr;
+  gap: 0.5rem 0.9rem;
+  align-items: baseline;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  font-size: var(--type-caption);
+  cursor: pointer;
+}
+
+.command-row:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--panel);
+}
+
+.command-row:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 1px;
+}
+
+.command-name {
+  color: var(--accent-cyan);
+  font-size: var(--type-caption);
+  white-space: nowrap;
+}
+
+.command-summary {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* A gated command stays visible and explains itself. Hidden, the reader would
+   think the command does not exist. */
+.command-row:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.command-row:disabled .command-name {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--accent-amber);
+}
+
+.command-gate {
+  grid-column: 2;
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+  color: var(--accent-amber);
+  font-size: var(--type-micro);
+}
+
+.command-empty {
+  margin: 0;
+  padding: 0.4rem 0.2rem;
+}
+
+@media (max-width: 900px) {
+  .command-runner {
+    grid-template-columns: 1fr;
+  }
+
+  .command-row {
+    grid-template-columns: 1fr;
+  }
+
+  .command-gate {
+    grid-column: 1;
+  }
+}

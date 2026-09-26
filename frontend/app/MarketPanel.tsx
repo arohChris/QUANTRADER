@@ -12,6 +12,7 @@ import {
 
 export type Theme = "dark" | "light";
 
+// Chart palette: cool axis/grid neutrals plus the data-series accents.
 const CHART_PALETTE: Record<Theme, { text: string; grid: string; border: string; line: string; accent: string }> = {
   dark: {
     text: "#a5b4fc",
@@ -44,6 +45,7 @@ export const SERIES_COLORS = [
   "#f87171",
 ];
 
+
 export type MarketControls = {
   selectedSymbols: string[];
   onToggleSymbol: (symbol: string) => void;
@@ -52,6 +54,23 @@ export type MarketControls = {
 
 // Assets are picked inside a box, same control language as the timeframe select.
 // The list holds every catalogue instrument (12) and stays open for multi-select.
+// The trigger names what is on the chart. WHY: it used to read
+// "1 selected · 12 available", which told the reader how many instruments exist and
+// nothing about the one they are looking at. One name for a single selection; a count
+// prefix for several, so a five-asset comparison does not print five names into a button.
+export function assetTriggerNames(symbols: string[]): string {
+  const names = symbols.map(
+    (symbol) => MOCK_INSTRUMENTS.find((instrument) => instrument.symbol === symbol)?.label ?? symbol,
+  );
+  if (names.length === 0) {
+    return "No assets selected";
+  }
+  if (names.length === 1) {
+    return names[0];
+  }
+  return `${names[0]} +${names.length - 1} more`;
+}
+
 function AssetSelectBox({ selectedSymbols, onToggleSymbol }: Pick<MarketControls, "selectedSymbols" | "onToggleSymbol">) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -91,7 +110,7 @@ function AssetSelectBox({ selectedSymbols, onToggleSymbol }: Pick<MarketControls
         aria-haspopup="listbox"
         onClick={() => setOpen((current) => !current)}
       >
-        {selectedSymbols.length} selected · {MOCK_INSTRUMENTS.length} available
+        {assetTriggerNames(selectedSymbols)}
       </button>
       {open ? (
         <ul className="asset-box-list" role="listbox" aria-multiselectable="true" aria-label="Select assets">
@@ -151,11 +170,6 @@ export function MarketToolbar({ market, selectedSymbols, onToggleSymbol, onTimef
           {new Date(market.asOf).toISOString().slice(11, 19)} UTC
         </span>
       </div>
-      <span className="toolbar-note">as_of {market.asOf}</span>
-      <span className="toolbar-note">window {windowSize} pts</span>
-      <span className={pathPhase(market.points.length) === "drawdown" ? "phase-chip is-drawdown" : "phase-chip"}>
-        mock path: {pathPhase(market.points.length)}
-      </span>
     </div>
   );
 }
