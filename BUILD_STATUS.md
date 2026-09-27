@@ -223,6 +223,18 @@ coerced. D34 is therefore a correctness blocker, not a style preference.
   unbuilt". Wrong: inferred from one grep for `OIDC|JWT|Principal`. `tenant_context.py` and
   `permissions.py` both exist and are substantive. Absence of a grep hit is not absence of code.
 
+## CONTRACT v2 PROPOSAL — M1.1 `1.0 → 2.0` — AWAITING SIGN-OFF (2026-09-27)
+
+**Full proposal: `docs/CONTRACT_V2_PROPOSAL.md`. No frozen contract has been modified. Per `AGENTS.md` §5 the human signs off before any code.**
+
+- **THE DECISIVE FACT, verified by grep across `modules/ shared/ app/ tests/ scripts/`: the money-bearing contracts have ZERO production consumers.** `contracts.portfolio`, `contracts.order`, `contracts.risk`, `contracts.execution` are each imported from **exactly one place** — `tests/contract_tests/test_contracts.py` (25 functions). **No module in `modules/` or `app/` constructs `PortfolioState`, `Order`, `OrderIntent`, `RiskDecision`, `ExecutionResult`, `Fill`, or `Position`.**
+- **This is the cheapest possible moment to fix them.** M5/M6/M7 have not started building these contracts, so the change has no production blast radius. Once they do, the identical change becomes a breaking change with real consumers and a migration burden.
+- **It also explains D34 and D35.** The contracts were declared, frozen, and then **never exercised by anyone** — which is precisely why `float` money (20+ fields) and `RiskDecision`'s missing tenant/money inputs sat undetected.
+- Proposed: `float → Decimal` (7 contracts) · required `trading_account_id` (was `str | None = None`) · `BaseContract` on `Position`/`Fill` · `Fill.timestamp` → aware `datetime` · `RiskDecision` gains `balance` + `required_margin` + tenant · `symbol → instrument_id`. Bump **major 1.0 → 2.0** (equality semantics AND JSON wire format both change — `Decimal` serialises as a **string**).
+- **D24 (`broker_account_id`) is explicitly EXCLUDED** from this bump and needs its own slice with the RLS schema — a user with two accounts at one broker is the reason it exists, and folding it in here would be scope creep.
+- **D43 (new) — there is NO contract snapshot.** `tests/contract_tests/` contains only `test_contracts.py`, so the §5/§8 gate `pytest tests/contract_tests --snapshot` **cannot currently fail on an un-bumped add**. That gate is aspiratory. The v2 bump must create the snapshot, or the "no silent drift" guarantee remains unenforced.
+- **Known risk, stated not hidden:** Pydantic v2 lax mode coerces `float → Decimal` via `str`, so a float passed to a `Decimal` field may be **silently accepted** rather than rejected. The test plan asserts rejection; if lax coercion defeats it, a field validator is required — **decided at implementation with evidence, not guessed now.**
+
 ## Standing Directives (human, in force)
 
 1. **RIGOROUS TESTING BEFORE CODE.** Every implementation is tested against **every failure mode I know AND every failure mode I have researched** before the code is added to the system. Not "the happy path plus one edge".
