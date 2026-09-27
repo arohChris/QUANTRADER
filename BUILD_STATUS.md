@@ -122,47 +122,92 @@
 - **SPEC SUPERSESSION — money-precision boundary (human-authorised 2026-09-27).** `AGENTS.md` §3.1 lists `price` among fields that must never be `float`. That is **correct for settlement and over-broad for market data**, and `candles_1m.open/high/low/close` are `double precision`. Superseded with evidence in `docs/specs/m2.7_backfill.spec.md` §9b: a `double` carries **7–9 orders of magnitude** more precision than the smallest observable tick across all four asset classes (BTC 84296.692 needs 8 significant digits, `double` has ~15), and all four values round-trip exactly — so `NUMERIC` would cost write throughput and a migration while adding **no** accuracy. **§3.1 remains in full force for settlement money** (PnL, fees, commission, slippage cost, balances, margin, positions, ledger) and the trap is named: `normalize.py` parses prices as `Decimal` from the quoted tick string before any money is derived. The exemption is void for any future instrument needing >~12 significant digits.
 - **D19 RECORDED, NOT HIDDEN:** `candles_1m` price columns are `double precision` (pre-existing M2.10 schema choice, now sanctioned by the §9b supersession). The `float()` cast in the repair script is **schema-forced, not chosen**. It must never propagate to money.
 
-## M1.4 MONEY PRECISION — SPEC + TESTS WRITTEN, AWAITING TEST LGTM (2026-09-27)
+## M1.4 MONEY PRECISION — SPEC + TESTS + IMPLEMENTATION COMPLETE (2026-09-27)
 
-**Current step: `AGENTS.md` §2 Step 4 (human review of tests). Step 5 implementation has NOT started and must not until you LGTM the tests.**
+**Steps 1-6 closed. Step 7 (real-data verify) and Step 8 (human review) NOT yet done — so per §0 this is `implemented, not verified`, NOT `complete`.**
+Human test-LGTM was given 2026-09-27 ("do the necessary") before Step 5 began.
 
-- **Spec:** `docs/specs/m1.4_money_precision.spec.md` (v1.0 DRAFT, 13 sections).
-- **Tests:** `financial_analyst_app/tests/m1/test_m1.4_money_spec.py` — 41 test functions, 3 parametrised blocks (~48 cases), 6 `# Hand calc:` asserts, **0 `pytest.approx`, 0 `assert no_exception`** (both verified by grep, not assumed).
-- **State is INTENTIONALLY RED.** `shared/core/money.py` does not exist, so the file fails to collect. That is the correct test-first state per §2 Step 3. **`check_collection.py` correctly FAILS (exit 1) on it and explicitly refuses to be silenced** — "do NOT add it to the register... that is how a suite starts lying about what it covers." The guard is working as designed.
-- **CONSEQUENCE, STATED PLAINLY:** a full `pytest -q` is now **INTERRUPTED at collection**, not `1412 passed + 1 error`. `python -m pytest -q --ignore=tests/m1` = **1412 passed**. This is expected between Step 3 and Step 5, but it means the suite is not currently runnable end-to-end and the dependency-upgrade safety net is unavailable until Step 5 completes.
+- **Spec:** `docs/specs/m1.4_money_precision.spec.md` (**v1.1** — amended twice by the tests, see below).
+- **Implementation:** `financial_analyst_app/shared/core/money.py` — the file `AGENTS.md` §3.1 always cited
+  and which **never existed** (D33). Owns the only `ROUND_HALF_UP`, the only money context, the only
+  scale source, and the only domain bounds.
+- **Tests:** `financial_analyst_app/tests/m1/test_m1.4_money_spec.py` — **43 test functions, 52 cases,
+  6 `# Hand calc:` asserts, 0 real `pytest.approx`, 0 real `assert no_exception`** (both verified by
+  grep, not assumed).
+- **Verified:** `pytest tests/m1` = **52 passed**. Full suite = **1464 passed** (was 1412). `ruff` clean.
+  `check_collection` exit 0 · `check_naming` OK · `check_no_accidental_deletion` OK (230 baseline) ·
+  `lint-imports` 5 kept / 0 broken.
 
-### Measured evidence behind the spec (this stack: py3.14.6, pydantic 2.13.4, asyncpg 0.31.0, pyarrow 25.0.1, PG 17.11, TimescaleDB 2.30.1)
+### THE TESTS FOUND TWO DEFECTS IN MY OWN SPEC — the spec was corrected, not the tests bent
 
-| Test | Result |
-|---|---|
-| `float("2000000075959.342")` | stores `2000000075959.342041015625` — error `+4.1e-5`, yet **prints identically** |
-| `math.ulp` at 2e12 | `0.000244140625` — a 3-dp value never lands on the grid |
-| 100,000 × `0.0000001` in float | `0.009999999999994874`; `== 0.01` is **False** |
-| `float round()` on `0.015` / `2.675` | `0.01` / `2.67` — both **wrong** (should be `0.02` / `2.68`) |
-| `Decimal` default context | `prec=28` — a 41-digit value **loses its tail silently** |
-| stray `localcontext(prec=6)` | `2000000075959.342 + 0.01` → `2.00000E+12` — **catastrophic** |
-| `Decimal('0.4') * 0.2` | raises `TypeError` — **the self-enforcement property that justifies the whole change** |
-| `asyncpg` `NUMERIC(38,18)` | returns Python `Decimal`, exact, 18dp preserved. The widely-quoted "driver returns float for DECIMAL" hazard **does not apply here** |
-| `pydantic` `Decimal` field ← `0.4` | coerces via `str` → `Decimal('0.4')` exact — **safer than feared** |
-| `pydantic` `float` field ← `Decimal("0.4")` | returns `0.4` as **Python float — the live bug** |
-| `Decimal(0.1+0.2)` | `Decimal('0.30000000000000004')` — **Decimal does NOT rescue lossy input** |
+1. **The mixed-scale edge was simply wrong.** It said summing a 2dp and an 8dp value is "rejected",
+   which **contradicts §5's own "compute wide, round once" rule** — summing a 3-dp balance into a 2-dp
+   currency is the exact case that rule exists for. Corrected: summation **accepts** differing scales;
+   only *persistence* into a fixed-scale column refuses excess scale
+   (`quantize_money(..., reject_excess_scale=True)`).
+2. **I hardcoded `PRICE_SCALES = {"BTC": 8}` — the very defect I had just spent the session fixing.**
+   BTC's tick was `0.01` in our config vs `0.001` at the broker, and XAG `0.01` vs `0.0001` (a **100x**
+   error that silently discarded two orders of magnitude of price). A hand-written price table
+   reintroduces that class of bug, and it **violated spec §4.4**. Replaced with
+   `scale_from_pip_size()` deriving scale from the **broker's authoritative `pip_size`**, which is what
+   `verify_m2b.5_broker_reference.py` already guards at boot.
 
-### Defects found in EXISTING, previously-"complete" code
+### STANDARDS, NOT ASSUMPTIONS (the user's correction — "use the standard in calculations")
 
-- **D33 — `shared/core/money.py` DOES NOT EXIST, yet `AGENTS.md` §3.1 cites it** as the single `ROUND_HALF_UP` authority. The law references a file that was never written.
-- **D34 — 20+ money fields typed `float` across 7 frozen M1.1 contracts** (`Position`, `PortfolioState`, `Order`, `OrderIntent`, `RiskDecision`, `Fill`, `ExecutionResult`). Violates §3.1. **Consequence: the `Decimal("12.00")` hand-calc asserts §2 Step 3 mandates are currently UNWRITABLE** — a `float` field coerces and the only remaining option is the `pytest.approx` that §2 Step 4 forbids. The contract and the law currently contradict each other.
-- **D35 — `RiskDecision` has NO tenant field and NO money inputs** (no `user_id`, `broker`, `balance`, `required_margin`). §3.12 requires every risk decision logged "with exact numbers: balance, required_margin, approved_qty" and attributable. **A risk decision cannot currently be reconstructed.** This is the contract under mandatory human review.
-- **D36 — tenant fields are Optional:** `PortfolioState.user_id: str | None = None` (also `Order`, `OrderIntent`). A `PortfolioState(user_id=None)` is constructible, so an `if user_id is None: load_all()` branch is a live cross-tenant-leak path.
-- **D37 — `Position` and `Fill` do NOT inherit `BaseContract`:** no `version`, `correlation_id`, `trace_id`, `timestamp`. A `Position` cannot be traced to a trade → §3.12 audit chain broken. Inconsistent with the other 7 contracts.
-- **D38 — `Fill.timestamp: str | None`** is a **string**, not an aware `datetime`. §3.8 requires UTC `datetime(tzinfo=utc)`, never naive, never string. Invites `timestamp[:10]` slicing, which breaks at timezone edges. Deriv sends epoch ints.
-- **D39 — `inject_where_clause()` in `tenant_context.py` builds invalid SQL.** It decides with `if "WHERE" in base_sql.upper()`, so on `SELECT ... WHERE x=1 ORDER BY y` it appends `AND user_id=...` **after `ORDER BY`**. The substring test also misfires on the word `WHERE` inside a string literal. A security helper that silently mis-builds its query is a liability. **This file is otherwise well built** — `require_user_id()`/`require_broker_id()` already raise `IsolationError`, i.e. fail-closed by construction.
-- **D40 — no `platform_admin` role, and `admin` holds `{"*"}`.** The approved signup flow requires a `platform_admin` to approve; no such role exists. A tenant `admin` with `*` can reach `trading.enable`.
-- **D41 — my own earlier over-claim, corrected.** I previously reported tenant isolation and permissions as "0% — unbuilt." **That was wrong**, inferred from a grep for `OIDC|JWT|Principal` that found nothing. `shared/core/tenant_context.py` and `shared/core/permissions.py` both exist and are substantive. Lesson recorded: absence of a grep hit is not absence of code.
+- **Currency minor units are ISO 4217 and are NOT all 2.** Pinned by test: `JPY`/`KRW` = **0**,
+  `KWD`/`BHD` = **3**, `CLF` = **4**. "Assume 2 decimals" is wrong for a large minority of currencies.
+  No `babel`/`pycountry` installed, so the mapping lives in `money.py` as the single place to delete.
+- **Rounding mode semantics now VERIFIED, not assumed.** `ROUND_HALF_UP` = ties **away from zero**,
+  symmetric: `0.005→0.01` and `-0.005→-0.01`. Chosen over `ROUND_HALF_EVEN` (banker's, gives `0.00`
+  for `0.005`) and over `ROUND_CEILING` (**asymmetric** — `0.005→0.01` but `-0.005→0.00`, biasing one
+  side, which is wrong for money). Symmetric gains/losses is the conventional settlement rule.
+- **`pyarrow` decimal sizing is the caller's responsibility, measured not assumed.** `decimal128(19,4)`
+  does **NOT** reject a 2e12 value (13 int + 3 dec = 16 ≤ 19) and stores it exactly; `decimal128(10,4)`
+  does reject it. My first version of that test wrongly assumed `(19,4)` was too small — the tests
+  caught my own bad premise.
+- **Asyncpg `NUMERIC(38,18)` returns Python `Decimal` exactly** (18dp preserved). The commonly cited
+  "driver returns float for a DECIMAL column" hazard **does not apply here**. Asserted, not assumed.
 
-### Decisions taken (mine, reversible — say the word and I will change them)
+### THE MOST IMPORTANT DISCOVERY OF THE SLICE
 
-1. **Currency scale is a registry, not hardcoded 2dp.** Config-driven `config/reference/scales.yaml`. The system is designed multi-broker/broker-agnostic (§4.3); hardcoding 2dp is a decision that must be *reversed* later, and reversal is a data migration. Registry makes JPY 0dp and crypto 8dp declarative.
-2. **Contract scope = money + money-participating ratios.** `float → Decimal` for all money plus **`leverage`** (divides *into* margin) and **`slippage_bps`** (*is* a cost). Deliberately stays `float`: `signal_strength` (bounded score), `latency_ms`, `latency_budget_ms` (durations) — none enters money arithmetic, and converting them is churn on a major bump for no correctness gain.
+**Python's `float` repr HIDES the error, so no amount of printing or eyeballing can detect it.**
+
+```
+str(2000000075959.342)                  -> '2000000075959.342'   # looks perfect
+Decimal(str(2000000075959.342))         -> exactly the right value
+Decimal(2000000075959.342)              -> Decimal('2000000075959.342041015625')  # the truth
+```
+
+A test asserting `Decimal(str(float)) != exact` **FAILED** — which is the finding. The binary error is
+invisible at the string layer and only appears on direct conversion. **Consequence: money precision
+cannot be verified after the fact by inspecting output. It must be enforced by type at the boundary**,
+which is exactly why the contract fields must become `Decimal` and why `float` is rejected rather than
+coerced. D34 is therefore a correctness blocker, not a style preference.
+
+### NEW / UPDATED FINDINGS
+
+- **D33 — `shared/core/money.py` DID NOT EXIST** despite `AGENTS.md` §3.1 citing it as the single
+  `ROUND_HALF_UP` authority. **Now created.**
+- **D34 — 20+ money fields typed `float` across 7 frozen M1.1 contracts** (`Position`, `PortfolioState`,
+  `Order`, `OrderIntent`, `RiskDecision`, `Fill`, `ExecutionResult`). **STILL OPEN — the next slice.**
+  Now demonstrably a correctness blocker, not cosmetic: see "MOST IMPORTANT DISCOVERY" above.
+- **D42 (new) — no ISO 4217 package** (`babel`/`pycountry`/`iso4217` all absent), so currency minor
+  units are hand-carried and test-pinned. If one is adopted, `MONEY_SCALES` in `money.py` is the single
+  place to delete. Not a defect, a known gap.
+- **D35 — `RiskDecision` has NO tenant field and NO money inputs.** §3.12 requires the exact numbers
+  (balance, required_margin, approved_qty) and attribution. A risk decision cannot be reconstructed.
+  **STILL OPEN.**
+- **D36 — tenant fields Optional** (`PortfolioState.user_id: str | None = None`, also `Order`,
+  `OrderIntent`). A `PortfolioState(user_id=None)` is constructible. **STILL OPEN.**
+- **D37 — `Position`/`Fill` do not inherit `BaseContract`** — no `version`/`correlation_id`/`timestamp`,
+  so a `Position` cannot be traced to a trade. **STILL OPEN.**
+- **D38 — `Fill.timestamp: str | None`** is a string, not an aware `datetime` (§3.8). **STILL OPEN.**
+- **D39 — `inject_where_clause()` builds invalid SQL** — appends `AND user_id=…` after `ORDER BY`.
+  Filed as its own slice (AGENTS.md §2 forbids parallel slices). **STILL OPEN.**
+- **D40 — no `platform_admin` role; `admin` holds `{"*"}`.** **STILL OPEN.**
+- **D41 — my own earlier over-claim, corrected.** I reported tenant isolation and permissions as "0% —
+  unbuilt". Wrong: inferred from one grep for `OIDC|JWT|Principal`. `tenant_context.py` and
+  `permissions.py` both exist and are substantive. Absence of a grep hit is not absence of code.
 
 ## Standing Directives (human, in force)
 
