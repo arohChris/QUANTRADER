@@ -349,7 +349,8 @@ async def test_golden_trend_long_full_strength() -> None:
     signal = await _run(runner, "trend_following")
     assert isinstance(signal, Signal)
     assert signal.direction == "long" and signal.strength == 1.0
-    assert signal.symbol == "EURUSD" and signal.broker == "deriv"
+    assert signal.symbol == "FX.EURUSD" and signal.broker == "deriv"  # A64/A65 law:
+    # trading identity = canonical instrument_id (was display "EURUSD" pre-fix)
     assert signal.timeframe == "1m" and signal.shadow is False
     assert signal.strategy_id == "trend_following::ema_trend"
     assert signal.version == "2.1" and signal.user_id is None

@@ -13,6 +13,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 REQUIRED = [
+    # --- API surface (added 2026-09-27) ---
+    # WHY: the API location was correct only by human effort. Nothing failed if it moved
+    # or vanished, because the previous REQUIRED list covered only shared/* and config/*.
+    # `app/main.py` is the composition root (bible 3); every HTTP route lives under
+    # `modules/experience/api/v1/` (bible 3, 10_M10_Experience.md:52).
+    "app/main.py",
+    "modules/experience/README.md",
+    "modules/experience/api/v1/router.py",
     "shared/contracts/base.py",
     "shared/contracts/market_data.py",
     "shared/contracts/analytics.py",

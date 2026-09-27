@@ -24,6 +24,7 @@ from typing import Protocol
 from modules.m2_market_data.candles import CandleBuilder
 from modules.m2_market_data.ingest.ingest import TickIngestor
 from modules.m2_market_data.normalize import Normalizer
+from modules.m2_market_data.quality import QualityGate
 from modules.m2_market_data.validate import validate
 from modules.m2_market_data.warm import FlushReport, redact_dsn
 from shared.contracts.drop import Drop
@@ -106,6 +107,7 @@ class LivePipeline:
         warm: _WarmPort,
         provider: str = "deriv",
         builder_factory: Callable[[str], CandleBuilder] | None = None,
+        quality_gate: QualityGate | None = None,
     ) -> None:
         self.ingest = ingest
         self.normalizer = normalizer
@@ -124,17 +126,31 @@ class LivePipeline:
         self.drops: list[dict] = []
         self.errors: list[str] = []
         self.last_md: MarketData | None = None
+        # WHY constructed BY DEFAULT, never None (corrected 2026-09-27): the M2.6
+        # QualityGate was implemented and unit-tested but the pipeline never called it, so
+        # dedup, spike detection and (now) watermark gap detection were all dead code on
+        # the live path. Defaulting to a real gate makes the omission structurally
+        # impossible; a caller may inject their own, but cannot accidentally opt out.
+        self.quality_gate = quality_gate if quality_gate is not None else QualityGate()
 
     @property
     def instrument_id(self) -> str | None:
         return self.last_md.instrument_id if self.last_md is not None else None
 
     async def push(self, raw: str | bytes) -> MarketData | Drop:
-        """S2->S3->S4: accepted ONLY when the builder does not reject it (C1)."""
+        """S2->S3->S4->**M2.6 QualityGate**->S5: accepted ONLY when nothing drops it."""
         md = process_frame(raw, self.ingest, self.normalizer)
         if isinstance(md, Drop):
             self.drops.append(_drop_record(raw, md))
             return md
+        # WHY the gate runs BEFORE the builder: it is what marks a candle gapped after a
+        # watermark hole, and the builder reads that quality flag. Skipping it produced
+        # COMPLETE candles spanning missing minutes.
+        gated = self.quality_gate.on_md(md)
+        if isinstance(gated, Drop):
+            self.drops.append(_drop_record(raw, gated))
+            return gated
+        md = gated
         if self._builder is None:
             # WHY assert: Normalizer guarantees instrument_id (M2.2 steps 2-4) —
             # contract field stays optional, this narrows for the builder seam.

@@ -14,7 +14,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import re
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal, Protocol
@@ -34,20 +33,12 @@ from modules.m3_analytics.engine.errors import FeatureEngineDataError
 from modules.m3_analytics.engine.profiles import Profiles
 from shared.contracts.analytics import AnalyticsResult
 from shared.contracts.market_data import Candle, CapabilityStatus
+from shared.temporal.temporal_resolver import TemporalRequirement, resolve
 from shared.timeframes import INTERVAL_MINUTES
 
 logger = structlog.get_logger(__name__)
 
 _CACHE_TTL_SECONDS = 60  # spec: hot-state only — never a historical source
-_DURATION_UNITS = {"m": 1, "h": 60, "d": 1440}
-
-
-def _duration_minutes(duration: str) -> int:
-    """Historical Depth Law: '3d' → 4320 minutes (calendar duration → bars via ceil)."""
-    match = re.fullmatch(r"(\d+)([mhd])", duration)
-    if match is None or int(match.group(1)) == 0:
-        raise ValueError(f"invalid history_duration {duration!r} — expected e.g. '3d'")
-    return int(match.group(1)) * _DURATION_UNITS[match.group(2)]
 
 
 def _require_known_timeframe(candidate: str) -> str:
@@ -195,17 +186,22 @@ class FeatureEngine:
             if cached is not None:
                 return AnalyticsResult.model_validate_json(cached)
 
-        # --- flow 5: Requirement Planner — union over closure, callers never dates
-        tf_minutes = INTERVAL_MINUTES[resolved_tf]
-        needed_bars = 0
-        for name in order:
-            req = self._registry.get(name).REQUIREMENTS
-            bars = req.minimum_history + req.warmup
-            if req.history_duration:
-                bars = max(bars, -(-_duration_minutes(req.history_duration) // tf_minutes))
-            needed_bars = max(needed_bars, bars)
-        window_end = request.as_of
-        window_start = window_end - timedelta(minutes=needed_bars * tf_minutes)
+        # --- flow 5: Requirement Planner — shared/temporal resolve() (bible §6a.3)
+        # WHY: ONE window-derivation source (A65: no depth tables in callers;
+        # Planner Dependency Law = union over the closure's declared requirements).
+        resolution = resolve(
+            requirements=tuple(
+                TemporalRequirement(
+                    minimum_history=self._registry.get(name).REQUIREMENTS.minimum_history,
+                    warmup=self._registry.get(name).REQUIREMENTS.warmup,
+                    history_duration=self._registry.get(name).REQUIREMENTS.history_duration,
+                )
+                for name in order
+            ),
+            as_of=request.as_of,
+            timeframe=resolved_tf,
+        )
+        window_start, window_end = resolution.window_start, resolution.window_end
 
         # --- flow 6: provider fetch (§6a.4) — typed error, never a silent empty
         try:

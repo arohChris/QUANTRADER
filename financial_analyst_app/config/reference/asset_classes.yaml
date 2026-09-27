@@ -1,0 +1,58 @@
+# M2b.5 — the ASSET-CLASS STANDARD. Data, not code.
+#
+# WHY this file exists: a hardcoded table in Python makes adding an asset class a code change
+# and a deploy. That is the wrong shape for the one part of the system whose whole purpose is
+# to grow. Adding a class, or changing any class's hours, is an edit HERE - no Python, no
+# deploy.
+#
+# HUMAN DIRECTIVE 2026-09-27: "everything that can be configured should be made configurable,
+# especially things that have the potential to be expanded."
+#
+# VALIDATED AT BOOT, and it fails the process rather than starting with a wrong answer. In
+# config the dangerous case is not "it does not work" - it is "it works, and is quietly wrong".
+#
+# RULES ENFORCED ON EVERY ENTRY BELOW:
+#   * money values MUST be quoted strings ("0.01"), never bare numbers. A bare YAML number is
+#     already a float by the time we read it, and AGENTS.md 3.1 forbids float in the money
+#     path. Decimal(str(float)) only recovers the author's literal by coincidence.
+#   * `always_open: true` must NOT be combined with open_weekday/close_weekday - two
+#     contradictory answers, no safe resolution.
+#   * a windowed class needs BOTH open and close weekday/minute, within range.
+#   * min_qty must be <= qty_step, or no order could ever be placed.
+#   * tick_size must be within [0.000000000001, 1) - exactness is not the same as sanity.
+#   * unknown keys are REJECTED, so a typo cannot silently disable a rule.
+#
+# INHERITED vs PER-INSTRUMENT: everything here is inherited by any instrument declaring the
+# class. `contract_size` is deliberately NOT here — Gold is 100oz, Silver 5000oz. That is a
+# real per-instrument difference, not an inconsistency, so it is required on each instrument
+# in config/assets/*.yaml instead.
+
+crypto:
+  # 24/7. No weekday fields: they would contradict always_open.
+  always_open: true
+  price_dp: 8
+  tick_size: "0.00000001"
+  min_qty: "0.00001"
+  qty_step: "0.00001"
+
+forex:
+  # Sun 21:00 UTC -> Fri 21:00 UTC, as a 7-day repeating window.
+  open_weekday: 6      # 0=Mon .. 6=Sun
+  open_minute: 1260     # 21:00 UTC, minutes from midnight
+  close_weekday: 4     # Friday
+  close_minute: 1260   # 21:00 UTC
+  price_dp: 5
+  tick_size: "0.00001"
+  min_qty: "0.01"
+  qty_step: "0.01"
+
+commodity:
+  # Metals open an hour later than FX and close an hour earlier: Sun 22:00 -> Fri 21:00.
+  open_weekday: 6
+  open_minute: 1320     # 22:00 UTC
+  close_weekday: 4
+  close_minute: 1260    # 21:00 UTC
+  price_dp: 2
+  tick_size: "0.01"
+  min_qty: "0.01"
+  qty_step: "0.01"

@@ -1,0 +1,104 @@
+[info] endpoint=wss://api.derivws.com/trading/v1/options/ws/public symbol=cryBTCUSD (app_id never printed)
+[seed] 200 candles 2026-09-26T00:59:00+00:00 -> 2026-09-26T04:19:00+00:00 instrument=CRYPTO.BTCUSD asset_class=crypto
+[data] C:\Users\MY PC\Desktop\QUANTRADER2\financial_analyst_app\data\live_signals\2026-09-26\history_1m.jsonl
+[gate] eligible=6 blocked=['microstructure_flow']
+
+=== EVAL seed as_of=2026-09-26T04:19:00+00:00 bars=200 last=[2026-09-26T04:18:00+00:00 O=83972.455 C=83973.34] ===
+ANALYTICS adx_14=35.172 choppiness=48.084 donchian_20=86.816 ema_20=83966 hurst=0.57511 rsi_14=59.375 sma_20=83958 zscore_20=0.83136
+STRATEGY                   VERDICT  VALUE
+trend_following            NONE     0.0
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             NONE     0.0
+donchian_breakout          NONE     0.0
+pullback                   NONE     0.0
+regime_based               NONE     0.0
+[live] subscribing cryBTCUSD duration=forever -> C:\Users\MY PC\Desktop\QUANTRADER2\financial_analyst_app\data\live_signals\2026-09-26\live_ticks.jsonl
+
+=== EVAL bar 2026-09-26T04:18:00+00:00 as_of=2026-09-26T04:19:00+00:00 bars=200 last=[2026-09-26T04:18:00+00:00 O=83973.29 C=83979.0] ===
+ANALYTICS adx_14=35.343 choppiness=49.304 donchian_20=93.511 ema_20=83967 hurst=0.58028 rsi_14=61.69 sma_20=83959 zscore_20=1.1132
+STRATEGY                   VERDICT  VALUE
+trend_following            LONG     0.5052336129643944
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             NONE     0.0
+donchian_breakout          NONE     0.0
+pullback                   NONE     0.0
+regime_based               NONE     0.0
+[live] ticks accepted=50 dropped=0 candles=200 evals=2
+
+=== EVAL bar 2026-09-26T04:19:00+00:00 as_of=2026-09-26T04:20:00+00:00 bars=201 last=[2026-09-26T04:19:00+00:00 O=83979.08 C=84000.03] ===
+ANALYTICS adx_14=36.498 choppiness=40.135 donchian_20=120.48 ema_20=83973 hurst=0.60185 rsi_14=68.831 sma_20=83963 zscore_20=2.2273
+STRATEGY                   VERDICT  VALUE
+trend_following            LONG     0.5060375624244626
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             SHORT    -0.5568313028119742
+donchian_breakout          NONE     0.0
+pullback                   NONE     0.0
+regime_based               NONE     0.0
+[live] ticks accepted=100 dropped=0 candles=201 evals=3
+
+=== EVAL bar 2026-09-26T04:20:00+00:00 as_of=2026-09-26T04:21:00+00:00 bars=202 last=[2026-09-26T04:20:00+00:00 O=84000.03 C=84010.92] ===
+ANALYTICS adx_14=38.04 choppiness=35.68 donchian_20=110.51 ema_20=83980 hurst=0.60105 rsi_14=71.277 sma_20=83968 zscore_20=2.8285
+STRATEGY                   VERDICT  VALUE
+trend_following            LONG     0.5071422317286487
+rsi_overbought_oversold    SHORT    -0.5212872013515517
+mean_reversion             SHORT    -0.7071152402480616
+donchian_breakout          LONG     0.5525423362709277
+pullback                   NONE     0.0
+regime_based               LONG     1.0
+[live] ticks accepted=150 dropped=0 candles=202 evals=4
+
+=== EVAL bar 2026-09-26T04:21:00+00:00 as_of=2026-09-26T04:22:00+00:00 bars=203 last=[2026-09-26T04:21:00+00:00 O=84010.92 C=83986.12] ===
+ANALYTICS adx_14=39.701 choppiness=39.037 donchian_20=74.257 ema_20=83981 hurst=0.60091 rsi_14=57.203 sma_20=83970 zscore_20=1.0716
+STRATEGY                   VERDICT  VALUE
+trend_following            NONE     0.0
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             NONE     0.0
+donchian_breakout          NONE     0.0
+pullback                   NONE     0.0
+regime_based               NONE     0.0
+[live] ticks accepted=200 dropped=0 candles=203 evals=5
+[live] ticks accepted=250 dropped=0 candles=203 evals=5
+
+=== EVAL bar 2026-09-26T04:22:00+00:00 as_of=2026-09-26T04:23:00+00:00 bars=204 last=[2026-09-26T04:22:00+00:00 O=83986.12 C=83942.44] ===
+ANALYTICS adx_14=35.953 choppiness=39.101 donchian_20=-14.9 ema_20=83974 hurst=0.61775 rsi_14=42.154 sma_20=83969 zscore_20=-1.6437
+STRATEGY                   VERDICT  VALUE
+trend_following            NONE     0.0
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             NONE     0.0
+donchian_breakout          NONE     0.0
+pullback                   LONG     0.8218312890134193
+regime_based               NONE     0.0
+[live] ticks accepted=300 dropped=0 candles=204 evals=6
+
+=== EVAL bar 2026-09-26T04:23:00+00:00 as_of=2026-09-26T04:24:00+00:00 bars=205 last=[2026-09-26T04:23:00+00:00 O=83940.39 C=83918.16] ===
+ANALYTICS adx_14=35.437 choppiness=31.513 donchian_20=-34.91 ema_20=83964 hurst=0.61639 rsi_14=36.697 sma_20=83967 zscore_20=-2.5147
+STRATEGY                   VERDICT  VALUE
+trend_following            SHORT    -0.5018510927057215
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             LONG     0.6286739767983107
+donchian_breakout          SHORT    -0.6745506829618823
+pullback                   LONG     1.0
+regime_based               LONG     1.0
+[live] ticks accepted=350 dropped=0 candles=205 evals=7
+
+=== EVAL bar 2026-09-26T04:24:00+00:00 as_of=2026-09-26T04:25:00+00:00 bars=206 last=[2026-09-26T04:24:00+00:00 O=83910.43 C=83893.69] ===
+ANALYTICS adx_14=35.693 choppiness=25.509 donchian_20=-26.079 ema_20=83951 hurst=0.61635 rsi_14=32.186 sma_20=83964 zscore_20=-2.7953
+STRATEGY                   VERDICT  VALUE
+trend_following            SHORT    -0.5076128377938947
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             LONG     0.6988178695872869
+donchian_breakout          SHORT    -0.6303953959288112
+pullback                   LONG     1.0
+regime_based               LONG     1.0
+[live] ticks accepted=400 dropped=0 candles=206 evals=8
+
+=== EVAL bar 2026-09-26T04:25:00+00:00 as_of=2026-09-26T04:26:00+00:00 bars=207 last=[2026-09-26T04:25:00+00:00 O=83893.72 C=83891.41] ===
+ANALYTICS adx_14=34.533 choppiness=26.635 donchian_20=1.4628 ema_20=83940 hurst=0.62431 rsi_14=31.624 sma_20=83961 zscore_20=-2.3347
+STRATEGY                   VERDICT  VALUE
+trend_following            SHORT    -0.5121661024691776
+rsi_overbought_oversold    NONE     0.0
+mean_reversion             LONG     0.5836791317367105
+donchian_breakout          NONE     0.0
+pullback                   LONG     1.0
+regime_based               LONG     1.0
+[live] ticks accepted=450 dropped=0 candles=207 evals=9

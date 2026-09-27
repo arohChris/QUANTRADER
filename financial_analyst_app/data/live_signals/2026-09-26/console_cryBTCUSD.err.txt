@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "C:\Users\MY PC\Desktop\QUANTRADER2\financial_analyst_app\scripts\verify_m4.2_live_signals.py", line 673, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\MY PC\Desktop\QUANTRADER2\financial_analyst_app\scripts\verify_m4.2_live_signals.py", line 529, in main
+    raw = ws.recv(timeout=timeout)
+  File "C:\Users\MY PC\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\sync\connection.py", line 340, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received

@@ -6,10 +6,10 @@ FX.EURUSD:
   display_name: EURUSD
   asset_class: forex
   pip: 0.0001
-  tick_size: 0.00001
-  contract_size: 100000
-  min_qty: 0.001
-  qty_step: 0.001
+  tick_size: "0.00001"
+  contract_size: "100000"
+  min_qty: "0.001"
+  qty_step: "0.001"
   brokers: [deriv, mt5, headway]
   broker_native:
     deriv: frxEURUSD
@@ -22,10 +22,10 @@ FX.GBPUSD:
   display_name: GBPUSD
   asset_class: forex
   pip: 0.0001
-  tick_size: 0.00001
-  contract_size: 100000
-  min_qty: 0.001
-  qty_step: 0.001
+  tick_size: "0.00001"
+  contract_size: "100000"
+  min_qty: "0.001"
+  qty_step: "0.001"
   brokers: [deriv, mt5]
   broker_native:
     deriv: frxGBPUSD

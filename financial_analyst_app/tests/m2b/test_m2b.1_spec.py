@@ -315,3 +315,37 @@ def test_yaml_is_source_of_truth_mappings_reachable() -> None:
         assert reference.to_canonical(native, broker) == inst_id
         checked += 1
     assert checked >= 7, f"YAML source-of-truth check only covered {checked} pairs"
+
+
+# --- DEFECT FIX 2026-09-27: non-instrument YAML sections were ingested as instruments ---
+# config/assets/*.yaml each carry a sibling top-level `analytics:` profile block. The master
+# loader took ANY dict-valued key, so `_MASTER` gained a junk 'analytics' entry and
+# exists("analytics") / get_instrument("analytics") returned truthy junk. Harmless while the
+# universe was 5, but it pollutes the reference master and matters for the 25-asset
+# expansion. Fixed by requiring a recognised `asset_class` (the bible's asset-class canon is
+# forex | crypto | commodity).
+
+def test_non_instrument_yaml_sections_are_not_instruments() -> None:
+    assert "analytics" not in reference._MASTER, (
+        "the `analytics:` profile block must not be ingested as an instrument"
+    )
+    assert not reference.exists("analytics")
+    with pytest.raises(reference.UnknownInstrumentError):
+        reference.get_instrument("analytics")
+
+
+def test_every_real_instrument_is_still_loaded() -> None:
+    """The fix must not drop a legitimate instrument."""
+    for inst in ("FX.EURUSD", "FX.GBPUSD", "CRYPTO.BTCUSD", "COMMODITY.XAUUSD", "COMMODITY.XAGUSD"):
+        assert reference.exists(inst), f"{inst} was wrongly dropped by the master fix"
+        assert reference.get_instrument(inst)["asset_class"] in {
+            "forex", "crypto", "commodity",
+        }
+
+
+def test_master_contains_only_known_asset_classes() -> None:
+    """Every master entry must declare a recognised asset class - fail closed."""
+    for key, entry in reference._MASTER.items():
+        assert entry.get("asset_class") in {"forex", "crypto", "commodity"}, (
+            f"master entry {key!r} has asset_class={entry.get('asset_class')!r}"
+        )

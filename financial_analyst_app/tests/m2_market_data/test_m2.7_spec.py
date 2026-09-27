@@ -14,7 +14,7 @@ from collections.abc import Sequence
 import pytest
 
 # Direct impl import — recovery.py must expose to_intervals after REV2 fix.
-from modules.m2_market_data.recovery import (  # noqa: F401
+from modules.m2_market_data.recovery import (
     ChunkOrchestrator,
     GapAnalyzer,
     RecoveryEngine,
@@ -202,7 +202,7 @@ def test_happy_path_ok_all_chunks() -> None:
 
 def test_disjoint_missing_fetches_only_listed_points() -> None:
     # Spec REV2 blocker: [5,7] must fetch (5,5) and (7,7) only — never (5,7) span
-    eng, fetch_calls, write_calls, choose_calls = _engine_logs(chunk_size=10)
+    eng, fetch_calls, _write_calls, choose_calls = _engine_logs(chunk_size=10)
     result = asyncio.run(eng.on_gap("FX.EURUSD", "deriv", missing_watermarks=[5, 7]))
     assert result.status == "ok"
     assert result.missing_count == 2  # unique requested, not span length
@@ -377,3 +377,77 @@ def test_source_chosen_once_fetch_order_ascending() -> None:
     starts = [c[0] for c, _ in fetch_calls]
     assert starts == sorted(starts)
     assert len(fetch_calls) == 3  # 10-14 size 2 → 3
+
+
+# --- DEFECT HUNT 2026-09-27 (human: "any error is prohibited", worst case) ---
+# Both tests below were observed FAILING against the REV2.1 implementation before the fix.
+
+async def test_empty_fetch_is_NOT_reported_as_recovered() -> None:
+    """DEFECT 1 (silent data loss): a chunk whose fetch returns ZERO rows was counted as
+    done and the whole run reported status="ok". The data was gone forever and nobody was
+    ever told. A recovery that cannot fail is worse than no recovery, because it converts
+    data loss into silence."""
+
+    async def fetch_nothing(chunk, source):
+        return []
+
+    async def write(data, instrument_id, broker, chunk):
+        return None
+
+    eng = RecoveryEngine(
+        choose_source=lambda i, b: "lake",
+        fetch=fetch_nothing,
+        write_backfill=write,
+        chunk_size=10,
+    )
+    result = await eng.on_gap("FX.EURUSD", "deriv", missing_watermarks=[1, 2, 3])
+    assert result.status != "ok", "an empty backfill must never report ok"
+    assert result.chunks_done == 0, "a chunk that returned no rows is not done"
+    assert result.status == "failed"
+    # The one contiguous run [1,2,3] is a single chunk (1,3) at chunk_size=10.
+    assert "1-3" in result.detail, (
+        f"the detail must name the unrecovered range, got {result.detail!r}"
+    )
+    assert "permanently missing" in result.detail
+
+
+async def test_partly_empty_fetch_reports_partial_not_ok() -> None:
+    """DEFECT 1, partial case: one chunk returns rows, the next returns none."""
+
+    async def fetch_sometimes(chunk, source):
+        return [1, 2, 3] if chunk[0] == 1 else []
+
+    async def write(data, instrument_id, broker, chunk):
+        return None
+
+    eng = RecoveryEngine(
+        choose_source=lambda i, b: "lake",
+        fetch=fetch_sometimes,
+        write_backfill=write,
+        chunk_size=1,
+    )
+    result = await eng.on_gap("FX.EURUSD", "deriv", missing_watermarks=[1, 2, 3])
+    assert result.status == "partial", f"got {result.status}"
+    assert result.chunks_done == 1
+
+
+def test_absurd_watermark_jump_does_not_exhaust_memory() -> None:
+    """DEFECT 2 (well-known DoS on the hot path): observe() did
+    list(range(last + 1, watermark)), materialising one int per missing tick. A corrupted
+    or spoofed watermark - or simply a long outage - built a 50-million-element list
+    (~1.8 GB) in about a second, on the ingest path, blowing the <50ms tick->parquet
+    budget and risking an OOM kill mid-session. A gap is a RANGE, so it must be carried as
+    a range and bounded, never expanded into a list."""
+    g = GapAnalyzer()
+    g.observe("FX.EURUSD", "deriv", 1)
+    with pytest.raises(ValueError, match="exceed"):
+        g.observe("FX.EURUSD", "deriv", 50_000_000)
+
+
+def test_large_but_bounded_watermark_jump_is_reported_as_a_range() -> None:
+    """A big-but-acceptable hole must still be detected, and cheaply."""
+    g = GapAnalyzer()
+    g.observe("FX.EURUSD", "deriv", 1)
+    missing = g.observe("FX.EURUSD", "deriv", 1001)
+    assert len(missing) == 999
+    assert missing[0] == 2 and missing[-1] == 1000

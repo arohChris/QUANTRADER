@@ -32,7 +32,6 @@ TEST_ALLOWLIST = {
     "test_account_switch.py",
     "test_account_mode.py",
     "test_account_mode_two_gate.py",
-    "test_account_mode_page.py",
     "test_contracts.py",
     "__init__.py",
     "conftest.py",

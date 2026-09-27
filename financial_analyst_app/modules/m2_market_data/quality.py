@@ -30,16 +30,57 @@ class QualityGate:
         *,
         spike_ratio: Decimal = _DEFAULT_SPIKE,
         dedup_store: set | None = None,
+        max_watermark_span: int = 1_000_000,
     ) -> None:
         # WHY fail-loud: absurd ratio would silently disable or flag everything.
-        if not (Decimal("0") < spike_ratio < Decimal("1")):
+        if not (Decimal(0) < spike_ratio < Decimal(1)):
             raise ValueError(f"spike_ratio must be in (0, 1), got {spike_ratio}")
+        if isinstance(max_watermark_span, bool) or not isinstance(max_watermark_span, int):
+            raise ValueError(  # noqa: TRY004 — one bad-input class for the whole gate
+                f"max_watermark_span must be int, got {type(max_watermark_span).__name__}"
+            )
+        if max_watermark_span < 1:
+            raise ValueError(f"max_watermark_span must be >= 1, got {max_watermark_span}")
         self._spike_ratio = spike_ratio
         self._seen: set = dedup_store if dedup_store is not None else set()
         self._prev_map: dict[tuple[str, str], tuple[float, float | None, float | None]] = {}
+        # WHY watermark tracking lives HERE (corrected 2026-09-27): the frozen MarketData
+        # contract documents `watermark` as "M2 processing_sequence per instrument_id+broker
+        # - gap detection", yet nothing read it. Gap status was therefore taken solely from
+        # the broker's own "gapped" marker, so a dropped socket or a lost tick produced a
+        # candle stamped COMPLETE with minutes missing inside it, and M3 computed straight
+        # across the hole. A gap is a QUALITY fact, so it is detected where quality is
+        # decided — not by the candle builder, which cannot distinguish "no ticks" from
+        # "no trading" and must stay a pure function of the stream it is handed.
+        self._wm_map: dict[tuple[str, str], int] = {}
+        self._max_watermark_span = max_watermark_span
+        self.watermark_gaps: list[tuple[str, str, int, int]] = []
+
+    def _apply_watermark_gap(self, md: MarketData) -> MarketData:
+        """Downgrade quality to `gapped` when this tick's watermark jumps forward.
+
+        WHY never promote: a healthy tick arriving after a hole must stay gapped so the
+        candle that spans the hole is stamped GAP_AFFECTED and M3 skips it. AGENTS.md 3.3
+        requires the safe assumption, and a silently repaired bar is exactly the failure
+        this whole mechanism exists to prevent.
+        """
+        wm = md.watermark
+        if isinstance(wm, bool) or not isinstance(wm, int) or wm < 1:
+            return md
+        key = (md.instrument_id or md.symbol, md.broker or md.provider or "")
+        last = self._wm_map.get(key)
+        if last is not None and wm > last + 1:
+            span = wm - last - 1
+            if span <= self._max_watermark_span:
+                self.watermark_gaps.append((key[0], key[1], last + 1, wm - 1))
+                if md.quality not in (DataQuality.gapped,):
+                    return md.model_copy(update={"quality": DataQuality.gapped})
+        if last is None or wm > last:
+            self._wm_map[key] = wm
+        return md
 
     def on_md(self, md: MarketData) -> MarketData | Drop:
-        # Order: defensive payload/timestamp → dedup identity → classifier → prev update.
+        # Order: defensive payload/timestamp → dedup identity → watermark-gap → classifier → prev update.
         if md.kind != "tick" or not isinstance(md.payload, Tick):
             return self._drop(md, DropReason.missing_field, "non-tick payload")
         ts = md.exchange_timestamp
@@ -54,6 +95,7 @@ class QualityGate:
                 return self._drop(md, DropReason.duplicate_tick, "duplicate identity")
             self._seen.add(key)
 
+        md = self._apply_watermark_gap(md)
         out = self._classify(md)
         tick = out.payload if isinstance(out, MarketData) else md.payload
         assert isinstance(tick, Tick)
@@ -64,13 +106,22 @@ class QualityGate:
 
     def _dedup_key(self, md: MarketData, provider: str) -> tuple | None:
         # Empty sei is not a unique key → fingerprint path (spec Adversarial).
-        if md.source_event_id:
-            return ("sei", md.instrument_id or md.symbol, md.source_event_id)
+        #
+        # CORRECTED 2026-09-27: the source_event_id branch omitted the timestamp. On Deriv
+        # `tick.id` is the SUBSCRIPTION id, constant for the life of a stream, so every
+        # tick after the first produced the same key and was dropped as a duplicate — near
+        # total data loss. This stayed invisible only because the gate was never called by
+        # the pipeline; wiring it in exposed it on the first run. M2.1's own ingest dedup
+        # already pairs them as (source_event_id, epoch) — this now matches.
         ts = md.exchange_timestamp
+        if md.source_event_id:
+            if ts is None:
+                return None  # no instant to pair with the id → cannot judge identity
+            return ("sei", md.instrument_id or md.symbol, md.source_event_id, ts.isoformat())
         tick = md.payload
         assert isinstance(tick, Tick)
         if ts is None:
-            return None  # defensive: no KeyError — classifier still ran via caller
+            return None  # defensive: no KeyError → classifier still ran via caller
         return (
             "fp",
             md.instrument_id or md.symbol,

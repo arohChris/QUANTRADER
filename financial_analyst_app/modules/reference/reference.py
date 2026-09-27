@@ -16,18 +16,37 @@ import logging
 import re
 from copy import deepcopy
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+from modules.reference.standards import AssetStandardsError, class_standard, standards
 from shared.contracts.errors import (
     ReferenceValidationError,
     UnknownBrokerError,
     UnknownInstrumentError,
 )
+from shared.reference.asset_classes import AssetStandardError, money_decimal
 
 logger = logging.getLogger(__name__)
+
+# M2b.3 facade re-export (spec "Contract"): a SINGLE entrypoint, the same callable object -
+# not a wrapper - so `reference.get_execution_profile is execution_profiles
+
+
+class AssetConfigError(ReferenceValidationError):
+    """An asset file is structurally invalid (M2b.5).
+
+    WHY a distinct type: "the config is wrong" and "you passed me a bad argument" are
+    different failures with different owners. A config error must stop the process at BOOT
+    (AGENTS.md 3.13) - it is never a per-tick drop.
+    """
+
+
+class OrphanReferenceError(ReferenceValidationError):
+    """A rule references an instrument that is not in the master (M2b.5)."""
 
 
 # Empty broker must raise BOTH ValidationError-style AND UnknownBrokerError
@@ -42,6 +61,168 @@ _ASSETS_DIR = Path(__file__).resolve().parents[2] / "config" / "assets"
 _YAML_FILES = ("forex.yaml", "crypto.yaml", "commodities.yaml")
 
 
+_KNOWN_ASSET_CLASSES = frozenset(standards())
+
+# Money fields materialised as exact Decimal from an authored, QUOTED string (M2b.5).
+# `contract_size` is per-instrument by nature - Gold 100, Silver 5000 - so it is required on
+# every instrument and is NOT a class default. The rest inherit from the class standard.
+_MONEY_FIELDS = ("tick_size", "contract_size", "min_qty", "qty_step")
+_REQUIRED_PER_INSTRUMENT = ("contract_size",)
+
+# Sane bounds for a price tick. Below 1e-12 no venue quotes usefully; at or above 1 every
+# price would round to a multiple of the tick, which destroys the data instead of guarding it.
+# WHY Decimal("...") and not Decimal(1): AGENTS.md 3.1 requires money to be built from `str`.
+# FURB157 wants the int form, which is harmless for a whole number but catastrophic for a
+# fraction - Decimal(0.1) is 0.1000000000000000055511151231257827, not 0.1. The lint hint is
+# refused deliberately, and the same convention is asserted in the money tests.
+_MIN_TICK_SIZE = Decimal("0.000000000001")
+_MAX_TICK_SIZE = Decimal("1")  # noqa: FURB157
+
+# How a top-level key is classified as an INSTRUMENT versus a sibling config section.
+# WHY a pattern and not "has an asset_class": `analytics:` and friends legitimately have no
+# asset_class, but so does a MALFORMED instrument. Guessing on the missing field would let a
+# typo'd asset_class silently become config and the instrument would simply vanish. The id
+# shape is unambiguous - every canonical id is CLASS.SYMBOL - so a key that LOOKS like an
+# instrument must validate as one.
+_INSTRUMENT_ID = re.compile(r"^[A-Z][A-Z0-9_]*\.[A-Z0-9_]+$")
+
+
+def _is_instrument_key(key: Any) -> bool:
+    return isinstance(key, str) and bool(_INSTRUMENT_ID.match(key))
+
+
+def _materialise(inst_id: str, entry: dict[str, Any], origin: str) -> dict[str, Any]:
+    """Apply the class standard to one instrument entry, validating as we go.
+
+    Order matters: asset_class first, because it decides the defaults for everything else.
+    """
+    asset_class = entry.get("asset_class")
+    try:
+        std = class_standard(asset_class)
+    except (AssetStandardError, AssetStandardsError) as exc:
+        raise AssetConfigError(f"{origin}: {inst_id}: {exc}") from exc
+
+    # WHY reject a per-asset session block outright: session hours are a property of the
+    # CLASS. A per-instrument exception is exactly how a second table grows beside the first
+    # and drifts. The class standard is the only place session hours may be written.
+    if "sessions" in entry:
+        raise AssetConfigError(
+            f"{origin}: {inst_id}: per-asset 'sessions' is not allowed - session hours are "
+            f"inherited from asset_class {asset_class!r}. Remove it, or change the class."
+        )
+
+    out = dict(entry)
+    out["tick_size"] = std.tick_size
+    out["min_qty"] = std.min_qty
+    out["qty_step"] = std.qty_step
+
+    for fld in _MONEY_FIELDS:
+        if fld not in entry:
+            if fld in _REQUIRED_PER_INSTRUMENT:
+                raise AssetConfigError(
+                    f"{origin}: {inst_id}: {fld} is required and has no safe default - a "
+                    "missing contract size is silently wrong notional (AGENTS.md 3.1)"
+                )
+            continue  # inherited from the class standard above
+        if fld != "contract_size" and fld not in std.overridable:
+            raise AssetConfigError(
+                f"{origin}: {inst_id}: {fld} is not overridable for class {asset_class!r}"
+            )
+        try:
+            out[fld] = money_decimal(entry[fld], field=f"{origin}:{inst_id}:{fld}")
+        except AssetStandardError as exc:
+            raise AssetConfigError(str(exc)) from exc
+
+    if out["min_qty"] > out["qty_step"]:
+        raise AssetConfigError(
+            f"{origin}: {inst_id}: min_qty {out['min_qty']} exceeds qty_step "
+            f"{out['qty_step']} - no order could ever be placed"
+        )
+
+    # WHY bound tick_size (AGENTS.md 3.13: refuse to start on an absurd value). `Decimal` is
+    # exact at any exponent, so "1e400" parses fine and would round EVERY price to a multiple
+    # of 1e400 - destroying all data while looking valid. Exactness is not the same as sanity.
+    if not (_MIN_TICK_SIZE <= out["tick_size"] < _MAX_TICK_SIZE):
+        raise AssetConfigError(
+            f"{origin}: {inst_id}: tick_size {out['tick_size']} is outside the sane range "
+            f"[{_MIN_TICK_SIZE}, {_MAX_TICK_SIZE}) - prices would be rounded to nonsense"
+        )
+    return out
+
+
+def load_assets(paths: list[Path] | None = None) -> dict[str, dict[str, Any]]:
+    """Load + validate asset files into a materialised master.
+
+    Used by the shipped loader and by tests. Duplicate instruments across files are an
+    error naming BOTH files - last-writer-wins would make the effective config depend on
+    directory iteration order.
+    """
+    files = list(paths) if paths is not None else [_ASSETS_DIR / f for f in _YAML_FILES]
+    master: dict[str, dict[str, Any]] = {}
+    origin_of: dict[str, str] = {}
+    for path in files:
+        if not path.exists():
+            continue
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for inst_id, entry in data.items():
+            if not isinstance(entry, dict):
+                continue
+            # Sibling top-level sections (`analytics:`) are config, not instruments, and are
+            # recognised by NOT having an instrument-shaped id. A key that DOES look like an
+            # instrument must validate as one - otherwise a typo'd asset_class would make the
+            # instrument vanish silently instead of failing the boot.
+            if not _is_instrument_key(inst_id):
+                continue
+            if entry.get("asset_class") not in _KNOWN_ASSET_CLASSES:
+                raise AssetConfigError(
+                    f"{path.name}: {inst_id}: asset_class "
+                    f"{entry.get('asset_class')!r} is missing or unknown; "
+                    f"known: {sorted(_KNOWN_ASSET_CLASSES)}"
+                )
+            if inst_id in master:
+                raise AssetConfigError(
+                    f"duplicate instrument {inst_id} in {origin_of[inst_id]} and {path.name}"
+                )
+            master[inst_id] = _materialise(inst_id, entry, path.name)
+            origin_of[inst_id] = path.name
+    return master
+
+
+def validate_asset_file(path: Path) -> dict[str, dict[str, Any]]:
+    """Validate one file and return its materialised instruments. Raises AssetConfigError."""
+    return load_assets([path])
+
+
+def list_orphans(
+    *,
+    master_files: list[Path],
+    calendar_files: list[Path] | None = None,
+    mapping_files: list[Path] | None = None,
+) -> list[str]:
+    """Report rules that point at an instrument the master does not contain.
+
+    WHY this exists: REMOVAL is the dangerous direction. Deleting an instrument from the
+    master while a session override or a broker-native mapping still names it leaves a live
+    rule for something that no longer exists - and it fails silently, because nothing looks
+    the instrument up any more.
+    """
+    known = set(load_assets(master_files))
+    orphans: list[str] = []
+    for path in [*(calendar_files or []), *(mapping_files or [])]:
+        if not path.exists():
+            continue
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if not isinstance(data, dict):
+            continue
+        for inst_id in data:
+            # Only instrument-shaped keys are rules about instruments; sibling config
+            # sections (analytics:, calendars:) are not and must not be reported.
+            if not _is_instrument_key(inst_id) or inst_id in known:
+                continue
+            orphans.append(f"{path.name}: {inst_id} is not in the instrument master")
+    return orphans
+
+
 def _load_master() -> dict[str, dict[str, Any]]:
     master: dict[str, dict[str, Any]] = {}
     for fname in _YAML_FILES:
@@ -50,8 +231,19 @@ def _load_master() -> dict[str, dict[str, Any]]:
             continue
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         for inst_id, entry in data.items():
-            if isinstance(entry, dict):
-                master[inst_id] = entry
+            # WHY require a recognised asset_class: each assets file also carries SIBLING
+            # top-level config sections (today `analytics:`). The loader used to take any
+            # dict-valued key, so a profile block became a phantom instrument and
+            # exists("analytics") returned True. Fail closed - a real instrument missing its
+            # asset_class is a config bug, and silently accepting it would let the calendar
+            # resolve a rule for something that is not a tradeable asset.
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("asset_class") not in _KNOWN_ASSET_CLASSES:
+                continue
+            # M2b.5: the class standard is applied here, so a newly added instrument inherits
+            # its session/tick/qty automatically and money fields are exact Decimals.
+            master[inst_id] = _materialise(inst_id, entry, fname)
     return master
 
 
@@ -103,7 +295,12 @@ def to_canonical(native: Any, broker: Any) -> str:
     (unresolved native — M2.2 detects/quarantines; not a resolved canonical ID)."""
     _require_non_empty_str(native, "native")
     _require_broker(broker)
-    return _TO_CANON[broker].get(native, native)
+    # WHY the explicit fallback rather than `dict.get(native, native)`: the map is typed
+    # `dict[str, str]`, so `.get(k, k)` infers `str | None` even though the default is
+    # always a `str`. Spelling it out keeps the return type honest - a caller must never have
+    # to defend against `None` from an identity lookup that cannot return it.
+    resolved = _TO_CANON[broker].get(native)
+    return native if resolved is None else resolved
 
 
 def to_native(instrument_id: Any, broker: Any) -> str:
@@ -192,3 +389,15 @@ def current_snapshot_id() -> str | None:
     human edits the file + restart (or current_snapshot_id.cache_clear()).
     """
     return load_snapshot_id(_SNAPSHOT_PATH)
+
+# M2b.3 facade re-export (spec "Contract"): a SINGLE entrypoint, the SAME callable object -
+# not a wrapper - so `reference.get_execution_profile is`
+# execution_profiles.get_execution_profile holds, and there is exactly ONE LRU cache to
+# clear on config rotation. Imported LAST because execution_profiles resolves get_instrument
+# from this module (lazily, at call time), so importing any earlier would be circular.
+from modules.reference.execution_profiles import (  # noqa: F401 - intentional facade re-export
+    ExecutionProfile,
+    SlippageParams,
+    get_execution_profile,
+    load_execution_profiles,
+)

@@ -1,0 +1,509 @@
+{"interval_start": "2026-09-26T03:17:00+00:00", "open": 83900.12, "close": 83899.93, "tick_count": 39}
+{"interval_start": "2026-09-26T03:18:00+00:00", "open": 83899.93, "close": 83892.51, "tick_count": 60}
+{"interval_start": "2026-09-26T03:19:00+00:00", "open": 83892.34, "close": 83892.26, "tick_count": 31}
+{"interval_start": "2026-09-26T03:19:00+00:00", "open": 83892.5, "close": 83892.5, "tick_count": 15}
+{"interval_start": "2026-09-26T03:20:00+00:00", "open": 83892.49, "close": 83895.48, "tick_count": 60}
+{"interval_start": "2026-09-26T03:21:00+00:00", "open": 83889.24, "close": 83913.55, "tick_count": 60}
+{"interval_start": "2026-09-26T03:22:00+00:00", "open": 83913.54, "close": 83926.3, "tick_count": 60}
+{"interval_start": "2026-09-26T03:23:00+00:00", "open": 83926.3, "close": 83926.32, "tick_count": 60}
+{"interval_start": "2026-09-26T03:24:00+00:00", "open": 83926.32, "close": 83926.03, "tick_count": 60}
+{"interval_start": "2026-09-26T03:25:00+00:00", "open": 83926.03, "close": 83968.24, "tick_count": 60}
+{"interval_start": "2026-09-26T03:26:00+00:00", "open": 83962.85, "close": 83988.72, "tick_count": 60}
+{"interval_start": "2026-09-26T03:27:00+00:00", "open": 83988.86, "close": 83994.19, "tick_count": 60}
+{"interval_start": "2026-09-26T03:28:00+00:00", "open": 83994.42, "close": 83994.54, "tick_count": 60}
+{"interval_start": "2026-09-26T03:29:00+00:00", "open": 83994.54, "close": 83988.05, "tick_count": 60}
+{"interval_start": "2026-09-26T03:30:00+00:00", "open": 83988.05, "close": 84000.19, "tick_count": 60}
+{"interval_start": "2026-09-26T03:31:00+00:00", "open": 84000.19, "close": 84025.32, "tick_count": 60}
+{"interval_start": "2026-09-26T03:32:00+00:00", "open": 84025.32, "close": 84016.78, "tick_count": 60}
+{"interval_start": "2026-09-26T03:33:00+00:00", "open": 84016.78, "close": 83989.61, "tick_count": 60}
+{"interval_start": "2026-09-26T03:34:00+00:00", "open": 83989.8, "close": 83965.03, "tick_count": 60}
+{"interval_start": "2026-09-26T03:35:00+00:00", "open": 83965.04, "close": 83969.42, "tick_count": 60}
+{"interval_start": "2026-09-26T03:36:00+00:00", "open": 83969.44, "close": 83970.05, "tick_count": 60}
+{"interval_start": "2026-09-26T03:37:00+00:00", "open": 83970.05, "close": 83970.64, "tick_count": 60}
+{"interval_start": "2026-09-26T03:38:00+00:00", "open": 83970.64, "close": 83968.95, "tick_count": 60}
+{"interval_start": "2026-09-26T03:39:00+00:00", "open": 83969.54, "close": 83965.2, "tick_count": 60}
+{"interval_start": "2026-09-26T03:40:00+00:00", "open": 83965.22, "close": 83946.06, "tick_count": 60}
+{"interval_start": "2026-09-26T03:41:00+00:00", "open": 83946.06, "close": 83946.01, "tick_count": 60}
+{"interval_start": "2026-09-26T03:42:00+00:00", "open": 83946.01, "close": 83936.48, "tick_count": 60}
+{"interval_start": "2026-09-26T03:43:00+00:00", "open": 83936.89, "close": 83926.81, "tick_count": 60}
+{"interval_start": "2026-09-26T03:44:00+00:00", "open": 83926.81, "close": 83918.55, "tick_count": 60}
+{"interval_start": "2026-09-26T03:45:00+00:00", "open": 83918.55, "close": 83910.59, "tick_count": 60}
+{"interval_start": "2026-09-26T03:46:00+00:00", "open": 83910.6, "close": 83907.12, "tick_count": 60}
+{"interval_start": "2026-09-26T03:47:00+00:00", "open": 83906.99, "close": 83916.03, "tick_count": 60}
+{"interval_start": "2026-09-26T03:48:00+00:00", "open": 83916.03, "close": 83915.98, "tick_count": 60}
+{"interval_start": "2026-09-26T03:49:00+00:00", "open": 83916.03, "close": 83910.57, "tick_count": 60}
+{"interval_start": "2026-09-26T03:50:00+00:00", "open": 83910.57, "close": 83924.46, "tick_count": 60}
+{"interval_start": "2026-09-26T03:51:00+00:00", "open": 83924.69, "close": 83935.58, "tick_count": 60}
+{"interval_start": "2026-09-26T03:52:00+00:00", "open": 83935.58, "close": 83917.94, "tick_count": 60}
+{"interval_start": "2026-09-26T03:53:00+00:00", "open": 83917.93, "close": 83926.94, "tick_count": 60}
+{"interval_start": "2026-09-26T03:54:00+00:00", "open": 83927.15, "close": 83919.22, "tick_count": 60}
+{"interval_start": "2026-09-26T03:55:00+00:00", "open": 83919.0, "close": 83900.12, "tick_count": 60}
+{"interval_start": "2026-09-26T03:56:00+00:00", "open": 83900.12, "close": 83900.27, "tick_count": 60}
+{"interval_start": "2026-09-26T03:57:00+00:00", "open": 83900.27, "close": 83900.0, "tick_count": 60}
+{"interval_start": "2026-09-26T03:58:00+00:00", "open": 83900.01, "close": 83908.6, "tick_count": 60}
+{"interval_start": "2026-09-26T03:59:00+00:00", "open": 83908.6, "close": 83908.6, "tick_count": 60}
+{"interval_start": "2026-09-26T04:00:00+00:00", "open": 83908.6, "close": 83911.51, "tick_count": 60}
+{"interval_start": "2026-09-26T04:01:00+00:00", "open": 83911.52, "close": 83956.01, "tick_count": 60}
+{"interval_start": "2026-09-26T04:02:00+00:00", "open": 83956.01, "close": 83956.09, "tick_count": 60}
+{"interval_start": "2026-09-26T04:03:00+00:00", "open": 83956.09, "close": 83956.15, "tick_count": 60}
+{"interval_start": "2026-09-26T04:04:00+00:00", "open": 83956.15, "close": 83955.96, "tick_count": 60}
+{"interval_start": "2026-09-26T04:05:00+00:00", "open": 83955.95, "close": 83956.05, "tick_count": 60}
+{"interval_start": "2026-09-26T04:06:00+00:00", "open": 83956.05, "close": 83956.21, "tick_count": 60}
+{"interval_start": "2026-09-26T04:07:00+00:00", "open": 83956.21, "close": 83966.86, "tick_count": 60}
+{"interval_start": "2026-09-26T04:08:00+00:00", "open": 83966.78, "close": 83967.35, "tick_count": 60}
+{"interval_start": "2026-09-26T04:09:00+00:00", "open": 83967.08, "close": 83970.54, "tick_count": 60}
+{"interval_start": "2026-09-26T04:10:00+00:00", "open": 83970.54, "close": 83966.73, "tick_count": 60}
+{"interval_start": "2026-09-26T04:11:00+00:00", "open": 83966.73, "close": 83978.41, "tick_count": 60}
+{"interval_start": "2026-09-26T04:12:00+00:00", "open": 83978.41, "close": 83965.46, "tick_count": 60}
+{"interval_start": "2026-09-26T04:14:00+00:00", "open": 83951.85, "close": 83951.86, "tick_count": 6}
+{"interval_start": "2026-09-26T04:15:00+00:00", "open": 83951.86, "close": 83973.27, "tick_count": 60}
+{"interval_start": "2026-09-26T04:16:00+00:00", "open": 83973.31, "close": 83973.01, "tick_count": 60}
+{"interval_start": "2026-09-26T04:17:00+00:00", "open": 83973.02, "close": 83972.47, "tick_count": 60}
+{"interval_start": "2026-09-26T04:18:00+00:00", "open": 83973.29, "close": 83979.0, "tick_count": 16}
+{"interval_start": "2026-09-26T04:19:00+00:00", "open": 83979.08, "close": 84000.03, "tick_count": 60}
+{"interval_start": "2026-09-26T04:20:00+00:00", "open": 84000.03, "close": 84010.92, "tick_count": 60}
+{"interval_start": "2026-09-26T04:21:00+00:00", "open": 84010.92, "close": 83986.12, "tick_count": 60}
+{"interval_start": "2026-09-26T04:22:00+00:00", "open": 83986.12, "close": 83942.44, "tick_count": 60}
+{"interval_start": "2026-09-26T04:23:00+00:00", "open": 83940.39, "close": 83918.16, "tick_count": 60}
+{"interval_start": "2026-09-26T04:24:00+00:00", "open": 83910.43, "close": 83893.69, "tick_count": 60}
+{"interval_start": "2026-09-26T04:25:00+00:00", "open": 83893.72, "close": 83891.41, "tick_count": 60}
+{"interval_start": "2026-09-26T07:01:00+00:00", "open": 83869.94, "close": 83874.0, "tick_count": 43}
+{"interval_start": "2026-09-26T07:02:00+00:00", "open": 83874.01, "close": 83874.0, "tick_count": 60}
+{"interval_start": "2026-09-26T07:03:00+00:00", "open": 83874.0, "close": 83919.48, "tick_count": 60}
+{"interval_start": "2026-09-26T07:04:00+00:00", "open": 83919.48, "close": 83941.41, "tick_count": 60}
+{"interval_start": "2026-09-26T07:05:00+00:00", "open": 83941.41, "close": 83946.56, "tick_count": 60}
+{"interval_start": "2026-09-26T07:06:00+00:00", "open": 83946.52, "close": 83968.5, "tick_count": 60}
+{"interval_start": "2026-09-26T07:07:00+00:00", "open": 83968.5, "close": 83970.16, "tick_count": 60}
+{"interval_start": "2026-09-26T07:08:00+00:00", "open": 83970.19, "close": 83974.89, "tick_count": 60}
+{"interval_start": "2026-09-26T07:09:00+00:00", "open": 83974.89, "close": 83958.26, "tick_count": 60}
+{"interval_start": "2026-09-26T07:10:00+00:00", "open": 83958.25, "close": 83958.55, "tick_count": 60}
+{"interval_start": "2026-09-26T07:11:00+00:00", "open": 83958.58, "close": 83966.15, "tick_count": 60}
+{"interval_start": "2026-09-26T07:12:00+00:00", "open": 83966.38, "close": 83970.07, "tick_count": 60}
+{"interval_start": "2026-09-26T07:13:00+00:00", "open": 83970.07, "close": 83965.36, "tick_count": 60}
+{"interval_start": "2026-09-26T07:14:00+00:00", "open": 83965.36, "close": 83976.07, "tick_count": 60}
+{"interval_start": "2026-09-26T07:15:00+00:00", "open": 83976.07, "close": 83971.41, "tick_count": 60}
+{"interval_start": "2026-09-26T07:16:00+00:00", "open": 83971.41, "close": 83955.46, "tick_count": 53}
+{"interval_start": "2026-09-26T07:17:00+00:00", "open": 83955.83, "close": 83963.57, "tick_count": 60}
+{"interval_start": "2026-09-26T07:18:00+00:00", "open": 83963.57, "close": 83963.54, "tick_count": 60}
+{"interval_start": "2026-09-26T07:19:00+00:00", "open": 83985.17, "close": 83982.44, "tick_count": 60}
+{"interval_start": "2026-09-26T07:20:00+00:00", "open": 83982.44, "close": 83984.88, "tick_count": 60}
+{"interval_start": "2026-09-26T07:21:00+00:00", "open": 83984.88, "close": 83984.78, "tick_count": 60}
+{"interval_start": "2026-09-26T07:22:00+00:00", "open": 83984.78, "close": 83976.15, "tick_count": 60}
+{"interval_start": "2026-09-26T07:23:00+00:00", "open": 83976.15, "close": 83983.9, "tick_count": 60}
+{"interval_start": "2026-09-26T07:24:00+00:00", "open": 83983.9, "close": 83984.05, "tick_count": 60}
+{"interval_start": "2026-09-26T07:25:00+00:00", "open": 83984.05, "close": 83971.14, "tick_count": 60}
+{"interval_start": "2026-09-26T07:26:00+00:00", "open": 83971.14, "close": 83971.15, "tick_count": 60}
+{"interval_start": "2026-09-26T07:27:00+00:00", "open": 83971.14, "close": 83971.16, "tick_count": 60}
+{"interval_start": "2026-09-26T07:28:00+00:00", "open": 83971.16, "close": 83974.69, "tick_count": 60}
+{"interval_start": "2026-09-26T07:29:00+00:00", "open": 83974.18, "close": 83974.29, "tick_count": 60}
+{"interval_start": "2026-09-26T07:30:00+00:00", "open": 83974.29, "close": 83975.09, "tick_count": 60}
+{"interval_start": "2026-09-26T07:31:00+00:00", "open": 83975.09, "close": 83975.09, "tick_count": 60}
+{"interval_start": "2026-09-26T07:32:00+00:00", "open": 83975.09, "close": 83975.1, "tick_count": 60}
+{"interval_start": "2026-09-26T07:33:00+00:00", "open": 83975.1, "close": 83975.1, "tick_count": 60}
+{"interval_start": "2026-09-26T07:34:00+00:00", "open": 83975.1, "close": 83975.2, "tick_count": 60}
+{"interval_start": "2026-09-26T07:35:00+00:00", "open": 83975.2, "close": 83977.79, "tick_count": 60}
+{"interval_start": "2026-09-26T07:36:00+00:00", "open": 83977.8, "close": 83980.1, "tick_count": 60}
+{"interval_start": "2026-09-26T07:37:00+00:00", "open": 83980.1, "close": 83983.1, "tick_count": 60}
+{"interval_start": "2026-09-26T07:38:00+00:00", "open": 83983.1, "close": 83998.44, "tick_count": 60}
+{"interval_start": "2026-09-26T07:39:00+00:00", "open": 83998.44, "close": 84002.19, "tick_count": 60}
+{"interval_start": "2026-09-26T07:40:00+00:00", "open": 84002.19, "close": 84018.14, "tick_count": 60}
+{"interval_start": "2026-09-26T07:41:00+00:00", "open": 84018.14, "close": 84028.09, "tick_count": 60}
+{"interval_start": "2026-09-26T07:42:00+00:00", "open": 84028.09, "close": 84019.6, "tick_count": 60}
+{"interval_start": "2026-09-26T07:43:00+00:00", "open": 84019.6, "close": 83998.55, "tick_count": 60}
+{"interval_start": "2026-09-26T07:44:00+00:00", "open": 83998.55, "close": 84002.7, "tick_count": 60}
+{"interval_start": "2026-09-26T07:45:00+00:00", "open": 84002.7, "close": 84028.0, "tick_count": 60}
+{"interval_start": "2026-09-26T07:46:00+00:00", "open": 84028.0, "close": 84027.97, "tick_count": 60}
+{"interval_start": "2026-09-26T07:47:00+00:00", "open": 84027.97, "close": 84041.55, "tick_count": 60}
+{"interval_start": "2026-09-26T07:48:00+00:00", "open": 84041.55, "close": 84038.74, "tick_count": 60}
+{"interval_start": "2026-09-26T07:49:00+00:00", "open": 84038.74, "close": 84045.05, "tick_count": 60}
+{"interval_start": "2026-09-26T07:50:00+00:00", "open": 84045.05, "close": 84041.18, "tick_count": 60}
+{"interval_start": "2026-09-26T07:51:00+00:00", "open": 84041.18, "close": 84041.64, "tick_count": 60}
+{"interval_start": "2026-09-26T07:52:00+00:00", "open": 84041.64, "close": 84040.5, "tick_count": 60}
+{"interval_start": "2026-09-26T07:53:00+00:00", "open": 84040.5, "close": 84019.93, "tick_count": 60}
+{"interval_start": "2026-09-26T07:54:00+00:00", "open": 84019.93, "close": 84019.96, "tick_count": 60}
+{"interval_start": "2026-09-26T07:55:00+00:00", "open": 84045.1, "close": 84065.93, "tick_count": 60}
+{"interval_start": "2026-09-26T07:56:00+00:00", "open": 84065.93, "close": 84065.93, "tick_count": 60}
+{"interval_start": "2026-09-26T07:57:00+00:00", "open": 84065.93, "close": 84077.0, "tick_count": 60}
+{"interval_start": "2026-09-26T07:58:00+00:00", "open": 84077.0, "close": 84094.9, "tick_count": 60}
+{"interval_start": "2026-09-26T07:59:00+00:00", "open": 84094.9, "close": 84074.87, "tick_count": 60}
+{"interval_start": "2026-09-26T08:00:00+00:00", "open": 84075.02, "close": 84054.7, "tick_count": 60}
+{"interval_start": "2026-09-26T08:01:00+00:00", "open": 84054.7, "close": 84041.48, "tick_count": 60}
+{"interval_start": "2026-09-26T08:02:00+00:00", "open": 84041.54, "close": 84017.42, "tick_count": 60}
+{"interval_start": "2026-09-26T08:03:00+00:00", "open": 84017.42, "close": 84028.45, "tick_count": 60}
+{"interval_start": "2026-09-26T08:04:00+00:00", "open": 84028.45, "close": 84028.45, "tick_count": 60}
+{"interval_start": "2026-09-26T08:05:00+00:00", "open": 84028.45, "close": 84020.79, "tick_count": 60}
+{"interval_start": "2026-09-26T08:06:00+00:00", "open": 84020.79, "close": 84020.76, "tick_count": 60}
+{"interval_start": "2026-09-26T08:07:00+00:00", "open": 84020.76, "close": 84009.07, "tick_count": 60}
+{"interval_start": "2026-09-26T08:08:00+00:00", "open": 84008.81, "close": 84028.45, "tick_count": 60}
+{"interval_start": "2026-09-26T08:09:00+00:00", "open": 84028.45, "close": 84033.8, "tick_count": 60}
+{"interval_start": "2026-09-26T08:10:00+00:00", "open": 84033.8, "close": 84040.95, "tick_count": 60}
+{"interval_start": "2026-09-26T08:11:00+00:00", "open": 84040.95, "close": 84040.87, "tick_count": 60}
+{"interval_start": "2026-09-26T08:12:00+00:00", "open": 84040.87, "close": 84032.41, "tick_count": 60}
+{"interval_start": "2026-09-26T08:13:00+00:00", "open": 84032.4, "close": 84014.53, "tick_count": 60}
+{"interval_start": "2026-09-26T08:14:00+00:00", "open": 84014.43, "close": 84016.57, "tick_count": 60}
+{"interval_start": "2026-09-26T08:15:00+00:00", "open": 84037.46, "close": 84037.46, "tick_count": 60}
+{"interval_start": "2026-09-26T08:16:00+00:00", "open": 84037.46, "close": 84037.4, "tick_count": 60}
+{"interval_start": "2026-09-26T08:17:00+00:00", "open": 84037.4, "close": 84005.9, "tick_count": 60}
+{"interval_start": "2026-09-26T08:18:00+00:00", "open": 84005.9, "close": 84005.86, "tick_count": 60}
+{"interval_start": "2026-09-26T08:19:00+00:00", "open": 84005.86, "close": 84005.86, "tick_count": 60}
+{"interval_start": "2026-09-26T08:20:00+00:00", "open": 84005.86, "close": 84008.9, "tick_count": 60}
+{"interval_start": "2026-09-26T08:21:00+00:00", "open": 84008.44, "close": 84005.68, "tick_count": 60}
+{"interval_start": "2026-09-26T08:22:00+00:00", "open": 84005.68, "close": 83998.64, "tick_count": 60}
+{"interval_start": "2026-09-26T08:23:00+00:00", "open": 83998.64, "close": 83998.64, "tick_count": 60}
+{"interval_start": "2026-09-26T08:24:00+00:00", "open": 83998.64, "close": 83987.43, "tick_count": 60}
+{"interval_start": "2026-09-26T08:25:00+00:00", "open": 84005.86, "close": 84009.2, "tick_count": 60}
+{"interval_start": "2026-09-26T08:26:00+00:00", "open": 84009.2, "close": 84031.95, "tick_count": 60}
+{"interval_start": "2026-09-26T08:27:00+00:00", "open": 84031.95, "close": 84049.96, "tick_count": 60}
+{"interval_start": "2026-09-26T08:28:00+00:00", "open": 84049.96, "close": 84057.89, "tick_count": 60}
+{"interval_start": "2026-09-26T08:29:00+00:00", "open": 84057.89, "close": 84063.67, "tick_count": 60}
+{"interval_start": "2026-09-26T08:30:00+00:00", "open": 84063.67, "close": 84082.8, "tick_count": 60}
+{"interval_start": "2026-09-26T08:31:00+00:00", "open": 84082.8, "close": 84126.1, "tick_count": 60}
+{"interval_start": "2026-09-26T08:32:00+00:00", "open": 84126.1, "close": 84192.05, "tick_count": 60}
+{"interval_start": "2026-09-26T08:33:00+00:00", "open": 84192.25, "close": 84218.95, "tick_count": 60}
+{"interval_start": "2026-09-26T08:34:00+00:00", "open": 84218.95, "close": 84235.32, "tick_count": 60}
+{"interval_start": "2026-09-26T08:35:00+00:00", "open": 84234.98, "close": 84222.63, "tick_count": 60}
+{"interval_start": "2026-09-26T08:36:00+00:00", "open": 84222.8, "close": 84257.69, "tick_count": 60}
+{"interval_start": "2026-09-26T08:37:00+00:00", "open": 84257.63, "close": 84253.11, "tick_count": 60}
+{"interval_start": "2026-09-26T08:38:00+00:00", "open": 84252.82, "close": 84283.38, "tick_count": 60}
+{"interval_start": "2026-09-26T08:39:00+00:00", "open": 84283.37, "close": 84248.45, "tick_count": 60}
+{"interval_start": "2026-09-26T08:40:00+00:00", "open": 84248.45, "close": 84228.17, "tick_count": 60}
+{"interval_start": "2026-09-26T08:41:00+00:00", "open": 84228.92, "close": 84213.49, "tick_count": 60}
+{"interval_start": "2026-09-26T08:42:00+00:00", "open": 84213.49, "close": 84244.4, "tick_count": 60}
+{"interval_start": "2026-09-26T08:43:00+00:00", "open": 84244.4, "close": 84244.64, "tick_count": 60}
+{"interval_start": "2026-09-26T08:44:00+00:00", "open": 84244.65, "close": 84248.46, "tick_count": 60}
+{"interval_start": "2026-09-26T08:45:00+00:00", "open": 84248.46, "close": 84225.44, "tick_count": 60}
+{"interval_start": "2026-09-26T08:46:00+00:00", "open": 84225.44, "close": 84203.02, "tick_count": 60}
+{"interval_start": "2026-09-26T08:47:00+00:00", "open": 84202.28, "close": 84203.0, "tick_count": 60}
+{"interval_start": "2026-09-26T08:48:00+00:00", "open": 84203.01, "close": 84203.01, "tick_count": 60}
+{"interval_start": "2026-09-26T08:49:00+00:00", "open": 84203.01, "close": 84176.78, "tick_count": 60}
+{"interval_start": "2026-09-26T08:50:00+00:00", "open": 84176.78, "close": 84178.35, "tick_count": 60}
+{"interval_start": "2026-09-26T08:51:00+00:00", "open": 84178.33, "close": 84178.41, "tick_count": 60}
+{"interval_start": "2026-09-26T08:52:00+00:00", "open": 84178.41, "close": 84178.63, "tick_count": 60}
+{"interval_start": "2026-09-26T08:53:00+00:00", "open": 84178.63, "close": 84178.64, "tick_count": 60}
+{"interval_start": "2026-09-26T08:54:00+00:00", "open": 84178.64, "close": 84178.54, "tick_count": 60}
+{"interval_start": "2026-09-26T08:55:00+00:00", "open": 84178.57, "close": 84178.38, "tick_count": 60}
+{"interval_start": "2026-09-26T08:56:00+00:00", "open": 84178.61, "close": 84166.58, "tick_count": 60}
+{"interval_start": "2026-09-26T08:57:00+00:00", "open": 84166.58, "close": 84167.29, "tick_count": 60}
+{"interval_start": "2026-09-26T08:58:00+00:00", "open": 84167.29, "close": 84167.36, "tick_count": 60}
+{"interval_start": "2026-09-26T08:59:00+00:00", "open": 84167.35, "close": 84167.03, "tick_count": 60}
+{"interval_start": "2026-09-26T09:00:00+00:00", "open": 84167.03, "close": 84167.9, "tick_count": 60}
+{"interval_start": "2026-09-26T09:01:00+00:00", "open": 84167.9, "close": 84161.91, "tick_count": 60}
+{"interval_start": "2026-09-26T09:02:00+00:00", "open": 84161.91, "close": 84160.14, "tick_count": 60}
+{"interval_start": "2026-09-26T09:03:00+00:00", "open": 84160.14, "close": 84172.43, "tick_count": 60}
+{"interval_start": "2026-09-26T09:04:00+00:00", "open": 84172.42, "close": 84162.86, "tick_count": 60}
+{"interval_start": "2026-09-26T09:05:00+00:00", "open": 84162.56, "close": 84161.94, "tick_count": 60}
+{"interval_start": "2026-09-26T09:06:00+00:00", "open": 84161.94, "close": 84161.84, "tick_count": 60}
+{"interval_start": "2026-09-26T09:07:00+00:00", "open": 84161.85, "close": 84161.9, "tick_count": 60}
+{"interval_start": "2026-09-26T09:08:00+00:00", "open": 84161.9, "close": 84158.22, "tick_count": 60}
+{"interval_start": "2026-09-26T09:09:00+00:00", "open": 84157.82, "close": 84129.91, "tick_count": 60}
+{"interval_start": "2026-09-26T09:10:00+00:00", "open": 84129.91, "close": 84114.75, "tick_count": 60}
+{"interval_start": "2026-09-26T09:11:00+00:00", "open": 84114.75, "close": 84054.71, "tick_count": 60}
+{"interval_start": "2026-09-26T09:12:00+00:00", "open": 84054.93, "close": 84041.25, "tick_count": 60}
+{"interval_start": "2026-09-26T09:13:00+00:00", "open": 84028.86, "close": 83937.46, "tick_count": 60}
+{"interval_start": "2026-09-26T09:14:00+00:00", "open": 83937.66, "close": 83972.73, "tick_count": 60}
+{"interval_start": "2026-09-26T09:15:00+00:00", "open": 83972.99, "close": 83964.96, "tick_count": 60}
+{"interval_start": "2026-09-26T09:16:00+00:00", "open": 83964.96, "close": 83947.37, "tick_count": 60}
+{"interval_start": "2026-09-26T09:17:00+00:00", "open": 83947.38, "close": 83925.1, "tick_count": 11}
+{"interval_start": "2026-09-26T09:20:00+00:00", "open": 83952.66, "close": 83943.34, "tick_count": 12}
+{"interval_start": "2026-09-26T09:21:00+00:00", "open": 83943.34, "close": 83969.85, "tick_count": 60}
+{"interval_start": "2026-09-26T09:22:00+00:00", "open": 83969.86, "close": 83994.02, "tick_count": 60}
+{"interval_start": "2026-09-26T09:23:00+00:00", "open": 83994.09, "close": 83991.19, "tick_count": 60}
+{"interval_start": "2026-09-26T09:24:00+00:00", "open": 83991.19, "close": 83982.92, "tick_count": 60}
+{"interval_start": "2026-09-26T09:25:00+00:00", "open": 83954.02, "close": 83954.31, "tick_count": 60}
+{"interval_start": "2026-09-26T09:26:00+00:00", "open": 83954.31, "close": 83950.02, "tick_count": 60}
+{"interval_start": "2026-09-26T09:27:00+00:00", "open": 83950.0, "close": 83982.67, "tick_count": 60}
+{"interval_start": "2026-09-26T09:28:00+00:00", "open": 83982.67, "close": 83976.88, "tick_count": 60}
+{"interval_start": "2026-09-26T09:29:00+00:00", "open": 83976.86, "close": 83988.97, "tick_count": 60}
+{"interval_start": "2026-09-26T09:30:00+00:00", "open": 83988.97, "close": 83963.15, "tick_count": 60}
+{"interval_start": "2026-09-26T09:31:00+00:00", "open": 83963.15, "close": 83972.46, "tick_count": 60}
+{"interval_start": "2026-09-26T09:32:00+00:00", "open": 83972.44, "close": 83986.61, "tick_count": 60}
+{"interval_start": "2026-09-26T09:33:00+00:00", "open": 83986.61, "close": 83988.48, "tick_count": 60}
+{"interval_start": "2026-09-26T09:34:00+00:00", "open": 83988.36, "close": 83995.76, "tick_count": 60}
+{"interval_start": "2026-09-26T09:35:00+00:00", "open": 83995.76, "close": 83995.75, "tick_count": 60}
+{"interval_start": "2026-09-26T09:36:00+00:00", "open": 83995.75, "close": 83980.4, "tick_count": 60}
+{"interval_start": "2026-09-26T09:37:00+00:00", "open": 83980.57, "close": 83984.77, "tick_count": 60}
+{"interval_start": "2026-09-26T09:38:00+00:00", "open": 83984.78, "close": 83980.65, "tick_count": 60}
+{"interval_start": "2026-09-26T09:39:00+00:00", "open": 83980.66, "close": 83973.85, "tick_count": 60}
+{"interval_start": "2026-09-26T09:40:00+00:00", "open": 83973.85, "close": 83967.7, "tick_count": 60}
+{"interval_start": "2026-09-26T09:41:00+00:00", "open": 83967.71, "close": 83967.87, "tick_count": 60}
+{"interval_start": "2026-09-26T09:42:00+00:00", "open": 83967.86, "close": 83967.84, "tick_count": 60}
+{"interval_start": "2026-09-26T09:43:00+00:00", "open": 83967.84, "close": 83964.9, "tick_count": 60}
+{"interval_start": "2026-09-26T09:44:00+00:00", "open": 83964.85, "close": 83967.1, "tick_count": 60}
+{"interval_start": "2026-09-26T09:45:00+00:00", "open": 83978.37, "close": 83988.0, "tick_count": 60}
+{"interval_start": "2026-09-26T09:46:00+00:00", "open": 83988.0, "close": 83986.27, "tick_count": 60}
+{"interval_start": "2026-09-26T09:47:00+00:00", "open": 83986.35, "close": 83986.35, "tick_count": 60}
+{"interval_start": "2026-09-26T09:48:00+00:00", "open": 83986.35, "close": 83978.07, "tick_count": 60}
+{"interval_start": "2026-09-26T09:49:00+00:00", "open": 83978.07, "close": 83978.06, "tick_count": 60}
+{"interval_start": "2026-09-26T09:50:00+00:00", "open": 83978.06, "close": 83978.07, "tick_count": 60}
+{"interval_start": "2026-09-26T09:51:00+00:00", "open": 83978.07, "close": 83963.61, "tick_count": 60}
+{"interval_start": "2026-09-26T09:52:00+00:00", "open": 83963.82, "close": 83963.85, "tick_count": 60}
+{"interval_start": "2026-09-26T09:53:00+00:00", "open": 83963.72, "close": 83963.79, "tick_count": 60}
+{"interval_start": "2026-09-26T09:54:00+00:00", "open": 83963.79, "close": 83963.84, "tick_count": 60}
+{"interval_start": "2026-09-26T09:55:00+00:00", "open": 83978.1, "close": 83954.86, "tick_count": 60}
+{"interval_start": "2026-09-26T09:56:00+00:00", "open": 83954.86, "close": 83954.95, "tick_count": 60}
+{"interval_start": "2026-09-26T09:57:00+00:00", "open": 83954.95, "close": 83950.0, "tick_count": 60}
+{"interval_start": "2026-09-26T09:58:00+00:00", "open": 83950.0, "close": 83954.76, "tick_count": 60}
+{"interval_start": "2026-09-26T09:59:00+00:00", "open": 83954.71, "close": 83969.17, "tick_count": 60}
+{"interval_start": "2026-09-26T10:00:00+00:00", "open": 83978.05, "close": 83989.01, "tick_count": 60}
+{"interval_start": "2026-09-26T10:01:00+00:00", "open": 83989.01, "close": 83997.4, "tick_count": 60}
+{"interval_start": "2026-09-26T10:02:00+00:00", "open": 83997.4, "close": 84032.47, "tick_count": 45}
+{"interval_start": "2026-09-26T10:04:00+00:00", "open": 84013.6, "close": 84036.95, "tick_count": 58}
+{"interval_start": "2026-09-26T10:05:00+00:00", "open": 84036.95, "close": 84043.7, "tick_count": 60}
+{"interval_start": "2026-09-26T10:06:00+00:00", "open": 84043.7, "close": 84054.39, "tick_count": 60}
+{"interval_start": "2026-09-26T10:07:00+00:00", "interval_end": "2026-09-26T10:08:00+00:00", "open": 84054.67, "high": 84054.68, "low": 84054.63, "close": 84054.66, "tick_count": 18}
+{"interval_start": "2026-09-26T10:08:00+00:00", "interval_end": "2026-09-26T10:09:00+00:00", "open": 84054.66, "high": 84054.66, "low": 84054.62, "close": 84054.64, "tick_count": 60}
+{"interval_start": "2026-09-26T10:09:00+00:00", "interval_end": "2026-09-26T10:10:00+00:00", "open": 84054.63, "high": 84071.26, "low": 84054.42, "close": 84071.26, "tick_count": 60}
+{"interval_start": "2026-09-26T10:10:00+00:00", "interval_end": "2026-09-26T10:11:00+00:00", "open": 84071.26, "high": 84075.1, "low": 84071.26, "close": 84075.1, "tick_count": 60}
+{"interval_start": "2026-09-26T10:11:00+00:00", "interval_end": "2026-09-26T10:12:00+00:00", "open": 84075.1, "high": 84081.4, "low": 84075.1, "close": 84081.35, "tick_count": 60}
+{"interval_start": "2026-09-26T10:12:00+00:00", "interval_end": "2026-09-26T10:13:00+00:00", "open": 84081.35, "high": 84081.35, "low": 84081.35, "close": 84081.35, "tick_count": 60}
+{"interval_start": "2026-09-26T10:13:00+00:00", "interval_end": "2026-09-26T10:14:00+00:00", "open": 84081.35, "high": 84081.35, "low": 84078.92, "close": 84079.03, "tick_count": 60}
+{"interval_start": "2026-09-26T10:14:00+00:00", "interval_end": "2026-09-26T10:15:00+00:00", "open": 84079.03, "high": 84079.04, "low": 84067.93, "close": 84075.52, "tick_count": 60}
+{"interval_start": "2026-09-26T10:15:00+00:00", "interval_end": "2026-09-26T10:16:00+00:00", "open": 84070.13, "high": 84070.13, "low": 84067.66, "close": 84067.76, "tick_count": 60}
+{"interval_start": "2026-09-26T10:16:00+00:00", "interval_end": "2026-09-26T10:17:00+00:00", "open": 84067.77, "high": 84091.51, "low": 84067.75, "close": 84091.51, "tick_count": 60}
+{"interval_start": "2026-09-26T10:17:00+00:00", "interval_end": "2026-09-26T10:18:00+00:00", "open": 84091.51, "high": 84113.1, "low": 84091.5, "close": 84113.09, "tick_count": 60}
+{"interval_start": "2026-09-26T10:18:00+00:00", "interval_end": "2026-09-26T10:19:00+00:00", "open": 84113.09, "high": 84113.09, "low": 84112.91, "close": 84112.91, "tick_count": 60}
+{"interval_start": "2026-09-26T10:19:00+00:00", "interval_end": "2026-09-26T10:20:00+00:00", "open": 84112.91, "high": 84112.92, "low": 84111.95, "close": 84112.0, "tick_count": 60}
+{"interval_start": "2026-09-26T10:20:00+00:00", "interval_end": "2026-09-26T10:21:00+00:00", "open": 84112.0, "high": 84112.04, "low": 84111.96, "close": 84111.97, "tick_count": 60}
+{"interval_start": "2026-09-26T10:21:00+00:00", "interval_end": "2026-09-26T10:22:00+00:00", "open": 84111.97, "high": 84140.45, "low": 84111.97, "close": 84140.44, "tick_count": 60}
+{"interval_start": "2026-09-26T10:22:00+00:00", "interval_end": "2026-09-26T10:23:00+00:00", "open": 84140.45, "high": 84148.4, "low": 84069.2, "close": 84069.42, "tick_count": 60}
+{"interval_start": "2026-09-26T10:23:00+00:00", "interval_end": "2026-09-26T10:24:00+00:00", "open": 84069.43, "high": 84120.08, "low": 84069.43, "close": 84120.08, "tick_count": 60}
+{"interval_start": "2026-09-26T10:24:00+00:00", "interval_end": "2026-09-26T10:25:00+00:00", "open": 84120.09, "high": 84120.09, "low": 84102.88, "close": 84103.82, "tick_count": 60}
+{"interval_start": "2026-09-26T10:25:00+00:00", "interval_end": "2026-09-26T10:26:00+00:00", "open": 84100.02, "high": 84101.33, "low": 84099.83, "close": 84100.15, "tick_count": 60}
+{"interval_start": "2026-09-26T10:26:00+00:00", "interval_end": "2026-09-26T10:27:00+00:00", "open": 84100.15, "high": 84115.1, "low": 84100.15, "close": 84115.09, "tick_count": 60}
+{"interval_start": "2026-09-26T10:27:00+00:00", "interval_end": "2026-09-26T10:28:00+00:00", "open": 84115.09, "high": 84115.1, "low": 84084.95, "close": 84085.09, "tick_count": 60}
+{"interval_start": "2026-09-26T10:28:00+00:00", "interval_end": "2026-09-26T10:29:00+00:00", "open": 84085.09, "high": 84085.1, "low": 84084.21, "close": 84084.95, "tick_count": 60}
+{"interval_start": "2026-09-26T10:29:00+00:00", "interval_end": "2026-09-26T10:30:00+00:00", "open": 84084.95, "high": 84104.87, "low": 84084.55, "close": 84104.43, "tick_count": 60}
+{"interval_start": "2026-09-26T10:30:00+00:00", "interval_end": "2026-09-26T10:31:00+00:00", "open": 84104.43, "high": 84109.2, "low": 84103.9, "close": 84104.04, "tick_count": 60}
+{"interval_start": "2026-09-26T10:31:00+00:00", "interval_end": "2026-09-26T10:32:00+00:00", "open": 84104.04, "high": 84104.63, "low": 84103.95, "close": 84104.16, "tick_count": 60}
+{"interval_start": "2026-09-26T10:32:00+00:00", "interval_end": "2026-09-26T10:33:00+00:00", "open": 84104.07, "high": 84104.17, "low": 84096.97, "close": 84097.17, "tick_count": 60}
+{"interval_start": "2026-09-26T10:33:00+00:00", "interval_end": "2026-09-26T10:34:00+00:00", "open": 84097.38, "high": 84097.84, "low": 84097.15, "close": 84097.63, "tick_count": 60}
+{"interval_start": "2026-09-26T10:34:00+00:00", "interval_end": "2026-09-26T10:35:00+00:00", "open": 84097.07, "high": 84097.75, "low": 84070.75, "close": 84070.75, "tick_count": 60}
+{"interval_start": "2026-09-26T10:35:00+00:00", "interval_end": "2026-09-26T10:36:00+00:00", "open": 84070.3, "high": 84077.47, "low": 84070.3, "close": 84077.37, "tick_count": 60}
+{"interval_start": "2026-09-26T10:36:00+00:00", "interval_end": "2026-09-26T10:37:00+00:00", "open": 84077.37, "high": 84087.52, "low": 84077.36, "close": 84087.41, "tick_count": 60}
+{"interval_start": "2026-09-26T10:37:00+00:00", "interval_end": "2026-09-26T10:38:00+00:00", "open": 84087.42, "high": 84087.85, "low": 84087.24, "close": 84087.27, "tick_count": 60}
+{"interval_start": "2026-09-26T10:38:00+00:00", "interval_end": "2026-09-26T10:39:00+00:00", "open": 84087.28, "high": 84087.28, "low": 84079.66, "close": 84080.01, "tick_count": 44}
+{"interval_start": "2026-09-26T10:39:00+00:00", "interval_end": "2026-09-26T10:40:00+00:00", "open": 84080.1, "high": 84099.07, "low": 84079.92, "close": 84096.47, "tick_count": 60}
+{"interval_start": "2026-09-26T10:40:00+00:00", "interval_end": "2026-09-26T10:41:00+00:00", "open": 84079.21, "high": 84104.17, "low": 84079.21, "close": 84104.17, "tick_count": 60}
+{"interval_start": "2026-09-26T10:41:00+00:00", "interval_end": "2026-09-26T10:42:00+00:00", "open": 84104.17, "high": 84112.13, "low": 84104.17, "close": 84112.12, "tick_count": 60}
+{"interval_start": "2026-09-26T10:42:00+00:00", "interval_end": "2026-09-26T10:43:00+00:00", "open": 84112.13, "high": 84125.56, "low": 84106.48, "close": 84107.91, "tick_count": 60}
+{"interval_start": "2026-09-26T10:43:00+00:00", "interval_end": "2026-09-26T10:44:00+00:00", "open": 84107.28, "high": 84113.41, "low": 84090.09, "close": 84100.54, "tick_count": 60}
+{"interval_start": "2026-09-26T10:44:00+00:00", "interval_end": "2026-09-26T10:45:00+00:00", "open": 84100.57, "high": 84111.85, "low": 84100.5, "close": 84110.93, "tick_count": 60}
+{"interval_start": "2026-09-26T10:45:00+00:00", "interval_end": "2026-09-26T10:46:00+00:00", "open": 84111.34, "high": 84129.74, "low": 84111.34, "close": 84129.74, "tick_count": 60}
+{"interval_start": "2026-09-26T10:46:00+00:00", "interval_end": "2026-09-26T10:47:00+00:00", "open": 84129.74, "high": 84129.79, "low": 84127.73, "close": 84129.2, "tick_count": 58}
+{"interval_start": "2026-09-26T10:47:00+00:00", "interval_end": "2026-09-26T10:48:00+00:00", "open": 84129.2, "high": 84129.23, "low": 84120.47, "close": 84120.87, "tick_count": 60}
+{"interval_start": "2026-09-26T10:48:00+00:00", "interval_end": "2026-09-26T10:49:00+00:00", "open": 84120.87, "high": 84120.87, "low": 84106.42, "close": 84107.52, "tick_count": 60}
+{"interval_start": "2026-09-26T10:49:00+00:00", "interval_end": "2026-09-26T10:50:00+00:00", "open": 84107.52, "high": 84112.22, "low": 84107.52, "close": 84108.36, "tick_count": 60}
+{"interval_start": "2026-09-26T10:50:00+00:00", "interval_end": "2026-09-26T10:51:00+00:00", "open": 84109.3, "high": 84128.45, "low": 84108.82, "close": 84128.45, "tick_count": 60}
+{"interval_start": "2026-09-26T10:51:00+00:00", "interval_end": "2026-09-26T10:52:00+00:00", "open": 84128.3, "high": 84128.45, "low": 84127.96, "close": 84128.0, "tick_count": 60}
+{"interval_start": "2026-09-26T10:52:00+00:00", "interval_end": "2026-09-26T10:53:00+00:00", "open": 84128.0, "high": 84128.0, "low": 84122.38, "close": 84123.21, "tick_count": 60}
+{"interval_start": "2026-09-26T10:53:00+00:00", "interval_end": "2026-09-26T10:54:00+00:00", "open": 84123.19, "high": 84123.83, "low": 84110.36, "close": 84110.36, "tick_count": 60}
+{"interval_start": "2026-09-26T10:54:00+00:00", "interval_end": "2026-09-26T10:55:00+00:00", "open": 84110.35, "high": 84110.35, "low": 84100.17, "close": 84100.17, "tick_count": 60}
+{"interval_start": "2026-09-26T10:55:00+00:00", "interval_end": "2026-09-26T10:56:00+00:00", "open": 84100.17, "high": 84112.56, "low": 84081.64, "close": 84112.55, "tick_count": 60}
+{"interval_start": "2026-09-26T10:56:00+00:00", "interval_end": "2026-09-26T10:57:00+00:00", "open": 84112.54, "high": 84141.49, "low": 84111.84, "close": 84133.31, "tick_count": 60}
+{"interval_start": "2026-09-26T10:57:00+00:00", "interval_end": "2026-09-26T10:58:00+00:00", "open": 84133.3, "high": 84138.89, "low": 84132.71, "close": 84138.83, "tick_count": 60}
+{"interval_start": "2026-09-26T10:58:00+00:00", "interval_end": "2026-09-26T10:59:00+00:00", "open": 84138.83, "high": 84138.83, "low": 84135.04, "close": 84135.38, "tick_count": 30}
+{"interval_start": "2026-09-26T11:05:00+00:00", "interval_end": "2026-09-26T11:06:00+00:00", "open": 84095.85, "high": 84095.91, "low": 84095.77, "close": 84095.84, "tick_count": 28}
+{"interval_start": "2026-09-26T11:06:00+00:00", "interval_end": "2026-09-26T11:07:00+00:00", "open": 84095.8, "high": 84111.23, "low": 84090.68, "close": 84110.22, "tick_count": 60}
+{"interval_start": "2026-09-26T11:07:00+00:00", "interval_end": "2026-09-26T11:08:00+00:00", "open": 84109.95, "high": 84109.95, "low": 84109.76, "close": 84109.84, "tick_count": 60}
+{"interval_start": "2026-09-26T11:08:00+00:00", "interval_end": "2026-09-26T11:09:00+00:00", "open": 84109.82, "high": 84144.0, "low": 84109.8, "close": 84121.02, "tick_count": 60}
+{"interval_start": "2026-09-26T11:09:00+00:00", "interval_end": "2026-09-26T11:10:00+00:00", "open": 84121.02, "high": 84131.0, "low": 84121.02, "close": 84122.31, "tick_count": 60}
+{"interval_start": "2026-09-26T11:10:00+00:00", "interval_end": "2026-09-26T11:11:00+00:00", "open": 84122.31, "high": 84122.31, "low": 84101.61, "close": 84108.85, "tick_count": 60}
+{"interval_start": "2026-09-26T11:11:00+00:00", "interval_end": "2026-09-26T11:12:00+00:00", "open": 84108.85, "high": 84114.27, "low": 84108.85, "close": 84114.14, "tick_count": 60}
+{"interval_start": "2026-09-26T11:12:00+00:00", "interval_end": "2026-09-26T11:13:00+00:00", "open": 84114.14, "high": 84115.61, "low": 84113.86, "close": 84114.19, "tick_count": 60}
+{"interval_start": "2026-09-26T11:13:00+00:00", "interval_end": "2026-09-26T11:14:00+00:00", "open": 84114.19, "high": 84144.73, "low": 84114.19, "close": 84144.71, "tick_count": 60}
+{"interval_start": "2026-09-26T11:14:00+00:00", "interval_end": "2026-09-26T11:15:00+00:00", "open": 84144.72, "high": 84144.75, "low": 84134.66, "close": 84135.45, "tick_count": 60}
+{"interval_start": "2026-09-26T11:15:00+00:00", "interval_end": "2026-09-26T11:16:00+00:00", "open": 84128.33, "high": 84141.54, "low": 84128.33, "close": 84141.53, "tick_count": 60}
+{"interval_start": "2026-09-26T11:16:00+00:00", "interval_end": "2026-09-26T11:17:00+00:00", "open": 84141.06, "high": 84161.89, "low": 84140.97, "close": 84161.86, "tick_count": 60}
+{"interval_start": "2026-09-26T11:17:00+00:00", "interval_end": "2026-09-26T11:18:00+00:00", "open": 84161.85, "high": 84161.86, "low": 84161.51, "close": 84161.74, "tick_count": 60}
+{"interval_start": "2026-09-26T11:18:00+00:00", "interval_end": "2026-09-26T11:19:00+00:00", "open": 84161.74, "high": 84161.86, "low": 84155.0, "close": 84160.58, "tick_count": 60}
+{"interval_start": "2026-09-26T11:19:00+00:00", "interval_end": "2026-09-26T11:20:00+00:00", "open": 84160.58, "high": 84160.62, "low": 84150.39, "close": 84150.55, "tick_count": 60}
+{"interval_start": "2026-09-26T11:20:00+00:00", "interval_end": "2026-09-26T11:21:00+00:00", "open": 84150.55, "high": 84150.82, "low": 84137.95, "close": 84137.96, "tick_count": 60}
+{"interval_start": "2026-09-26T11:21:00+00:00", "interval_end": "2026-09-26T11:22:00+00:00", "open": 84137.96, "high": 84138.05, "low": 84137.96, "close": 84137.99, "tick_count": 60}
+{"interval_start": "2026-09-26T11:22:00+00:00", "interval_end": "2026-09-26T11:23:00+00:00", "open": 84137.99, "high": 84138.0, "low": 84137.64, "close": 84137.64, "tick_count": 60}
+{"interval_start": "2026-09-26T11:23:00+00:00", "interval_end": "2026-09-26T11:24:00+00:00", "open": 84137.64, "high": 84137.64, "low": 84134.38, "close": 84134.65, "tick_count": 17}
+{"interval_start": "2026-09-26T11:31:00+00:00", "interval_end": "2026-09-26T11:32:00+00:00", "open": 84122.59, "high": 84122.68, "low": 84122.35, "close": 84122.68, "tick_count": 8}
+{"interval_start": "2026-09-26T11:32:00+00:00", "interval_end": "2026-09-26T11:33:00+00:00", "open": 84122.67, "high": 84122.81, "low": 84118.43, "close": 84119.7, "tick_count": 60}
+{"interval_start": "2026-09-26T11:33:00+00:00", "interval_end": "2026-09-26T11:34:00+00:00", "open": 84119.68, "high": 84130.53, "low": 84119.68, "close": 84130.48, "tick_count": 60}
+{"interval_start": "2026-09-26T11:34:00+00:00", "interval_end": "2026-09-26T11:35:00+00:00", "open": 84130.48, "high": 84130.5, "low": 84130.47, "close": 84130.47, "tick_count": 10}
+{"interval_start": "2026-09-26T11:37:00+00:00", "interval_end": "2026-09-26T11:38:00+00:00", "open": 84144.87, "high": 84144.94, "low": 84144.85, "close": 84144.87, "tick_count": 33}
+{"interval_start": "2026-09-26T11:38:00+00:00", "interval_end": "2026-09-26T11:39:00+00:00", "open": 84144.87, "high": 84158.97, "low": 84144.87, "close": 84158.47, "tick_count": 60}
+{"interval_start": "2026-09-26T11:39:00+00:00", "interval_end": "2026-09-26T11:40:00+00:00", "open": 84158.89, "high": 84159.9, "low": 84158.4, "close": 84159.86, "tick_count": 60}
+{"interval_start": "2026-09-26T11:40:00+00:00", "interval_end": "2026-09-26T11:41:00+00:00", "open": 84159.86, "high": 84159.86, "low": 84145.18, "close": 84145.18, "tick_count": 60}
+{"interval_start": "2026-09-26T11:41:00+00:00", "interval_end": "2026-09-26T11:42:00+00:00", "open": 84137.21, "high": 84137.25, "low": 84133.45, "close": 84133.61, "tick_count": 60}
+{"interval_start": "2026-09-26T11:42:00+00:00", "interval_end": "2026-09-26T11:43:00+00:00", "open": 84133.61, "high": 84133.66, "low": 84133.61, "close": 84133.66, "tick_count": 43}
+{"interval_start": "2026-09-26T11:43:00+00:00", "interval_end": "2026-09-26T11:44:00+00:00", "open": 84133.66, "high": 84147.69, "low": 84133.63, "close": 84147.66, "tick_count": 60}
+{"interval_start": "2026-09-26T11:44:00+00:00", "interval_end": "2026-09-26T11:45:00+00:00", "open": 84147.66, "high": 84147.66, "low": 84130.02, "close": 84130.16, "tick_count": 57}
+{"interval_start": "2026-09-26T11:45:00+00:00", "interval_end": "2026-09-26T11:46:00+00:00", "open": 84137.88, "high": 84137.88, "low": 84137.13, "close": 84137.16, "tick_count": 42}
+{"interval_start": "2026-09-26T11:46:00+00:00", "interval_end": "2026-09-26T11:47:00+00:00", "open": 84137.17, "high": 84137.17, "low": 84137.12, "close": 84137.12, "tick_count": 60}
+{"interval_start": "2026-09-26T11:47:00+00:00", "interval_end": "2026-09-26T11:48:00+00:00", "open": 84137.12, "high": 84137.12, "low": 84136.1, "close": 84136.1, "tick_count": 48}
+{"interval_start": "2026-09-26T11:48:00+00:00", "interval_end": "2026-09-26T11:49:00+00:00", "open": 84136.1, "high": 84136.1, "low": 84128.66, "close": 84129.5, "tick_count": 60}
+{"interval_start": "2026-09-26T11:49:00+00:00", "interval_end": "2026-09-26T11:50:00+00:00", "open": 84129.99, "high": 84135.73, "low": 84129.99, "close": 84135.73, "tick_count": 60}
+{"interval_start": "2026-09-26T11:50:00+00:00", "interval_end": "2026-09-26T11:51:00+00:00", "open": 84138.08, "high": 84144.25, "low": 84138.08, "close": 84144.04, "tick_count": 60}
+{"interval_start": "2026-09-26T11:51:00+00:00", "interval_end": "2026-09-26T11:52:00+00:00", "open": 84144.04, "high": 84144.19, "low": 84140.0, "close": 84140.0, "tick_count": 60}
+{"interval_start": "2026-09-26T11:52:00+00:00", "interval_end": "2026-09-26T11:53:00+00:00", "open": 84140.0, "high": 84140.05, "low": 84140.0, "close": 84140.04, "tick_count": 60}
+{"interval_start": "2026-09-26T11:53:00+00:00", "interval_end": "2026-09-26T11:54:00+00:00", "open": 84140.04, "high": 84143.26, "low": 84140.04, "close": 84142.75, "tick_count": 60}
+{"interval_start": "2026-09-26T11:54:00+00:00", "interval_end": "2026-09-26T11:55:00+00:00", "open": 84142.75, "high": 84142.78, "low": 84135.63, "close": 84135.63, "tick_count": 60}
+{"interval_start": "2026-09-26T11:55:00+00:00", "interval_end": "2026-09-26T11:56:00+00:00", "open": 84136.36, "high": 84139.11, "low": 84136.36, "close": 84139.11, "tick_count": 60}
+{"interval_start": "2026-09-26T11:56:00+00:00", "interval_end": "2026-09-26T11:57:00+00:00", "open": 84139.09, "high": 84143.24, "low": 84138.71, "close": 84142.85, "tick_count": 60}
+{"interval_start": "2026-09-26T11:57:00+00:00", "interval_end": "2026-09-26T11:58:00+00:00", "open": 84142.85, "high": 84142.85, "low": 84138.71, "close": 84139.46, "tick_count": 60}
+{"interval_start": "2026-09-26T11:58:00+00:00", "interval_end": "2026-09-26T11:59:00+00:00", "open": 84139.48, "high": 84139.56, "low": 84138.62, "close": 84138.88, "tick_count": 60}
+{"interval_start": "2026-09-26T11:59:00+00:00", "interval_end": "2026-09-26T12:00:00+00:00", "open": 84138.88, "high": 84138.97, "low": 84132.72, "close": 84134.27, "tick_count": 60}
+{"interval_start": "2026-09-26T12:00:00+00:00", "interval_end": "2026-09-26T12:01:00+00:00", "open": 84133.94, "high": 84134.28, "low": 84133.56, "close": 84134.27, "tick_count": 60}
+{"interval_start": "2026-09-26T12:01:00+00:00", "interval_end": "2026-09-26T12:02:00+00:00", "open": 84134.28, "high": 84134.36, "low": 84134.18, "close": 84134.35, "tick_count": 60}
+{"interval_start": "2026-09-26T12:02:00+00:00", "interval_end": "2026-09-26T12:03:00+00:00", "open": 84134.35, "high": 84134.35, "low": 84119.23, "close": 84119.46, "tick_count": 60}
+{"interval_start": "2026-09-26T12:03:00+00:00", "interval_end": "2026-09-26T12:04:00+00:00", "open": 84119.46, "high": 84120.53, "low": 84089.72, "close": 84089.74, "tick_count": 60}
+{"interval_start": "2026-09-26T12:04:00+00:00", "interval_end": "2026-09-26T12:05:00+00:00", "open": 84088.41, "high": 84088.41, "low": 84065.34, "close": 84065.34, "tick_count": 60}
+{"interval_start": "2026-09-26T12:05:00+00:00", "interval_end": "2026-09-26T12:06:00+00:00", "open": 84065.33, "high": 84105.01, "low": 84065.33, "close": 84103.57, "tick_count": 60}
+{"interval_start": "2026-09-26T12:06:00+00:00", "interval_end": "2026-09-26T12:07:00+00:00", "open": 84103.44, "high": 84115.26, "low": 84103.28, "close": 84115.19, "tick_count": 60}
+{"interval_start": "2026-09-26T12:07:00+00:00", "interval_end": "2026-09-26T12:08:00+00:00", "open": 84119.35, "high": 84142.39, "low": 84118.13, "close": 84118.41, "tick_count": 60}
+{"interval_start": "2026-09-26T12:08:00+00:00", "interval_end": "2026-09-26T12:09:00+00:00", "open": 84118.56, "high": 84118.56, "low": 84109.18, "close": 84109.83, "tick_count": 60}
+{"interval_start": "2026-09-26T12:09:00+00:00", "interval_end": "2026-09-26T12:10:00+00:00", "open": 84109.83, "high": 84129.88, "low": 84104.45, "close": 84104.45, "tick_count": 60}
+{"interval_start": "2026-09-26T12:10:00+00:00", "interval_end": "2026-09-26T12:11:00+00:00", "open": 84104.45, "high": 84104.45, "low": 84099.68, "close": 84099.84, "tick_count": 60}
+{"interval_start": "2026-09-26T12:11:00+00:00", "interval_end": "2026-09-26T12:12:00+00:00", "open": 84099.85, "high": 84100.0, "low": 84081.5, "close": 84081.5, "tick_count": 60}
+{"interval_start": "2026-09-26T12:12:00+00:00", "interval_end": "2026-09-26T12:13:00+00:00", "open": 84081.49, "high": 84081.49, "low": 84072.71, "close": 84074.12, "tick_count": 60}
+{"interval_start": "2026-09-26T12:13:00+00:00", "interval_end": "2026-09-26T12:14:00+00:00", "open": 84074.12, "high": 84088.96, "low": 84074.12, "close": 84084.99, "tick_count": 60}
+{"interval_start": "2026-09-26T12:14:00+00:00", "interval_end": "2026-09-26T12:15:00+00:00", "open": 84084.99, "high": 84100.22, "low": 84084.99, "close": 84099.86, "tick_count": 60}
+{"interval_start": "2026-09-26T12:15:00+00:00", "interval_end": "2026-09-26T12:16:00+00:00", "open": 84099.86, "high": 84130.63, "low": 84099.86, "close": 84130.52, "tick_count": 60}
+{"interval_start": "2026-09-26T12:16:00+00:00", "interval_end": "2026-09-26T12:17:00+00:00", "open": 84130.53, "high": 84148.59, "low": 84130.43, "close": 84144.98, "tick_count": 60}
+{"interval_start": "2026-09-26T12:17:00+00:00", "interval_end": "2026-09-26T12:18:00+00:00", "open": 84145.01, "high": 84157.94, "low": 84144.6, "close": 84156.69, "tick_count": 60}
+{"interval_start": "2026-09-26T12:18:00+00:00", "interval_end": "2026-09-26T12:19:00+00:00", "open": 84157.14, "high": 84157.43, "low": 84150.78, "close": 84150.84, "tick_count": 60}
+{"interval_start": "2026-09-26T12:19:00+00:00", "interval_end": "2026-09-26T12:20:00+00:00", "open": 84150.84, "high": 84151.17, "low": 84117.66, "close": 84117.66, "tick_count": 60}
+{"interval_start": "2026-09-26T12:20:00+00:00", "interval_end": "2026-09-26T12:21:00+00:00", "open": 84117.65, "high": 84123.73, "low": 84100.24, "close": 84100.24, "tick_count": 60}
+{"interval_start": "2026-09-26T12:21:00+00:00", "interval_end": "2026-09-26T12:22:00+00:00", "open": 84100.24, "high": 84100.26, "low": 84075.54, "close": 84075.54, "tick_count": 60}
+{"interval_start": "2026-09-26T12:22:00+00:00", "interval_end": "2026-09-26T12:23:00+00:00", "open": 84075.65, "high": 84075.84, "low": 84074.53, "close": 84075.83, "tick_count": 60}
+{"interval_start": "2026-09-26T12:23:00+00:00", "interval_end": "2026-09-26T12:24:00+00:00", "open": 84075.83, "high": 84079.74, "low": 84075.83, "close": 84079.47, "tick_count": 60}
+{"interval_start": "2026-09-26T12:24:00+00:00", "interval_end": "2026-09-26T12:25:00+00:00", "open": 84079.53, "high": 84079.54, "low": 84056.96, "close": 84063.45, "tick_count": 60}
+{"interval_start": "2026-09-26T12:25:00+00:00", "interval_end": "2026-09-26T12:26:00+00:00", "open": 84064.97, "high": 84086.97, "low": 84064.92, "close": 84086.41, "tick_count": 60}
+{"interval_start": "2026-09-26T12:26:00+00:00", "interval_end": "2026-09-26T12:27:00+00:00", "open": 84086.53, "high": 84086.53, "low": 84067.33, "close": 84070.0, "tick_count": 60}
+{"interval_start": "2026-09-26T12:27:00+00:00", "interval_end": "2026-09-26T12:28:00+00:00", "open": 84070.42, "high": 84070.74, "low": 84056.96, "close": 84058.15, "tick_count": 60}
+{"interval_start": "2026-09-26T12:28:00+00:00", "interval_end": "2026-09-26T12:29:00+00:00", "open": 84058.15, "high": 84058.26, "low": 84051.3, "close": 84052.23, "tick_count": 60}
+{"interval_start": "2026-09-26T12:29:00+00:00", "interval_end": "2026-09-26T12:30:00+00:00", "open": 84052.11, "high": 84060.25, "low": 84052.11, "close": 84059.85, "tick_count": 60}
+{"interval_start": "2026-09-26T12:30:00+00:00", "interval_end": "2026-09-26T12:31:00+00:00", "open": 84059.82, "high": 84060.49, "low": 84059.81, "close": 84059.99, "tick_count": 60}
+{"interval_start": "2026-09-26T12:31:00+00:00", "interval_end": "2026-09-26T12:32:00+00:00", "open": 84060.29, "high": 84064.49, "low": 84060.08, "close": 84064.39, "tick_count": 60}
+{"interval_start": "2026-09-26T12:32:00+00:00", "interval_end": "2026-09-26T12:33:00+00:00", "open": 84064.39, "high": 84064.49, "low": 84064.1, "close": 84064.25, "tick_count": 60}
+{"interval_start": "2026-09-26T12:33:00+00:00", "interval_end": "2026-09-26T12:34:00+00:00", "open": 84064.37, "high": 84083.42, "low": 84064.08, "close": 84083.28, "tick_count": 60}
+{"interval_start": "2026-09-26T12:34:00+00:00", "interval_end": "2026-09-26T12:35:00+00:00", "open": 84083.28, "high": 84083.37, "low": 84083.24, "close": 84083.24, "tick_count": 60}
+{"interval_start": "2026-09-26T12:35:00+00:00", "interval_end": "2026-09-26T12:36:00+00:00", "open": 84083.24, "high": 84089.46, "low": 84083.23, "close": 84087.6, "tick_count": 60}
+{"interval_start": "2026-09-26T12:36:00+00:00", "interval_end": "2026-09-26T12:37:00+00:00", "open": 84087.6, "high": 84087.6, "low": 84079.2, "close": 84079.6, "tick_count": 60}
+{"interval_start": "2026-09-26T12:37:00+00:00", "interval_end": "2026-09-26T12:38:00+00:00", "open": 84079.6, "high": 84079.6, "low": 84051.72, "close": 84052.19, "tick_count": 60}
+{"interval_start": "2026-09-26T12:38:00+00:00", "interval_end": "2026-09-26T12:39:00+00:00", "open": 84052.18, "high": 84052.18, "low": 84035.51, "close": 84036.05, "tick_count": 60}
+{"interval_start": "2026-09-26T12:39:00+00:00", "interval_end": "2026-09-26T12:40:00+00:00", "open": 84036.05, "high": 84036.3, "low": 84035.88, "close": 84036.3, "tick_count": 60}
+{"interval_start": "2026-09-26T12:40:00+00:00", "interval_end": "2026-09-26T12:41:00+00:00", "open": 84053.5, "high": 84053.5, "low": 84040.5, "close": 84040.5, "tick_count": 60}
+{"interval_start": "2026-09-26T12:41:00+00:00", "interval_end": "2026-09-26T12:42:00+00:00", "open": 84040.98, "high": 84040.99, "low": 84008.72, "close": 84008.72, "tick_count": 60}
+{"interval_start": "2026-09-26T12:42:00+00:00", "interval_end": "2026-09-26T12:43:00+00:00", "open": 84008.72, "high": 84008.84, "low": 84002.73, "close": 84004.1, "tick_count": 60}
+{"interval_start": "2026-09-26T12:43:00+00:00", "interval_end": "2026-09-26T12:44:00+00:00", "open": 84004.09, "high": 84008.73, "low": 84004.09, "close": 84008.46, "tick_count": 60}
+{"interval_start": "2026-09-26T12:44:00+00:00", "interval_end": "2026-09-26T12:45:00+00:00", "open": 84008.68, "high": 84008.68, "low": 84008.43, "close": 84008.66, "tick_count": 60}
+{"interval_start": "2026-09-26T12:45:00+00:00", "interval_end": "2026-09-26T12:46:00+00:00", "open": 84008.44, "high": 84015.57, "low": 84008.44, "close": 84014.62, "tick_count": 60}
+{"interval_start": "2026-09-26T12:46:00+00:00", "interval_end": "2026-09-26T12:47:00+00:00", "open": 84014.96, "high": 84023.58, "low": 84014.96, "close": 84022.55, "tick_count": 60}
+{"interval_start": "2026-09-26T12:47:00+00:00", "interval_end": "2026-09-26T12:48:00+00:00", "open": 84022.55, "high": 84025.11, "low": 84022.5, "close": 84024.95, "tick_count": 60}
+{"interval_start": "2026-09-26T12:48:00+00:00", "interval_end": "2026-09-26T12:49:00+00:00", "open": 84027.31, "high": 84028.91, "low": 84026.65, "close": 84028.75, "tick_count": 60}
+{"interval_start": "2026-09-26T12:49:00+00:00", "interval_end": "2026-09-26T12:50:00+00:00", "open": 84028.75, "high": 84028.79, "low": 84028.73, "close": 84028.76, "tick_count": 60}
+{"interval_start": "2026-09-26T12:50:00+00:00", "interval_end": "2026-09-26T12:51:00+00:00", "open": 84028.76, "high": 84028.81, "low": 84028.73, "close": 84028.79, "tick_count": 60}
+{"interval_start": "2026-09-26T12:51:00+00:00", "interval_end": "2026-09-26T12:52:00+00:00", "open": 84028.79, "high": 84029.22, "low": 84028.75, "close": 84029.21, "tick_count": 60}
+{"interval_start": "2026-09-26T12:52:00+00:00", "interval_end": "2026-09-26T12:53:00+00:00", "open": 84029.21, "high": 84029.21, "low": 84028.74, "close": 84028.84, "tick_count": 60}
+{"interval_start": "2026-09-26T12:53:00+00:00", "interval_end": "2026-09-26T12:54:00+00:00", "open": 84028.84, "high": 84029.18, "low": 84028.8, "close": 84028.86, "tick_count": 60}
+{"interval_start": "2026-09-26T12:54:00+00:00", "interval_end": "2026-09-26T12:55:00+00:00", "open": 84028.86, "high": 84028.86, "low": 84006.56, "close": 84009.9, "tick_count": 60}
+{"interval_start": "2026-09-26T12:55:00+00:00", "interval_end": "2026-09-26T12:56:00+00:00", "open": 84009.97, "high": 84009.98, "low": 84009.87, "close": 84009.89, "tick_count": 60}
+{"interval_start": "2026-09-26T12:56:00+00:00", "interval_end": "2026-09-26T12:57:00+00:00", "open": 84009.89, "high": 84009.96, "low": 84009.87, "close": 84009.94, "tick_count": 60}
+{"interval_start": "2026-09-26T12:57:00+00:00", "interval_end": "2026-09-26T12:58:00+00:00", "open": 84009.87, "high": 84009.99, "low": 84009.83, "close": 84009.84, "tick_count": 60}
+{"interval_start": "2026-09-26T12:58:00+00:00", "interval_end": "2026-09-26T12:59:00+00:00", "open": 84009.84, "high": 84026.44, "low": 84008.83, "close": 84020.14, "tick_count": 60}
+{"interval_start": "2026-09-26T12:59:00+00:00", "interval_end": "2026-09-26T13:00:00+00:00", "open": 84020.14, "high": 84020.4, "low": 84020.14, "close": 84020.34, "tick_count": 60}
+{"interval_start": "2026-09-26T13:00:00+00:00", "interval_end": "2026-09-26T13:01:00+00:00", "open": 84008.53, "high": 84009.35, "low": 84008.28, "close": 84009.35, "tick_count": 60}
+{"interval_start": "2026-09-26T13:01:00+00:00", "interval_end": "2026-09-26T13:02:00+00:00", "open": 84009.36, "high": 84021.42, "low": 84009.36, "close": 84020.67, "tick_count": 60}
+{"interval_start": "2026-09-26T13:02:00+00:00", "interval_end": "2026-09-26T13:03:00+00:00", "open": 84020.69, "high": 84055.4, "low": 84020.67, "close": 84055.4, "tick_count": 60}
+{"interval_start": "2026-09-26T13:03:00+00:00", "interval_end": "2026-09-26T13:04:00+00:00", "open": 84055.42, "high": 84064.27, "low": 84026.09, "close": 84027.59, "tick_count": 60}
+{"interval_start": "2026-09-26T13:04:00+00:00", "interval_end": "2026-09-26T13:05:00+00:00", "open": 84027.37, "high": 84028.04, "low": 84027.23, "close": 84027.26, "tick_count": 60}
+{"interval_start": "2026-09-26T13:05:00+00:00", "interval_end": "2026-09-26T13:06:00+00:00", "open": 84027.26, "high": 84046.22, "low": 84027.18, "close": 84045.79, "tick_count": 60}
+{"interval_start": "2026-09-26T13:06:00+00:00", "interval_end": "2026-09-26T13:07:00+00:00", "open": 84045.88, "high": 84079.97, "low": 84045.88, "close": 84079.97, "tick_count": 60}
+{"interval_start": "2026-09-26T13:07:00+00:00", "interval_end": "2026-09-26T13:08:00+00:00", "open": 84079.95, "high": 84088.13, "low": 84079.95, "close": 84080.0, "tick_count": 60}
+{"interval_start": "2026-09-26T13:08:00+00:00", "interval_end": "2026-09-26T13:09:00+00:00", "open": 84080.0, "high": 84081.11, "low": 84047.31, "close": 84047.31, "tick_count": 60}
+{"interval_start": "2026-09-26T13:09:00+00:00", "interval_end": "2026-09-26T13:10:00+00:00", "open": 84047.37, "high": 84047.37, "low": 84033.97, "close": 84034.14, "tick_count": 60}
+{"interval_start": "2026-09-26T13:10:00+00:00", "interval_end": "2026-09-26T13:11:00+00:00", "open": 84034.06, "high": 84034.13, "low": 84013.11, "close": 84013.15, "tick_count": 60}
+{"interval_start": "2026-09-26T13:11:00+00:00", "interval_end": "2026-09-26T13:12:00+00:00", "open": 83938.46, "high": 83953.08, "low": 83929.96, "close": 83933.01, "tick_count": 60}
+{"interval_start": "2026-09-26T13:12:00+00:00", "interval_end": "2026-09-26T13:13:00+00:00", "open": 83933.03, "high": 83971.56, "low": 83907.09, "close": 83970.85, "tick_count": 60}
+{"interval_start": "2026-09-26T13:13:00+00:00", "interval_end": "2026-09-26T13:14:00+00:00", "open": 83973.94, "high": 83974.02, "low": 83948.13, "close": 83965.85, "tick_count": 60}
+{"interval_start": "2026-09-26T13:14:00+00:00", "interval_end": "2026-09-26T13:15:00+00:00", "open": 83965.85, "high": 83975.85, "low": 83965.85, "close": 83975.85, "tick_count": 60}
+{"interval_start": "2026-09-26T13:15:00+00:00", "interval_end": "2026-09-26T13:16:00+00:00", "open": 83961.71, "high": 83979.6, "low": 83943.03, "close": 83943.04, "tick_count": 60}
+{"interval_start": "2026-09-26T13:16:00+00:00", "interval_end": "2026-09-26T13:17:00+00:00", "open": 83943.06, "high": 83943.84, "low": 83931.31, "close": 83943.52, "tick_count": 60}
+{"interval_start": "2026-09-26T13:17:00+00:00", "interval_end": "2026-09-26T13:18:00+00:00", "open": 83943.52, "high": 83977.48, "low": 83943.4, "close": 83975.71, "tick_count": 60}
+{"interval_start": "2026-09-26T13:18:00+00:00", "interval_end": "2026-09-26T13:19:00+00:00", "open": 83968.06, "high": 83968.06, "low": 83953.68, "close": 83954.35, "tick_count": 60}
+{"interval_start": "2026-09-26T13:19:00+00:00", "interval_end": "2026-09-26T13:20:00+00:00", "open": 83954.86, "high": 83955.02, "low": 83954.61, "close": 83955.02, "tick_count": 11}
+{"interval_start": "2026-09-26T13:31:00+00:00", "interval_end": "2026-09-26T13:32:00+00:00", "open": 83874.06, "high": 83886.75, "low": 83873.91, "close": 83886.16, "tick_count": 39}
+{"interval_start": "2026-09-26T13:32:00+00:00", "interval_end": "2026-09-26T13:33:00+00:00", "open": 83886.13, "high": 83886.13, "low": 83859.47, "close": 83867.65, "tick_count": 60}
+{"interval_start": "2026-09-26T13:33:00+00:00", "interval_end": "2026-09-26T13:34:00+00:00", "open": 83867.65, "high": 83869.14, "low": 83864.91, "close": 83865.88, "tick_count": 60}
+{"interval_start": "2026-09-26T13:34:00+00:00", "interval_end": "2026-09-26T13:35:00+00:00", "open": 83865.97, "high": 83873.86, "low": 83860.04, "close": 83866.03, "tick_count": 60}
+{"interval_start": "2026-09-26T13:35:00+00:00", "interval_end": "2026-09-26T13:36:00+00:00", "open": 83866.03, "high": 83866.14, "low": 83839.69, "close": 83839.9, "tick_count": 60}
+{"interval_start": "2026-09-26T13:36:00+00:00", "interval_end": "2026-09-26T13:37:00+00:00", "open": 83839.9, "high": 83851.47, "low": 83825.22, "close": 83850.44, "tick_count": 60}
+{"interval_start": "2026-09-26T13:37:00+00:00", "interval_end": "2026-09-26T13:38:00+00:00", "open": 83849.89, "high": 83889.85, "low": 83849.89, "close": 83883.88, "tick_count": 60}
+{"interval_start": "2026-09-26T13:38:00+00:00", "interval_end": "2026-09-26T13:39:00+00:00", "open": 83883.86, "high": 83901.32, "low": 83877.41, "close": 83901.32, "tick_count": 60}
+{"interval_start": "2026-09-26T13:39:00+00:00", "interval_end": "2026-09-26T13:40:00+00:00", "open": 83901.27, "high": 83901.27, "low": 83889.75, "close": 83889.75, "tick_count": 60}
+{"interval_start": "2026-09-26T13:40:00+00:00", "interval_end": "2026-09-26T13:41:00+00:00", "open": 83889.76, "high": 83896.93, "low": 83889.69, "close": 83895.76, "tick_count": 60}
+{"interval_start": "2026-09-26T13:41:00+00:00", "interval_end": "2026-09-26T13:42:00+00:00", "open": 83895.75, "high": 83895.77, "low": 83870.73, "close": 83884.35, "tick_count": 60}
+{"interval_start": "2026-09-26T13:42:00+00:00", "interval_end": "2026-09-26T13:43:00+00:00", "open": 83884.21, "high": 83890.73, "low": 83883.76, "close": 83889.4, "tick_count": 60}
+{"interval_start": "2026-09-26T13:43:00+00:00", "interval_end": "2026-09-26T13:44:00+00:00", "open": 83889.4, "high": 83889.42, "low": 83884.82, "close": 83885.41, "tick_count": 60}
+{"interval_start": "2026-09-26T13:44:00+00:00", "interval_end": "2026-09-26T13:45:00+00:00", "open": 83885.41, "high": 83885.41, "low": 83882.88, "close": 83883.66, "tick_count": 60}
+{"interval_start": "2026-09-26T13:45:00+00:00", "interval_end": "2026-09-26T13:46:00+00:00", "open": 83889.9, "high": 83896.49, "low": 83886.75, "close": 83896.43, "tick_count": 60}
+{"interval_start": "2026-09-26T13:46:00+00:00", "interval_end": "2026-09-26T13:47:00+00:00", "open": 83896.42, "high": 83896.6, "low": 83895.77, "close": 83896.13, "tick_count": 60}
+{"interval_start": "2026-09-26T13:47:00+00:00", "interval_end": "2026-09-26T13:48:00+00:00", "open": 83895.88, "high": 83909.51, "low": 83891.11, "close": 83891.11, "tick_count": 60}
+{"interval_start": "2026-09-26T13:48:00+00:00", "interval_end": "2026-09-26T13:49:00+00:00", "open": 83891.66, "high": 83922.62, "low": 83880.1, "close": 83922.56, "tick_count": 60}
+{"interval_start": "2026-09-26T13:49:00+00:00", "interval_end": "2026-09-26T13:50:00+00:00", "open": 83922.56, "high": 83928.52, "low": 83904.82, "close": 83904.86, "tick_count": 60}
+{"interval_start": "2026-09-26T13:50:00+00:00", "interval_end": "2026-09-26T13:51:00+00:00", "open": 83904.87, "high": 83923.53, "low": 83897.88, "close": 83918.58, "tick_count": 60}
+{"interval_start": "2026-09-26T13:51:00+00:00", "interval_end": "2026-09-26T13:52:00+00:00", "open": 83919.1, "high": 83919.1, "low": 83879.23, "close": 83879.23, "tick_count": 60}
+{"interval_start": "2026-09-26T13:52:00+00:00", "interval_end": "2026-09-26T13:53:00+00:00", "open": 83879.21, "high": 83879.21, "low": 83878.03, "close": 83878.24, "tick_count": 60}
+{"interval_start": "2026-09-26T13:53:00+00:00", "interval_end": "2026-09-26T13:54:00+00:00", "open": 83878.24, "high": 83897.36, "low": 83878.24, "close": 83897.09, "tick_count": 60}
+{"interval_start": "2026-09-26T13:54:00+00:00", "interval_end": "2026-09-26T13:55:00+00:00", "open": 83896.77, "high": 83917.2, "low": 83896.7, "close": 83916.99, "tick_count": 60}
+{"interval_start": "2026-09-26T13:55:00+00:00", "interval_end": "2026-09-26T13:56:00+00:00", "open": 83917.18, "high": 83930.24, "low": 83917.18, "close": 83920.51, "tick_count": 60}
+{"interval_start": "2026-09-26T13:56:00+00:00", "interval_end": "2026-09-26T13:57:00+00:00", "open": 83919.65, "high": 83938.84, "low": 83919.64, "close": 83927.37, "tick_count": 60}
+{"interval_start": "2026-09-26T13:57:00+00:00", "interval_end": "2026-09-26T13:58:00+00:00", "open": 83927.36, "high": 83927.36, "low": 83924.68, "close": 83925.59, "tick_count": 60}
+{"interval_start": "2026-09-26T13:58:00+00:00", "interval_end": "2026-09-26T13:59:00+00:00", "open": 83925.59, "high": 83925.74, "low": 83925.35, "close": 83925.7, "tick_count": 60}
+{"interval_start": "2026-09-26T13:59:00+00:00", "interval_end": "2026-09-26T14:00:00+00:00", "open": 83897.61, "high": 83916.95, "low": 83897.61, "close": 83907.81, "tick_count": 60}
+{"interval_start": "2026-09-26T14:00:00+00:00", "interval_end": "2026-09-26T14:01:00+00:00", "open": 83908.39, "high": 83908.39, "low": 83885.06, "close": 83885.22, "tick_count": 60}
+{"interval_start": "2026-09-26T14:01:00+00:00", "interval_end": "2026-09-26T14:02:00+00:00", "open": 83885.22, "high": 83894.28, "low": 83885.22, "close": 83888.85, "tick_count": 60}
+{"interval_start": "2026-09-26T14:02:00+00:00", "interval_end": "2026-09-26T14:03:00+00:00", "open": 83888.85, "high": 83898.27, "low": 83888.81, "close": 83897.65, "tick_count": 60}
+{"interval_start": "2026-09-26T14:03:00+00:00", "interval_end": "2026-09-26T14:04:00+00:00", "open": 83897.66, "high": 83897.7, "low": 83897.6, "close": 83897.66, "tick_count": 60}
+{"interval_start": "2026-09-26T14:04:00+00:00", "interval_end": "2026-09-26T14:05:00+00:00", "open": 83897.66, "high": 83938.83, "low": 83897.65, "close": 83938.82, "tick_count": 60}
+{"interval_start": "2026-09-26T14:05:00+00:00", "interval_end": "2026-09-26T14:06:00+00:00", "open": 83897.99, "high": 83897.99, "low": 83885.42, "close": 83885.44, "tick_count": 60}
+{"interval_start": "2026-09-26T14:06:00+00:00", "interval_end": "2026-09-26T14:07:00+00:00", "open": 83885.44, "high": 83885.44, "low": 83874.72, "close": 83874.92, "tick_count": 3}
+{"interval_start": "2026-09-26T14:08:00+00:00", "interval_end": "2026-09-26T14:09:00+00:00", "open": 83882.83, "high": 83882.83, "low": 83881.22, "close": 83881.99, "tick_count": 58}
+{"interval_start": "2026-09-26T14:09:00+00:00", "interval_end": "2026-09-26T14:10:00+00:00", "open": 83881.99, "high": 83898.15, "low": 83881.28, "close": 83897.82, "tick_count": 60}
+{"interval_start": "2026-09-26T14:10:00+00:00", "interval_end": "2026-09-26T14:11:00+00:00", "open": 83897.83, "high": 83900.67, "low": 83897.74, "close": 83900.17, "tick_count": 60}
+{"interval_start": "2026-09-26T14:11:00+00:00", "interval_end": "2026-09-26T14:12:00+00:00", "open": 83910.0, "high": 83910.16, "low": 83904.87, "close": 83905.99, "tick_count": 60}
+{"interval_start": "2026-09-26T14:12:00+00:00", "interval_end": "2026-09-26T14:13:00+00:00", "open": 83905.88, "high": 83909.94, "low": 83904.26, "close": 83905.45, "tick_count": 60}
+{"interval_start": "2026-09-26T14:13:00+00:00", "interval_end": "2026-09-26T14:14:00+00:00", "open": 83905.32, "high": 83909.27, "low": 83905.32, "close": 83909.27, "tick_count": 60}
+{"interval_start": "2026-09-26T14:14:00+00:00", "interval_end": "2026-09-26T14:15:00+00:00", "open": 83909.27, "high": 83918.3, "low": 83899.0, "close": 83913.14, "tick_count": 60}
+{"interval_start": "2026-09-26T14:15:00+00:00", "interval_end": "2026-09-26T14:16:00+00:00", "open": 83912.99, "high": 83941.12, "low": 83912.99, "close": 83940.95, "tick_count": 60}
+{"interval_start": "2026-09-26T14:16:00+00:00", "interval_end": "2026-09-26T14:17:00+00:00", "open": 83940.95, "high": 83940.99, "low": 83927.57, "close": 83927.82, "tick_count": 60}
+{"interval_start": "2026-09-26T14:17:00+00:00", "interval_end": "2026-09-26T14:18:00+00:00", "open": 83927.79, "high": 83927.82, "low": 83912.58, "close": 83912.59, "tick_count": 60}
+{"interval_start": "2026-09-26T14:18:00+00:00", "interval_end": "2026-09-26T14:19:00+00:00", "open": 83912.53, "high": 83925.34, "low": 83912.53, "close": 83925.13, "tick_count": 60}
+{"interval_start": "2026-09-26T14:19:00+00:00", "interval_end": "2026-09-26T14:20:00+00:00", "open": 83925.12, "high": 83925.16, "low": 83925.06, "close": 83925.16, "tick_count": 60}
+{"interval_start": "2026-09-26T14:20:00+00:00", "interval_end": "2026-09-26T14:21:00+00:00", "open": 83925.16, "high": 83925.16, "low": 83925.11, "close": 83925.11, "tick_count": 60}
+{"interval_start": "2026-09-26T14:21:00+00:00", "interval_end": "2026-09-26T14:22:00+00:00", "open": 83925.11, "high": 83936.42, "low": 83925.1, "close": 83933.09, "tick_count": 60}
+{"interval_start": "2026-09-26T14:22:00+00:00", "interval_end": "2026-09-26T14:23:00+00:00", "open": 83933.08, "high": 83935.13, "low": 83930.97, "close": 83931.66, "tick_count": 60}
+{"interval_start": "2026-09-26T14:23:00+00:00", "interval_end": "2026-09-26T14:24:00+00:00", "open": 83931.66, "high": 83931.67, "low": 83931.34, "close": 83931.66, "tick_count": 60}
+{"interval_start": "2026-09-26T14:24:00+00:00", "interval_end": "2026-09-26T14:25:00+00:00", "open": 83931.66, "high": 83931.66, "low": 83931.65, "close": 83931.66, "tick_count": 60}
+{"interval_start": "2026-09-26T14:25:00+00:00", "interval_end": "2026-09-26T14:26:00+00:00", "open": 83931.66, "high": 83939.59, "low": 83931.65, "close": 83932.49, "tick_count": 60}
+{"interval_start": "2026-09-26T14:26:00+00:00", "interval_end": "2026-09-26T14:27:00+00:00", "open": 83932.49, "high": 83932.57, "low": 83932.47, "close": 83932.5, "tick_count": 60}
+{"interval_start": "2026-09-26T14:27:00+00:00", "interval_end": "2026-09-26T14:28:00+00:00", "open": 83932.47, "high": 83932.55, "low": 83932.47, "close": 83932.54, "tick_count": 60}
+{"interval_start": "2026-09-26T14:28:00+00:00", "interval_end": "2026-09-26T14:29:00+00:00", "open": 83932.54, "high": 83932.56, "low": 83932.53, "close": 83932.55, "tick_count": 60}
+{"interval_start": "2026-09-26T14:29:00+00:00", "interval_end": "2026-09-26T14:30:00+00:00", "open": 83932.55, "high": 83948.77, "low": 83932.55, "close": 83948.3, "tick_count": 60}
+{"interval_start": "2026-09-26T14:30:00+00:00", "interval_end": "2026-09-26T14:31:00+00:00", "open": 83948.32, "high": 83959.6, "low": 83948.31, "close": 83956.15, "tick_count": 60}
+{"interval_start": "2026-09-26T14:31:00+00:00", "interval_end": "2026-09-26T14:32:00+00:00", "open": 83956.26, "high": 83967.47, "low": 83956.26, "close": 83967.05, "tick_count": 60}
+{"interval_start": "2026-09-26T14:32:00+00:00", "interval_end": "2026-09-26T14:33:00+00:00", "open": 83967.05, "high": 83982.5, "low": 83967.04, "close": 83978.87, "tick_count": 60}
+{"interval_start": "2026-09-26T14:33:00+00:00", "interval_end": "2026-09-26T14:34:00+00:00", "open": 83978.91, "high": 83979.13, "low": 83978.91, "close": 83979.07, "tick_count": 60}
+{"interval_start": "2026-09-26T14:34:00+00:00", "interval_end": "2026-09-26T14:35:00+00:00", "open": 83979.07, "high": 83979.99, "low": 83965.31, "close": 83965.31, "tick_count": 60}
+{"interval_start": "2026-09-26T14:35:00+00:00", "interval_end": "2026-09-26T14:36:00+00:00", "open": 83965.31, "high": 83965.36, "low": 83960.55, "close": 83960.55, "tick_count": 60}
+{"interval_start": "2026-09-26T14:36:00+00:00", "interval_end": "2026-09-26T14:37:00+00:00", "open": 83960.55, "high": 83961.18, "low": 83960.54, "close": 83961.18, "tick_count": 60}
+{"interval_start": "2026-09-26T14:37:00+00:00", "interval_end": "2026-09-26T14:38:00+00:00", "open": 83961.18, "high": 83961.21, "low": 83960.46, "close": 83961.2, "tick_count": 60}
+{"interval_start": "2026-09-26T14:38:00+00:00", "interval_end": "2026-09-26T14:39:00+00:00", "open": 83961.2, "high": 83977.35, "low": 83960.87, "close": 83973.65, "tick_count": 60}
+{"interval_start": "2026-09-26T14:39:00+00:00", "interval_end": "2026-09-26T14:40:00+00:00", "open": 83973.65, "high": 83973.65, "low": 83964.97, "close": 83965.84, "tick_count": 60}
+{"interval_start": "2026-09-26T14:40:00+00:00", "interval_end": "2026-09-26T14:41:00+00:00", "open": 83959.4, "high": 83976.22, "low": 83958.85, "close": 83975.05, "tick_count": 60}
+{"interval_start": "2026-09-26T14:41:00+00:00", "interval_end": "2026-09-26T14:42:00+00:00", "open": 83975.05, "high": 83984.82, "low": 83975.04, "close": 83984.78, "tick_count": 60}
+{"interval_start": "2026-09-26T14:42:00+00:00", "interval_end": "2026-09-26T14:43:00+00:00", "open": 83984.78, "high": 83990.17, "low": 83984.78, "close": 83990.17, "tick_count": 60}
+{"interval_start": "2026-09-26T14:43:00+00:00", "interval_end": "2026-09-26T14:44:00+00:00", "open": 83990.17, "high": 83990.18, "low": 83989.96, "close": 83989.96, "tick_count": 60}
+{"interval_start": "2026-09-26T14:44:00+00:00", "interval_end": "2026-09-26T14:45:00+00:00", "open": 83989.96, "high": 83990.08, "low": 83969.27, "close": 83977.67, "tick_count": 60}
+{"interval_start": "2026-09-26T14:45:00+00:00", "interval_end": "2026-09-26T14:46:00+00:00", "open": 83977.67, "high": 83978.36, "low": 83957.87, "close": 83958.5, "tick_count": 60}
+{"interval_start": "2026-09-26T14:46:00+00:00", "interval_end": "2026-09-26T14:47:00+00:00", "open": 83958.5, "high": 83970.22, "low": 83958.5, "close": 83970.0, "tick_count": 60}
+{"interval_start": "2026-09-26T14:47:00+00:00", "interval_end": "2026-09-26T14:48:00+00:00", "open": 83970.0, "high": 83970.23, "low": 83969.99, "close": 83970.15, "tick_count": 60}
+{"interval_start": "2026-09-26T14:48:00+00:00", "interval_end": "2026-09-26T14:49:00+00:00", "open": 83969.93, "high": 83970.02, "low": 83969.9, "close": 83970.02, "tick_count": 60}
+{"interval_start": "2026-09-26T14:49:00+00:00", "interval_end": "2026-09-26T14:50:00+00:00", "open": 83970.02, "high": 83983.26, "low": 83969.99, "close": 83982.85, "tick_count": 60}
+{"interval_start": "2026-09-26T14:50:00+00:00", "interval_end": "2026-09-26T14:51:00+00:00", "open": 83983.22, "high": 84008.53, "low": 83983.22, "close": 84008.32, "tick_count": 60}

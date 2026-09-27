@@ -9,19 +9,17 @@ No clock — bucket from md.exchange_timestamp only (purity asserted).
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 # Direct impl import ONLY — fails collection until Step 5 (honest RED).
-from modules.m2_market_data.candles import CandleBuilder  # noqa: F401
-
+from modules.m2_market_data.candles import CandleBuilder
 from shared.contracts.drop import Drop, DropReason
 from shared.contracts.market_data import Candle, DataQuality, MarketData, Tick
 
-BASE = datetime(2026, 3, 22, 19, 46, 0, tzinfo=timezone.utc)
-NAIVE = datetime(2026, 3, 22, 19, 46, 0)
+BASE = datetime(2026, 3, 22, 19, 46, 0, tzinfo=UTC)
+NAIVE = datetime(2026, 3, 22, 19, 46, 0)  # noqa: DTZ001 — deliberate: this IS the bad input under test
 
 
 def _md(
@@ -121,6 +119,14 @@ def test_ohlc_from_multiple_prices() -> None:
 
 
 def test_out_of_order_within_open_bucket_updates_ohlc() -> None:
+    """CORRECTED 2026-09-27: O and C follow EXCHANGE TIMESTAMP order, not arrival order.
+
+    Previous behaviour was "open is first received, not min ts" and was pinned here. That
+    is now cancelled: it records a close that never existed at the end of the bar whenever
+    the venue delivers out of order - which this system does by design (two independent
+    WS subscriptions, backfill replay, async ingest, reconnect overlap). `high`/`low` were
+    always order-independent and are unchanged.
+    """
     b = _builder()
     b.on_tick(_md(price=1.08400, exchange=BASE + timedelta(seconds=30)))
     # late but same open bucket — lower low arrives after
@@ -128,11 +134,40 @@ def test_out_of_order_within_open_bucket_updates_ohlc() -> None:
     assert r is None  # still open
     c = b.close()
     assert isinstance(c, Candle)
-    assert c.open == 1.08400  # first tick chronologically? No — open is first received, not min ts
-    # Spec: O is first tick that opened the bucket (by arrival order for open), H/L update
-    # First tick was 1.08400 at t=30, then 1.08350 at t=10 same bucket → O stays 1.08400 (opened with it)
+    # EARLIEST timestamp opens the bar, not the first packet seen
+    assert c.open == 1.08350
     assert c.low == 1.08350
+    assert c.high == 1.08400
+    # LATEST timestamp closes the bar, not the last packet seen
+    assert c.close == 1.08400
     assert c.tick_count == 2
+
+
+def test_out_of_order_reversed_arrival_closes_on_latest_timestamp() -> None:
+    """The exact defect case: the earlier-priced tick arrives LAST and must still be close."""
+    b = _builder()
+    b.on_tick(_md(price=1.1000, exchange=BASE + timedelta(seconds=30)))  # arrives first
+    b.on_tick(_md(price=1.0900, exchange=BASE + timedelta(seconds=10)))  # arrives second
+    c = b.close()
+    assert isinstance(c, Candle)
+    assert c.open == 1.0900, "open must be the earliest timestamp"
+    assert c.close == 1.1000, "close must be the latest timestamp, not the last arrival"
+    assert c.high == 1.1000
+    assert c.low == 1.0900
+
+
+def test_out_of_order_close_is_immune_to_packet_reordering() -> None:
+    """Same tick set, two arrival orders, must produce the SAME candle."""
+    a, bb = _builder(), _builder()
+    a.on_tick(_md(price=1.1000, exchange=BASE + timedelta(seconds=30)))
+    a.on_tick(_md(price=1.0900, exchange=BASE + timedelta(seconds=10)))
+    a.on_tick(_md(price=1.0950, exchange=BASE + timedelta(seconds=20)))
+    for price, sec in ((1.0950, 20), (1.0900, 10), (1.1000, 30)):
+        bb.on_tick(_md(price=price, exchange=BASE + timedelta(seconds=sec)))
+    ca, cb = a.close(), bb.close()
+    assert isinstance(ca, Candle) and isinstance(cb, Candle)
+    assert (ca.open, ca.high, ca.low, ca.close) == (cb.open, cb.high, cb.low, cb.close)
+    assert (ca.open, ca.high, ca.low, ca.close) == (1.0900, 1.1000, 1.0900, 1.1000)
 
 
 def test_late_tick_prior_closed_bucket_drops_invalid_timestamp() -> None:
@@ -274,64 +309,64 @@ def test_unsupported_interval_raises_value_error() -> None:
 
 def test_30m_interval_bucket_boundary_and_duration() -> None:
     # Hand calc: exchange 01:45 → floor to 01:30 (minutes_into_day=105, 105//30=3, 3*30=90 → 01:30)
-    start = datetime(2026, 3, 22, 1, 45, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 3, 22, 1, 45, 0, tzinfo=UTC)
     b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="30m")
     b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
     c = b.close()
     assert isinstance(c, Candle)
     assert c.interval == "30m"
-    assert c.interval_start == datetime(2026, 3, 22, 1, 30, 0, tzinfo=timezone.utc)
-    assert c.interval_end == datetime(2026, 3, 22, 2, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_start == datetime(2026, 3, 22, 1, 30, 0, tzinfo=UTC)
+    assert c.interval_end == datetime(2026, 3, 22, 2, 0, 0, tzinfo=UTC)
     assert c.expected_duration_ms == 30 * 60 * 1000
 
 
 def test_40m_interval_bucket_boundary_and_duration() -> None:
     # 40m boundaries within a day: 00:00, 00:40, 01:20, ...
     # Hand calc: exchange 01:30 → floor to 01:20 (minutes_into_day=90, 90//40=2, 2*40=80 → 01:20)
-    start = datetime(2026, 3, 22, 1, 30, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 3, 22, 1, 30, 0, tzinfo=UTC)
     b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="40m")
     b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
     c = b.close()
     assert isinstance(c, Candle)
     assert c.interval == "40m"
-    assert c.interval_start == datetime(2026, 3, 22, 1, 20, 0, tzinfo=timezone.utc)
-    assert c.interval_end == datetime(2026, 3, 22, 2, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_start == datetime(2026, 3, 22, 1, 20, 0, tzinfo=UTC)
+    assert c.interval_end == datetime(2026, 3, 22, 2, 0, 0, tzinfo=UTC)
     assert c.expected_duration_ms == 40 * 60 * 1000
 
 
 def test_2h_interval_bucket_boundary_and_duration() -> None:
     # Hand calc: exchange 03:10 → floor to 02:00 (190//120=1 → 120 min = 02:00)
-    start = datetime(2026, 3, 22, 3, 10, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 3, 22, 3, 10, 0, tzinfo=UTC)
     b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="2h")
     b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
     c = b.close()
     assert isinstance(c, Candle)
-    assert c.interval_start == datetime(2026, 3, 22, 2, 0, 0, tzinfo=timezone.utc)
-    assert c.interval_end == datetime(2026, 3, 22, 4, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_start == datetime(2026, 3, 22, 2, 0, 0, tzinfo=UTC)
+    assert c.interval_end == datetime(2026, 3, 22, 4, 0, 0, tzinfo=UTC)
     assert c.expected_duration_ms == 120 * 60 * 1000
 
 
 def test_4h_interval_bucket_boundary_and_duration() -> None:
     # Hand calc: exchange 05:00 → floor to 04:00 (300//240=1 → 240 min = 04:00)
-    start = datetime(2026, 3, 22, 5, 0, 30, tzinfo=timezone.utc)
+    start = datetime(2026, 3, 22, 5, 0, 30, tzinfo=UTC)
     b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="4h")
     b.on_tick(_md(price=1.08400, exchange=start))
     c = b.close()
     assert isinstance(c, Candle)
-    assert c.interval_start == datetime(2026, 3, 22, 4, 0, 0, tzinfo=timezone.utc)
-    assert c.interval_end == datetime(2026, 3, 22, 8, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_start == datetime(2026, 3, 22, 4, 0, 0, tzinfo=UTC)
+    assert c.interval_end == datetime(2026, 3, 22, 8, 0, 0, tzinfo=UTC)
     assert c.expected_duration_ms == 240 * 60 * 1000
 
 
 def test_24h_interval_bucket_boundary_and_duration() -> None:
     # Hand calc: exchange 13:00 on day → floor to 00:00 same day (780//1440=0 → 0 min)
-    start = datetime(2026, 3, 22, 13, 0, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 3, 22, 13, 0, 0, tzinfo=UTC)
     b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="24h")
     b.on_tick(_md(price=1.08400, exchange=start + timedelta(seconds=10)))
     c = b.close()
     assert isinstance(c, Candle)
-    assert c.interval_start == datetime(2026, 3, 22, 0, 0, 0, tzinfo=timezone.utc)
-    assert c.interval_end == datetime(2026, 3, 23, 0, 0, 0, tzinfo=timezone.utc)
+    assert c.interval_start == datetime(2026, 3, 22, 0, 0, 0, tzinfo=UTC)
+    assert c.interval_end == datetime(2026, 3, 23, 0, 0, 0, tzinfo=UTC)
     assert c.expected_duration_ms == 1440 * 60 * 1000
 
 
@@ -339,14 +374,14 @@ def test_multi_minute_interval_stays_open_across_minute_boundary() -> None:
     # 5m bucket: ticks at 19:46 and 19:47 must NOT close — same 5m bucket
     # floor: 19:45 for both (minutes_into_day//5)
     b = CandleBuilder(instrument_id="FX.EURUSD", broker="deriv", interval="5m")
-    r1 = b.on_tick(_md(price=1.08400, exchange=datetime(2026, 3, 22, 19, 46, 0, tzinfo=timezone.utc)))
-    r2 = b.on_tick(_md(price=1.08410, exchange=datetime(2026, 3, 22, 19, 47, 0, tzinfo=timezone.utc)))
+    r1 = b.on_tick(_md(price=1.08400, exchange=datetime(2026, 3, 22, 19, 46, 0, tzinfo=UTC)))
+    r2 = b.on_tick(_md(price=1.08410, exchange=datetime(2026, 3, 22, 19, 47, 0, tzinfo=UTC)))
     assert r1 is None and r2 is None  # still open
     c = b.close()
     assert isinstance(c, Candle)
     assert c.tick_count == 2
-    assert c.interval_start == datetime(2026, 3, 22, 19, 45, 0, tzinfo=timezone.utc)
-    assert c.interval_end == datetime(2026, 3, 22, 19, 50, 0, tzinfo=timezone.utc)
+    assert c.interval_start == datetime(2026, 3, 22, 19, 45, 0, tzinfo=UTC)
+    assert c.interval_end == datetime(2026, 3, 22, 19, 50, 0, tzinfo=UTC)
 
 
 # --- Spread stats (great addition from review — Candle contract fields) ---

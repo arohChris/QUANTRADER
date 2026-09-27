@@ -13,19 +13,18 @@ never writes watermark; never mutates frozen input.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
 
 # Direct impl import ONLY — fails collection until Step 5 (honest RED).
-from modules.m2_market_data.quality import QualityGate  # noqa: F401
-
+from modules.m2_market_data.quality import QualityGate
 from shared.contracts.drop import Drop, DropReason
 from shared.contracts.market_data import DataQuality, MarketData, Tick
 
-BASE = datetime(2026, 9, 23, 14, 2, 0, tzinfo=timezone.utc)
-NAIVE = datetime(2026, 9, 23, 14, 2, 0)
+BASE = datetime(2026, 9, 23, 14, 2, 0, tzinfo=UTC)
+NAIVE = datetime(2026, 9, 23, 14, 2, 0)  # noqa: DTZ001 - deliberate: this IS the bad input under test
 
 
 def _md(
@@ -218,9 +217,9 @@ def test_does_not_mutate_frozen_input() -> None:
 def test_spike_ratio_invalid_constructor_valueerror() -> None:
     # Spec Edges/Adversarial: 0 < spike_ratio < 1 else ValueError at init
     with pytest.raises(ValueError):
-        _gate(spike_ratio=Decimal("0"))
+        _gate(spike_ratio=Decimal(0))
     with pytest.raises(ValueError):
-        _gate(spike_ratio=Decimal("1"))
+        _gate(spike_ratio=Decimal(1))
 
 
 # --- Defensive / adversarial ---
@@ -251,3 +250,77 @@ def test_adversarial_bid_none_vs_value_not_false_duplicate() -> None:
             _md(source_event_id=None, price=1.10000, bid=1.0, ask=1.1, exchange=BASE)
         )
     )
+
+
+# --- DEFECT HUNT 2026-09-27 (human: "any error is prohibited") ---
+# Found while wiring this gate into the live pipeline. The gate had been implemented and
+# unit-tested but NEVER CALLED, so both of these had no failing test anywhere.
+
+def test_constant_source_event_id_with_different_epochs_all_accepted() -> None:
+    """CRITICAL: on Deriv `tick.id` is the SUBSCRIPTION id, constant for a stream's life.
+    Keying dedup on source_event_id ALONE made every tick after the first look like a
+    duplicate, so the gate would have dropped essentially the entire feed. Invisible only
+    because nothing called it. M2.1's own ingest dedup already pairs (id, epoch); this
+    pins the gate to the same identity."""
+    g = _gate()
+    accepted = 0
+    for i in range(5):
+        md = _md(
+            source_event_id="sub-abc123",  # constant, as Deriv sends it
+            price=1.10000 + i * 0.00001,
+            exchange=BASE + timedelta(seconds=i),
+            watermark=100 + i,
+        )
+        out = g.on_md(md)
+        assert isinstance(out, MarketData), f"tick {i} wrongly dropped: {out}"
+        accepted += 1
+    assert accepted == 5
+
+
+def test_same_source_event_id_AND_same_epoch_is_still_deduped() -> None:
+    """The fix must not weaken genuine exactly-once: identical (id, epoch) is a replay."""
+    g = _gate()
+    first = g.on_md(_md(source_event_id="sub-x", exchange=BASE, watermark=1))
+    second = g.on_md(_md(source_event_id="sub-x", exchange=BASE, watermark=1))
+    assert isinstance(first, MarketData)
+    assert isinstance(second, Drop)
+    assert second.reason == DropReason.duplicate_tick
+
+
+def test_watermark_jump_marks_the_tick_gapped() -> None:
+    """THE MISSING DETECTION: a dropped socket leaves a hole in `watermark`. The gate must
+    downgrade the tick so CandleBuilder stamps GAP_AFFECTED and M3 skips the bar. Before
+    this, gap status came only from the broker volunteering a "gapped" marker, so a lost
+    tick produced a COMPLETE candle spanning missing minutes."""
+    g = _gate()
+    g.on_md(_md(exchange=BASE, watermark=100))
+    out = g.on_md(_md(exchange=BASE + timedelta(seconds=1), watermark=110))
+    assert isinstance(out, MarketData)
+    assert out.quality == DataQuality.gapped
+    assert g.watermark_gaps, "the hole must be recorded for audit/recovery"
+    assert g.watermark_gaps[0][2:] == (101, 109)
+
+
+def test_contiguous_watermark_is_not_gapped() -> None:
+    """The common case must stay pristine - a gapped flag here would disable trading."""
+    g = _gate()
+    for i in range(6):
+        out = g.on_md(
+            _md(source_event_id=f"e{i}", exchange=BASE + timedelta(seconds=i), watermark=500 + i)
+        )
+        assert isinstance(out, MarketData)
+        assert out.quality == DataQuality.pristine, f"false gap at i={i}"
+    assert g.watermark_gaps == []
+
+
+def test_watermark_gap_never_promotes_a_repaired_bar() -> None:
+    """A healthy tick arriving AFTER a hole stays gapped. Silently repairing the bar is
+    precisely the failure the whole mechanism exists to prevent (AGENTS.md 3.3)."""
+    g = _gate()
+    g.on_md(_md(exchange=BASE, watermark=10))
+    jumped = g.on_md(_md(exchange=BASE + timedelta(seconds=1), watermark=20))
+    assert isinstance(jumped, MarketData)
+    assert jumped.quality == DataQuality.gapped
+    after = g.on_md(_md(exchange=BASE + timedelta(seconds=2), watermark=21))
+    assert isinstance(after, MarketData)
+    assert after.quality == DataQuality.gapped

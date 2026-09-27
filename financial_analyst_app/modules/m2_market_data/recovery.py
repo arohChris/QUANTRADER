@@ -9,7 +9,8 @@ Ownership freeze: see BUILD_STATUS Discrepancies — do not add next() here.
 """
 from __future__ import annotations
 
-from typing import Awaitable, Callable, Iterable, Literal, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,7 +33,15 @@ class RecoveryResult(BaseModel):
 
 
 class GapAnalyzer:
-    """Per-(instrument_id, broker) last-seen watermark → missing lists (sync, no clock)."""
+    """Per-(instrument_id, broker) last-seen watermark -> missing lists (sync, no clock)."""
+
+    # WHY a hard ceiling: observe() runs on the INGEST hot path (<50ms budget, AGENTS 4.1).
+    # Without a ceiling, one corrupted or spoofed watermark made this method materialise
+    # range(last+1, watermark) - 50M ticks built a ~1.8GB list in ~1s and OOM-killed the
+    # process mid-session. A gap is a RANGE, so an implausible one is refused loudly
+    # rather than expanded. 1_000_000 is ~4 months of 1m ticks per instrument: far beyond
+    # any recoverable outage, and small enough to enumerate safely.
+    MAX_MISSING_SPAN = 1_000_000
 
     def __init__(self) -> None:
         self._last: dict[tuple[str, str], int] = {}
@@ -40,7 +49,7 @@ class GapAnalyzer:
     def observe(self, instrument_id: str, broker: str, watermark: int) -> list[int]:
         # bool is int subclass in Python — reject explicitly (spec Adversarial).
         if isinstance(watermark, bool) or not isinstance(watermark, int):
-            raise ValueError(f"watermark must be int, got {type(watermark).__name__}")
+            raise ValueError(f"watermark must be int, got {type(watermark).__name__}")  # noqa: TRY004
         if watermark < 1:
             raise ValueError(f"watermark must be >= 1, got {watermark}")
         key = (instrument_id, broker)
@@ -50,6 +59,17 @@ class GapAnalyzer:
             return []  # cold start — do not invent 1..N
         if watermark <= last:
             return []  # stale/duplicate — hold last
+        span = watermark - last - 1
+        if span > self.MAX_MISSING_SPAN:
+            # Refuse BEFORE expanding. Advancing _last is deliberate: the old value is
+            # provably stale, so leaving it would re-raise this on every subsequent tick
+            # and wedge the ingest path. The operator must investigate out of band.
+            self._last[key] = watermark
+            raise ValueError(
+                f"gap span {span} exceeds MAX_MISSING_SPAN={self.MAX_MISSING_SPAN} "
+                f"for {instrument_id}/{broker} (last={last}, seen={watermark}); "
+                "refusing to materialise - investigate the feed before resuming"
+            )
         missing = list(range(last + 1, watermark))
         self._last[key] = watermark
         return missing
@@ -129,13 +149,22 @@ class RecoveryEngine:
         for run in runs:
             chunks.extend(self._chunks.split(run))
         chunks_done = 0
+        first_empty: Chunk | None = None
         for chunk in chunks:
             try:
                 data = await self._fetch(chunk, source)
-                # Write fail ⇒ chunk not done; watermarks remain recoverable (spec REV2).
+                # WHY an empty fetch is NOT a success: the source had nothing for this
+                # range, so the ticks are unrecoverable. Counting it done reported
+                # status="ok" for data that was never restored - silent data loss that
+                # no operator would ever see. An empty chunk is recorded and left
+                # outstanding, exactly like a failed write.
+                if not data:
+                    if first_empty is None:
+                        first_empty = chunk
+                    continue
                 await self._write(data, instrument_id, broker, chunk)
                 chunks_done += 1
-            except Exception as exc:  # abort remaining — retry lives outside M2.7
+            except Exception as exc:  # noqa: BLE001 — abort remaining; retry lives outside M2.7
                 detail = str(exc) or type(exc).__name__
                 status: Literal["ok", "partial", "failed"] = "partial" if chunks_done else "failed"
                 return RecoveryResult(
@@ -146,6 +175,21 @@ class RecoveryEngine:
                     source=source,
                     detail=detail,
                 )
+        if first_empty is not None:
+            # Never "ok" while a range is still missing — say which one, loudly.
+            status = "partial" if chunks_done else "failed"
+            return RecoveryResult(
+                status=status,
+                missing_count=missing_count,
+                chunk_count=len(chunks),
+                chunks_done=chunks_done,
+                source=source,
+                detail=(
+                    f"source {source!r} returned no rows for watermark range "
+                    f"{first_empty[0]}-{first_empty[1]}; {chunks_done} of {len(chunks)} "
+                    "chunk(s) recovered - remaining data is permanently missing"
+                ),
+            )
         return RecoveryResult(
             status="ok",
             missing_count=missing_count,

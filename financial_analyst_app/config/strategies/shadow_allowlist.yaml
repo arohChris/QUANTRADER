@@ -1,0 +1,10 @@
+# M4.1 — shadow allowlist: prod opt-in per strategy@version (fail-closed).
+# WHY: A3.10 dry-run-first — a strategy trades in prod ONLY after a human
+#   lists it here post dry-run review. Missing file or missing entry => the
+#   signal is still produced in prod but shadow=True (never sent to M5).
+# Loader: load_shadow_allowlist(config_dir) reads the `prod:` list only.
+# Flow: paper (always active) -> human reviews output -> add
+#   "strategy_id@version" under prod -> signal unshadows on next run.
+prod: []
+# `paper:` is read-ignored by the loader (paper never shadows); kept for docs.
+paper: []

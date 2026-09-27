@@ -1,0 +1,2407 @@
+{
+ "echo_req": {
+  "trading_times": "2027-03-26"
+ },
+ "msg_type": "trading_times",
+ "trading_times": {
+  "markets": [
+   {
+    "name": "Forex",
+    "submarkets": [
+     {
+      "name": "Major Pairs",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "AUD/JPY",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxAUDJPY"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "AUD/USD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxAUDUSD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR/AUD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxEURAUD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR/CAD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxEURCAD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR/CHF",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxEURCHF"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR/GBP",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxEURGBP"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR/JPY",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxEURJPY"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR/USD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxEURUSD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "GBP/AUD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxGBPAUD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "GBP/JPY",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxGBPJPY"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "GBP/USD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxGBPUSD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "USD/CAD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxUSDCAD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "USD/CHF",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxUSDCHF"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "USD/JPY",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxUSDJPY"
+       }
+      ]
+     },
+     {
+      "name": "Minor Pairs",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "AUD/CAD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxAUDCAD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "AUD/CHF",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxAUDCHF"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "AUD/NZD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxAUDNZD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR/NZD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxEURNZD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "GBP/CAD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxGBPCAD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "GBP/CHF",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxGBPCHF"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "GBP/NZD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxGBPNZD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "NZD/JPY",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxNZDJPY"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "NZD/USD",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxNZDUSD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "USD/MXN",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxUSDMXN"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "USD/PLN",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxUSDPLN"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Stock Indices",
+    "submarkets": [
+     {
+      "name": "Asian indices",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         },
+         {
+          "dates": "2027-04-26",
+          "descrip": "Anzac Day (obs)"
+         }
+        ],
+        "name": "Australia 200",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_AS51"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         },
+         {
+          "dates": "2027-05-04",
+          "descrip": "Ching Ming Festival"
+         },
+         {
+          "dates": "2027-05-13",
+          "descrip": "Buddha's Birthday"
+         },
+         {
+          "dates": "2027-08-02, 2027-09-02",
+          "descrip": "Lunar New Year"
+         }
+        ],
+        "name": "Hong Kong 50",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_HSI"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-04-05",
+          "descrip": "Greenery Day"
+         },
+         {
+          "dates": "2027-04-29",
+          "descrip": "Showa Day"
+         },
+         {
+          "dates": "2027-05-05",
+          "descrip": "Children's Day"
+         },
+         {
+          "dates": "2027-11-01",
+          "descrip": "Coming-of-age Day"
+         },
+         {
+          "dates": "2027-11-02",
+          "descrip": "National Foundation Day"
+         }
+        ],
+        "name": "Japan 225",
+        "times": {
+         "close": [
+          "20:00:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "22:00:00"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_N225"
+       }
+      ]
+     },
+     {
+      "name": "European indices",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         }
+        ],
+        "name": "Euro 50",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_SX5E"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         }
+        ],
+        "name": "France 40",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_FCHI"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         },
+         {
+          "dates": "2027-05-17",
+          "descrip": "Whit Monday"
+         }
+        ],
+        "name": "Germany 40",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_GDAXI"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         }
+        ],
+        "name": "Netherlands 25",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_AEX"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         },
+         {
+          "dates": "2027-05-17",
+          "descrip": "Whit Monday"
+         },
+         {
+          "dates": "2027-06-05",
+          "descrip": "Ascension Day"
+         }
+        ],
+        "name": "Swiss 20",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_SSMI"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-03-29",
+          "descrip": "Easter Monday"
+         },
+         {
+          "dates": "2027-05-31",
+          "descrip": "Late May Bank Holiday"
+         }
+        ],
+        "name": "UK 100",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_FTSE"
+       }
+      ]
+     },
+     {
+      "name": "American indices",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-05-31",
+          "descrip": "Memorial Day"
+         }
+        ],
+        "name": "US 500",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_SPC"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-05-31",
+          "descrip": "Memorial Day"
+         }
+        ],
+        "name": "US Tech 100",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_NDX"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "2027-05-31",
+          "descrip": "Memorial Day"
+         }
+        ],
+        "name": "Wall Street 30",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "OTC_DJI"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Commodities",
+    "submarkets": [
+     {
+      "name": "Metals",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "Gold/USD",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxXAUUSD"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "Palladium/USD",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxXPDUSD"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "Platinum/USD",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxXPTUSD"
+       },
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "Silver/USD",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "frxXAGUSD"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Derived",
+    "submarkets": [
+     {
+      "name": "Continuous Indices",
+      "symbols": [
+       {
+        "events": [],
+        "name": "Volatility 10 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ10V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 10 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "R_10"
+       },
+       {
+        "events": [],
+        "name": "Volatility 15 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ15V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 25 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ25V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 25 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "R_25"
+       },
+       {
+        "events": [],
+        "name": "Volatility 30 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ30V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 50 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ50V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 50 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "R_50"
+       },
+       {
+        "events": [],
+        "name": "Volatility 75 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ75V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 75 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "R_75"
+       },
+       {
+        "events": [],
+        "name": "Volatility 90 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ90V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 100 (1s) Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "1HZ100V"
+       },
+       {
+        "events": [],
+        "name": "Volatility 100 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "R_100"
+       }
+      ]
+     },
+     {
+      "name": "Daily Reset Indices",
+      "symbols": [
+       {
+        "events": [],
+        "name": "Bear Market Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "RDBEAR"
+       },
+       {
+        "events": [],
+        "name": "Bull Market Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "RDBULL"
+       }
+      ]
+     },
+     {
+      "name": "Forex Basket",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "AUD Basket",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "WLDAUD"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "EUR Basket",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "WLDEUR"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "GBP Basket",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "WLDGBP"
+       },
+       {
+        "events": [
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "USD Basket",
+        "times": {
+         "close": [
+          "20:55:00"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "WLDUSD"
+       }
+      ]
+     },
+     {
+      "name": "Commodities Basket",
+      "symbols": [
+       {
+        "events": [
+         {
+          "dates": "2027-03-26",
+          "descrip": "Good Friday"
+         },
+         {
+          "dates": "Fridays",
+          "descrip": "Closes early (at 20:55)"
+         }
+        ],
+        "name": "Gold Basket",
+        "times": {
+         "close": [
+          "--"
+         ],
+         "open": [
+          "--"
+         ],
+         "settlement": "--"
+        },
+        "trading_days": [
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri"
+        ],
+        "underlying_symbol": "WLDXAU"
+       }
+      ]
+     },
+     {
+      "name": "Step Indices",
+      "symbols": [
+       {
+        "events": [],
+        "name": "Step Index 100",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "stpRNG"
+       },
+       {
+        "events": [],
+        "name": "Step Index 200",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "stpRNG2"
+       },
+       {
+        "events": [],
+        "name": "Step Index 300",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "stpRNG3"
+       },
+       {
+        "events": [],
+        "name": "Step Index 400",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "stpRNG4"
+       },
+       {
+        "events": [],
+        "name": "Step Index 500",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "stpRNG5"
+       }
+      ]
+     },
+     {
+      "name": "Crash/Boom Indices",
+      "symbols": [
+       {
+        "events": [],
+        "name": "Boom 50 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "BOOM50"
+       },
+       {
+        "events": [],
+        "name": "Boom 150 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "BOOM150N"
+       },
+       {
+        "events": [],
+        "name": "Boom 300 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "BOOM300N"
+       },
+       {
+        "events": [],
+        "name": "Boom 500 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "BOOM500"
+       },
+       {
+        "events": [],
+        "name": "Boom 600 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "BOOM600"
+       },
+       {
+        "events": [],
+        "name": "Boom 900 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "BOOM900"
+       },
+       {
+        "events": [],
+        "name": "Boom 1000 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "BOOM1000"
+       },
+       {
+        "events": [],
+        "name": "Crash 50 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "CRASH50"
+       },
+       {
+        "events": [],
+        "name": "Crash 150 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "CRASH150N"
+       },
+       {
+        "events": [],
+        "name": "Crash 300 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "CRASH300N"
+       },
+       {
+        "events": [],
+        "name": "Crash 500 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "CRASH500"
+       },
+       {
+        "events": [],
+        "name": "Crash 600 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "CRASH600"
+       },
+       {
+        "events": [],
+        "name": "Crash 900 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "CRASH900"
+       },
+       {
+        "events": [],
+        "name": "Crash 1000 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "CRASH1000"
+       }
+      ]
+     },
+     {
+      "name": "Range Break Indices",
+      "symbols": [
+       {
+        "events": [],
+        "name": "Range Break 100 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "RB100"
+       },
+       {
+        "events": [],
+        "name": "Range Break 200 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "RB200"
+       }
+      ]
+     },
+     {
+      "name": "Jump Indices",
+      "symbols": [
+       {
+        "events": [],
+        "name": "Jump 10 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "JD10"
+       },
+       {
+        "events": [],
+        "name": "Jump 25 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "JD25"
+       },
+       {
+        "events": [],
+        "name": "Jump 50 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "JD50"
+       },
+       {
+        "events": [],
+        "name": "Jump 75 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "JD75"
+       },
+       {
+        "events": [],
+        "name": "Jump 100 Index",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "JD100"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Cryptocurrencies",
+    "submarkets": [
+     {
+      "name": "Cryptocurrencies",
+      "symbols": [
+       {
+        "events": [],
+        "name": "BTC/USD",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "cryBTCUSD"
+       },
+       {
+        "events": [],
+        "name": "ETH/USD",
+        "times": {
+         "close": [
+          "23:59:59"
+         ],
+         "open": [
+          "00:00:00"
+         ],
+         "settlement": "23:59:59"
+        },
+        "trading_days": [
+         "Sun",
+         "Mon",
+         "Tue",
+         "Wed",
+         "Thu",
+         "Fri",
+         "Sat"
+        ],
+        "underlying_symbol": "cryETHUSD"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

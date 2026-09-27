@@ -15,7 +15,7 @@ average/min/max_spread = None. Decimal mid-calc, store float per Candle contract
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from shared.contracts.drop import Drop, DropReason
@@ -78,10 +78,10 @@ class CandleBuilder:
             return self._drop(md, DropReason.negative_price, f"price={price!r}")
 
         # --- 5. floor to interval boundary UTC (day-relative, not minute) ---
-        day_start = exchange.astimezone(timezone.utc).replace(
+        day_start = exchange.astimezone(UTC).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
-        minutes_into_day = int((exchange.astimezone(timezone.utc) - day_start).total_seconds() // 60)
+        minutes_into_day = int((exchange.astimezone(UTC) - day_start).total_seconds() // 60)
         bucket_idx = minutes_into_day // self._minutes
         bucket_start = day_start + timedelta(minutes=bucket_idx * self._minutes)
 
@@ -89,9 +89,12 @@ class CandleBuilder:
         # WHY explicit None-check: prior `(a < b if b else False)` ternary is hard to scan on review.
         if self._open_start is not None and bucket_start < self._open_start:
             return self._drop(md, DropReason.invalid_timestamp, "late tick prior open bucket")
-        if self._open_start is None and self._last_closed_start is not None:
-            if bucket_start <= self._last_closed_start:
-                return self._drop(md, DropReason.invalid_timestamp, "late tick prior closed bucket")
+        if (
+            self._open_start is None
+            and self._last_closed_start is not None
+            and bucket_start <= self._last_closed_start
+        ):
+            return self._drop(md, DropReason.invalid_timestamp, "late tick prior closed bucket")
 
         closed: Candle | None = None
         # --- 6b. boundary cross: close prior open, open new ---
@@ -103,14 +106,24 @@ class CandleBuilder:
             self._gapped = False
 
         # --- open or update ---
+        # WHY timestamp-ordered O/C (corrected 2026-09-27): O and C must be the prices at
+        # the bar's FIRST and LAST exchange timestamp, not the first and last packet that
+        # happened to arrive. This system delivers out of order BY DESIGN — two independent
+        # WS subscriptions are separate TCP streams, backfill replays older ticks, ingest
+        # is async, and reconnect resubscribe can overlap buffered frames. Under arrival
+        # order a candle could record a close that never existed at the end of the bar, and
+        # every downstream consumer (RSI, EMA, ATR, ADX) would be silently wrong.
+        # high/low are max/min, so they were always order-independent and are unchanged.
         if self._open_start is None:
             self._open_start = bucket_start
             self._gapped = md.quality == DataQuality.gapped
             self._open = {
                 "open": price,
+                "open_ts": exchange,
                 "high": price,
                 "low": price,
                 "close": price,
+                "close_ts": exchange,
                 "tick_count": 1,
                 "spreads": [],
             }
@@ -118,7 +131,12 @@ class CandleBuilder:
             assert self._open is not None
             self._open["high"] = max(self._open["high"], price)
             self._open["low"] = min(self._open["low"], price)
-            self._open["close"] = price
+            if exchange < self._open["open_ts"]:
+                self._open["open"] = price
+                self._open["open_ts"] = exchange
+            if exchange >= self._open["close_ts"]:
+                self._open["close"] = price
+                self._open["close_ts"] = exchange
             self._open["tick_count"] += 1
             if md.quality == DataQuality.gapped:
                 self._gapped = True

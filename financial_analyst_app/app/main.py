@@ -26,13 +26,32 @@ def create_app(accounts: AccountsConfig | None = None) -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
+        # WHY localhost-only and no "null" (corrected 2026-09-27): the "null" origin existed
+        # solely for the file:// vanilla Day-1 panel, which has been deleted. Leaving it
+        # admitted requests from ANY file:// page, which is a real origin-spoofing surface.
         allow_origins=[
             "http://127.0.0.1:8000",
             "http://localhost:8000",
-            "null",  # file:// pages send Origin: null
         ],
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "X-Role"],
+        # WHY Authorization: the OIDC path sends a bearer token, and X-Correlation-Id /
+        # Idempotency-Key are mandated by the API contract. Without these in the allow-list
+        # the preflight fails and the whole gateway is unusable in a browser.
+        # X-Role is STILL LISTED because it remains the only working auth path until OIDC
+        # lands - removing it here would break the running demo. It is a client-supplied
+        # header and is not authentication; it must be dropped from this list in the same
+        # change that enables OIDC validation.
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "X-Correlation-Id",
+            "Idempotency-Key",
+            "X-Role",
+        ],
+        # WHY credentials on: required for any cookie/session-based auth. Safe here ONLY
+        # because allow_origins is an explicit localhost list, never "*" — with wildcard
+        # origins and credentials the browser rejects the response anyway.
+        allow_credentials=True,
     )
 
     app.include_router(build_account_router(svc), prefix="/api/v1")

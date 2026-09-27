@@ -9,6 +9,8 @@ tests-before-code, same discipline as test_m4.1_spec.py.
 from __future__ import annotations
 
 import importlib.util
+import json
+import random
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -173,6 +175,43 @@ def test_slot_features_adversarial_none_analytics_all_missing():
     assert missing == ["z=zscore_20"]
 
 
+# --- append_series: replace-or-append (amended spec §helper 5) -----------------
+
+
+def test_append_series_appends_new_interval():
+    candles = mod.history_candles_from_response(
+        {"candles": [_row(epoch=E1), _row(epoch=E2)]}
+    )
+    fresh = mod.history_candles_from_response({"candles": [_row(epoch=E3)]})[0]
+    mod.append_series(candles, fresh)
+    assert [c.interval_start.timestamp() for c in candles] == [
+        float(E1),
+        float(E2),
+        float(E3),
+    ]
+
+
+def test_append_series_replaces_forming_candle_same_interval_start():
+    # Deriv seed includes the FORMING bucket; the finalized live bar must win.
+    candles = mod.history_candles_from_response(
+        {"candles": [_row(epoch=E1), _row(epoch=E2, close=1.08570)]}
+    )
+    finalized = mod.history_candles_from_response(
+        {"candles": [_row(epoch=E2, close=1.08610, high=1.08666)]}
+    )[0]
+    mod.append_series(candles, finalized)
+    assert len(candles) == 2
+    assert candles[-1].close == 1.08610 and candles[-1].high == 1.08666
+
+
+def test_append_series_adversarial_duplicate_only_once():
+    candles = mod.history_candles_from_response({"candles": [_row(epoch=E1)]})
+    same = mod.history_candles_from_response({"candles": [_row(epoch=E1)]})[0]
+    mod.append_series(candles, same)
+    mod.append_series(candles, same)
+    assert len(candles) == 1
+
+
 # --- verdict: sign mapping + honest out-of-range -------------------------------
 
 
@@ -192,3 +231,72 @@ def test_verdict_adversarial_out_of_range_flagged_never_clamped():
     direction2, note2 = mod.verdict(-2.0)
     assert direction2 == "SHORT"
     assert "out-of-range" in note2
+
+
+# --- reconnect_delay: backoff bounds + adversarial (spec helper 6) --------------
+
+
+def test_reconnect_delay_backoff_bounds_seeded_rng():
+    rng = random.Random(42)
+    d1 = mod.reconnect_delay(1, rng)
+    # Hand calc: base 1.0 * 2.0**0 * jitter[0.5,1.5) -> [0.5, 1.5)
+    assert 0.5 <= d1 < 1.5
+    d2 = mod.reconnect_delay(2, rng)
+    # Hand calc: step 2.0 * jitter[0.5,1.5) -> [1.0, 3.0)
+    assert 1.0 <= d2 < 3.0
+    d3 = mod.reconnect_delay(3, rng)
+    # Hand calc: step 4.0 * jitter[0.5,1.5) -> [2.0, 6.0)
+    assert 2.0 <= d3 < 6.0
+
+
+def test_reconnect_delay_caps_at_max_for_huge_attempt():
+    # Exponent clamp: 2.0**60 * anything >> cap 30.0 -> exact cap, any rng
+    assert mod.reconnect_delay(1000, random.Random(1)) == 30.0
+    assert mod.reconnect_delay(1000, random.Random(999), cap=5.0) == 5.0
+
+
+def test_reconnect_delay_adversarial_attempt_zero_raises_typed_error():
+    with pytest.raises(ValueError, match="attempt"):
+        mod.reconnect_delay(0, random.Random(0))
+
+
+def test_reconnect_delay_adversarial_million_attempts_no_overflow():
+    # Adversarial: naive 2.0**(attempt-1) would OverflowError long before 10**6
+    assert mod.reconnect_delay(10**6, random.Random(0)) == 30.0
+
+
+# --- candle_row: ONE serializer for all candle jsonl rows ---------------------
+# (amended spec helper 7 — ACTION 62, 2026-09-26: the live writer emitted only
+#  interval_start/open/close/tick_count; missing interval_end/high/low made every
+#  live bar a partial the m4.6 reader had to skip — test written BEFORE the fix)
+
+
+def test_candle_row_seven_fields_match_history_writer():
+    c = mod.history_candles_from_response(
+        {"candles": [_row(epoch=E1, volume=17)]}
+    )[0]
+    row = mod.candle_row(c)
+    assert set(row) == {
+        "interval_start", "interval_end", "open", "high", "low", "close", "tick_count",
+    }
+    assert row["interval_start"] == c.interval_start.isoformat()
+    assert row["interval_end"] == c.interval_end.isoformat()  # start + 60s
+    assert (row["open"], row["high"], row["low"], row["close"]) == (
+        c.open, c.high, c.low, c.close,
+    )
+
+
+def test_candle_row_json_roundtrip_keeps_interval_end():
+    row = mod.candle_row(
+        mod.history_candles_from_response({"candles": [_row(epoch=E1, volume=17)]})[0]
+    )
+    back = json.loads(json.dumps(row))
+    # Regression: the pre-fix live row had NO interval_end — reader skipped it
+    assert back["interval_end"] == datetime.fromtimestamp(E1 + 60, tz=UTC).isoformat()
+    assert back["tick_count"] == 17
+
+
+def test_candle_row_adversarial_zero_tick_candle_still_complete():
+    c = mod.history_candles_from_response({"candles": [_row(epoch=E2)]})[0]
+    assert c.tick_count == 0  # absent volume -> 0, never coerced
+    assert len(mod.candle_row(c)) == 7

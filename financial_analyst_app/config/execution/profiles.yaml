@@ -1,0 +1,75 @@
+# M2b.3 - EXECUTION COST FACTS. Descriptive facts only; this file computes nothing.
+#
+# WHY these are mandatory (AGENTS.md 3.4): a backtest without realistic costs is rejected.
+# Zero commission and zero spread are the most dangerous values in this system - they make a
+# losing strategy look profitable. There is no implicit default anywhere: a missing file, a
+# missing row, or a missing broker is a hard error.
+#
+# MONEY LAW (spec REV3): every value below MUST be a QUOTED STRING. An unquoted YAML number
+# is a binary float by the time the loader reads it, and recovering the author's literal from
+# it depends on a CPython repr accident rather than a guarantee. M2b.5 enforces the same rule
+# for asset-class values; these two files must not disagree.
+#
+# UNITS, stated once:
+#   commission_rate : fraction of NOTIONAL.  "0.0001" = 1 basis point = 0.01%.
+#   typical_spread  : price units, QUOTE currency per base. NOT a fraction.
+#   financing_apy   : annualised fraction, SIGNED. Negative = cost of carry.
+#   slippage.value  : basis points of NOTIONAL.
+#
+# These are DESCRIPTIVE and effective-dated. Applying them to a trade is M8's job. Nothing
+# here may encode a venue-selection decision - that belongs to M6.
+
+profiles:
+  # Crypto: wide spread, no financing, minimal modelled slippage.
+  - instrument_id: CRYPTO.BTCUSD
+    broker: deriv
+    effective_from: '2026-01-01T00:00:00+00:00'
+    commission_rate: "0.0001"
+    typical_spread: "12.0"
+    financing_apy: "0"
+    slippage:
+      model: fixed_bps
+      value: "0.50"
+
+  # FX: tighter spread in price terms, and negative financing (swap cost of carry).
+  - instrument_id: FX.EURUSD
+    broker: deriv
+    effective_from: '2026-01-01T00:00:00+00:00'
+    commission_rate: "0"
+    typical_spread: "0.00010"
+    financing_apy: "-0.0200"
+    slippage:
+      model: fixed_bps
+      value: "0.20"
+
+  - instrument_id: FX.GBPUSD
+    broker: deriv
+    effective_from: '2026-01-01T00:00:00+00:00'
+    commission_rate: "0"
+    typical_spread: "0.00012"
+    financing_apy: "-0.0180"
+    slippage:
+      model: fixed_bps
+      value: "0.20"
+
+  # Metals: wide spread, negative financing, and slippage is the dominant cost - which is
+  # exactly why a metal backtest without these facts would look far better than it is.
+  - instrument_id: COMMODITY.XAUUSD
+    broker: deriv
+    effective_from: '2026-01-01T00:00:00+00:00'
+    commission_rate: "0"
+    typical_spread: "2.50"
+    financing_apy: "-0.0350"
+    slippage:
+      model: fixed_bps
+      value: "3.00"
+
+  - instrument_id: COMMODITY.XAGUSD
+    broker: deriv
+    effective_from: '2026-01-01T00:00:00+00:00'
+    commission_rate: "0"
+    typical_spread: "0.030"
+    financing_apy: "-0.0400"
+    slippage:
+      model: fixed_bps
+      value: "4.00"

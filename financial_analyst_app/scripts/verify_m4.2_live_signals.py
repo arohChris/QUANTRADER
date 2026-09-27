@@ -22,6 +22,7 @@ import argparse
 import asyncio
 import json
 import math
+import random
 import sys
 import time
 from datetime import UTC, datetime, timedelta
@@ -33,6 +34,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 import yaml
+from websockets.exceptions import ConnectionClosed
 from websockets.sync.client import connect
 
 from modules.m2_market_data import capture
@@ -57,12 +59,14 @@ from modules.reference import reference
 from shared.contracts.drop import Drop
 from shared.contracts.internal_tick import InternalTick
 from shared.contracts.market_data import Candle, MarketData
-from shared.core.clock import SimulatedClock
+from shared.core.clock import SystemClock
 
 EXIT_OK, EXIT_FAIL, EXIT_CONNECT, EXIT_CLOSED = 0, 1, 2, 3
 _CAP_YAML = _ROOT / "config" / "capabilities.yaml"
 _ASSETS_DIR = _ROOT / "config" / "assets"
 _GRANULARITY_S = 60  # Deriv history granularity (seconds) == our built 1m candle
+_MAX_RECONNECTS = 10  # WHY: bounded ladder — a dead network must exit 2, not spin
+_RNG = random.Random()  # jitter source for reconnect_delay (tests pass seeded rng)
 
 # M4.2 public contract only: NAME / FEATURE_SLOTS / PARAM_DEFAULTS / evaluate
 MODULES = (
@@ -185,6 +189,48 @@ def slot_overrides(modules: tuple) -> dict[str, dict[str, float]]:
         for analytic, overrides in module.FEATURE_SLOTS.values():
             merged.setdefault(analytic, {}).update(overrides)
     return merged
+
+
+def append_series(series: list[Candle], candle: Candle) -> None:
+    """WHY replace-or-append: Deriv's end=latest seed includes the FORMING candle;
+    when the live pipeline finalizes that same bucket, appending would duplicate
+    interval_start and corrupt the engine window — the finalized bar wins."""
+    for i, existing in enumerate(series):
+        if existing.interval_start == candle.interval_start:
+            series[i] = candle
+            return
+    series.append(candle)
+
+
+def candle_row(c: Candle) -> dict[str, object]:
+    """WHY ONE serializer for every candle jsonl row (spec helper 7, amended
+    2026-09-26 ACTION 62): the live writer hand-rolled a 4-key dict (missing
+    interval_end/high/low) while the seed writer emitted 7 — every live bar was a
+    partial the m4.6 reader had to skip+count. One shape, seed == live."""
+    return {
+        "interval_start": c.interval_start.isoformat(),
+        "interval_end": c.interval_end.isoformat(),
+        "open": c.open,
+        "high": c.high,
+        "low": c.low,
+        "close": c.close,
+        "tick_count": c.tick_count,
+    }
+
+
+def reconnect_delay(
+    attempt: int, rng: random.Random, *, base: float = 1.0, cap: float = 30.0
+) -> float:
+    """WHY (spec helper 6, amended 2026-09-26 after live crash): jittered exponential
+    backoff so a dropped Deriv stream reconnects politely — Deriv killed a healthy
+    8-minute collector with `keepalive ping timeout`; retry-storming the broker is
+    as bad as giving up. Exponent clamped at 60 so huge attempts hit `cap` exactly
+    instead of OverflowError."""
+    if attempt < 1:
+        raise ValueError(f"attempt must be >= 1, got {attempt}")
+    step = base * 2.0 ** min(attempt - 1, 60)  # clamp BEFORE pow — adversarial 10**6
+    jittered = step * (0.5 + rng.random())  # uniform [0.5*step, 1.5*step)
+    return float(min(cap, jittered))  # hard cap survives any jitter
 
 
 class _SeriesProvider:
@@ -418,21 +464,7 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     history_path = out_dir / "history_1m.jsonl"
     history_path.write_text(
-        "".join(
-            json.dumps(
-                {
-                    "interval_start": c.interval_start.isoformat(),
-                    "interval_end": c.interval_end.isoformat(),
-                    "open": c.open,
-                    "high": c.high,
-                    "low": c.low,
-                    "close": c.close,
-                    "tick_count": c.tick_count,
-                }
-            )
-            + "\n"
-            for c in series
-        ),
+        "".join(json.dumps(candle_row(c)) + "\n" for c in series),
         encoding="utf-8",
     )
     print(f"[data] {history_path}")
@@ -461,7 +493,10 @@ def main() -> int:
     candles_path = out_dir / "live_candles_1m.jsonl"
     drops_path = out_dir / "drops_live.jsonl"
     evals_path = out_dir / f"evals_{run_id}.jsonl"
-    ingestor = TickIngestor(provider="deriv", clock=SimulatedClock(datetime.now(UTC)))
+    # WHY SystemClock (live) — a SimulatedClock frozen at startup made every tick
+    # after the first second drop as timestamp_ahead (99/100 on 2026-09-26 probe).
+    # SimulatedClock stays for frozen-history replays (m2.1/m2.11 batch captures).
+    ingestor = TickIngestor(provider="deriv", clock=SystemClock())
     normalizer = Normalizer(
         reference=_ReferenceFacade(), watermark_registry=WatermarkRegistry()
     )
@@ -492,9 +527,12 @@ def main() -> int:
         print(f"[live] subscribing {args.symbol} "
               f"duration={'forever' if args.duration_s <= 0 else f'{args.duration_s:.0f}s'} "
               f"-> {ticks_path}")
+        attempts = 0  # consecutive connection failures; reset on any received frame
         try:
             ws = capture.connect_with_retry(
-                lambda: connect(url, open_timeout=10), attempts=8, sleep=time.sleep
+                lambda: connect(url, open_timeout=10, ping_timeout=60),
+                attempts=8,
+                sleep=time.sleep,
             )
         except Exception as exc:  # noqa: BLE001
             print(f"[EXIT 2] live connect failed: {type(exc).__name__}: {exc}")
@@ -508,6 +546,32 @@ def main() -> int:
                 "a", encoding="utf-8"
             ) as candles_fh, drops_path.open("a", encoding="utf-8") as drops_fh:
                 while deadline is None or time.monotonic() < deadline:
+                    if ws is None:
+                        # Reconnect path (spec amended 2026-09-26): stream dropped,
+                        # backoff already slept — bounded by _MAX_RECONNECTS so a
+                        # dead network exits 2 instead of spinning forever.
+                        try:
+                            ws = capture.connect_with_retry(
+                                lambda: connect(url, open_timeout=10, ping_timeout=60),
+                                attempts=8,
+                                sleep=time.sleep,
+                            )
+                            ws.send(capture.build_capture_frame(args.symbol))
+                        except Exception as exc:  # noqa: BLE001 — bounded ladder
+                            attempts += 1
+                            if attempts > _MAX_RECONNECTS:
+                                print(
+                                    f"[EXIT 2] reconnect failed {attempts} times: "
+                                    f"{type(exc).__name__}: {exc}"
+                                )
+                                return EXIT_CONNECT
+                            print(
+                                f"[reconnect] attempt={attempts} failed "
+                                f"{type(exc).__name__}: {exc}"
+                            )
+                            time.sleep(reconnect_delay(attempts, _RNG))
+                            ws = None
+                        continue
                     timeout = 30.0 if deadline is None else max(
                         min(deadline - time.monotonic(), 30.0), 0.05
                     )
@@ -515,9 +579,34 @@ def main() -> int:
                         raw = ws.recv(timeout=timeout)
                     except TimeoutError:
                         continue
+                    except (ConnectionClosed, OSError) as exc:
+                        # WHY: Deriv killed a healthy stream once with
+                        # `keepalive ping timeout` (1011) — never fatal, count it,
+                        # back off, and take the ws is None reconnect path above.
+                        attempts += 1
+                        if attempts > _MAX_RECONNECTS:
+                            print(
+                                f"[EXIT 2] connection lost {attempts} times: "
+                                f"{type(exc).__name__}: {exc}"
+                            )
+                            return EXIT_CONNECT
+                        print(
+                            f"[reconnect] attempt={attempts} "
+                            f"{type(exc).__name__}: {str(exc)[:120]}"
+                        )
+                        try:
+                            ws.close()
+                        except Exception:  # noqa: BLE001, S110 — best-effort close
+                            pass
+                        ws = None
+                        time.sleep(reconnect_delay(attempts, _RNG))
+                        continue
+                    attempts = 0  # WHY: received frame proves the stream healthy
                     if not isinstance(raw, str):
                         continue
                     ticks_fh.write(capture.to_jsonl_line({"raw": raw}) + "\n")
+                    ticks_fh.flush()  # WHY every tick: ~1Hz — buffered8KB would sit
+                    # in memory on a crash and hide collection progress in logs
                     try:
                         msg = json.loads(raw)
                     except (json.JSONDecodeError, ValueError):
@@ -571,18 +660,8 @@ def main() -> int:
                         )
                         continue
                     if isinstance(closed, Candle):
-                        series.append(closed)
-                        candles_fh.write(
-                            json.dumps(
-                                {
-                                    "interval_start": closed.interval_start.isoformat(),
-                                    "open": closed.open,
-                                    "close": closed.close,
-                                    "tick_count": closed.tick_count,
-                                }
-                            )
-                            + "\n"
-                        )
+                        append_series(series, closed)
+                        candles_fh.write(json.dumps(candle_row(closed)) + "\n")
                         candles_fh.flush()
                         try:
                             _print_eval(
@@ -604,14 +683,36 @@ def main() -> int:
                             f"[live] ticks accepted={accepted} dropped={dropped} "
                             f"candles={len(series)} evals={evals}"
                         )
+                # WHY inside the with-block: the trailing partial bucket must be
+                # finalized, appended, and EVALUATED before evals_fh closes —
+                # previously the flush happened in finally after the file was gone.
+                final = builder.close()
+                if isinstance(final, Candle):
+                    append_series(series, final)
+                    candles_fh.write(json.dumps(candle_row(final)) + "\n")
+                    candles_fh.flush()
+                    print(f"[live] final candle flushed {final.interval_start.isoformat()}")
+                    try:
+                        _print_eval(
+                            engine,
+                            eligible,
+                            blocked,
+                            series,
+                            final.interval_end,
+                            f"final flush {final.interval_start.isoformat()}",
+                            evals_fh,
+                            instrument_id,
+                            asset_class,
+                        )
+                        evals += 1
+                    except Exception as exc:  # noqa: BLE001 — run still passes on warn
+                        print(f"[warn] final eval failed: {type(exc).__name__}: {exc}")
         finally:
             try:
-                ws.close()
+                if ws is not None:
+                    ws.close()
             except Exception:  # noqa: BLE001, S110 — best-effort close
                 pass
-            final = builder.close()
-            if isinstance(final, Candle):
-                print(f"[live] final candle flushed {final.interval_start.isoformat()}")
 
     print(
         f"[done] accepted={accepted} dropped={dropped} candles={len(series)} "
