@@ -122,21 +122,35 @@
 - **SPEC SUPERSESSION — money-precision boundary (human-authorised 2026-09-27).** `AGENTS.md` §3.1 lists `price` among fields that must never be `float`. That is **correct for settlement and over-broad for market data**, and `candles_1m.open/high/low/close` are `double precision`. Superseded with evidence in `docs/specs/m2.7_backfill.spec.md` §9b: a `double` carries **7–9 orders of magnitude** more precision than the smallest observable tick across all four asset classes (BTC 84296.692 needs 8 significant digits, `double` has ~15), and all four values round-trip exactly — so `NUMERIC` would cost write throughput and a migration while adding **no** accuracy. **§3.1 remains in full force for settlement money** (PnL, fees, commission, slippage cost, balances, margin, positions, ledger) and the trap is named: `normalize.py` parses prices as `Decimal` from the quoted tick string before any money is derived. The exemption is void for any future instrument needing >~12 significant digits.
 - **D19 RECORDED, NOT HIDDEN:** `candles_1m` price columns are `double precision` (pre-existing M2.10 schema choice, now sanctioned by the §9b supersession). The `float()` cast in the repair script is **schema-forced, not chosen**. It must never propagate to money.
 
-## M1.4 MONEY PRECISION — SPEC + TESTS + IMPLEMENTATION COMPLETE (2026-09-27)
+## M1.4 MONEY PRECISION — **COMPLETE** (2026-09-27) · human LGTM + real-data verify done
 
-**Steps 1-6 closed. Step 7 (real-data verify) and Step 8 (human review) NOT yet done — so per §0 this is `implemented, not verified`, NOT `complete`.**
-Human test-LGTM was given 2026-09-27 ("do the necessary") before Step 5 began.
+**All 9 points of AGENTS.md §0 satisfied. Status = `complete`.** Steps 1-8 closed.
+- Spec v1.1 · impl `shared/core/money.py` · tests 43 fn / 52 cases / 6 hand-calcs, 52/52 pass
+- **Step 7 real-data: `scripts/verify_m1.4_money.py` = 34/34 against REAL values** — real captured
+  Deriv BTC candle (`open 84800.418`, `high 84819.134`, `low 84797.52`, `close 84799.93`), real live
+  `pip_size` values, live Timescale `NUMERIC(38,18)`, real parquet `decimal128(38,18)`, real posting math
+  on a real 0.001 tick grid.
+- **Step 8 human review: LGTM 2026-09-27** (money is in the §2.8 mandatory-review class).
+- Full suite **1464 passed** · ruff clean · `check_collection` 0 · `check_naming` OK ·
+  `check_no_accidental_deletion` OK (230) · `lint-imports` 5 kept / 0 broken.
+- Commits: `df84bd1` (spec+tests, test-first RED) → `0c1fe52` (impl green) → Step 7 commit below.
 
-- **Spec:** `docs/specs/m1.4_money_precision.spec.md` (**v1.1** — amended twice by the tests, see below).
-- **Implementation:** `financial_analyst_app/shared/core/money.py` — the file `AGENTS.md` §3.1 always cited
-  and which **never existed** (D33). Owns the only `ROUND_HALF_UP`, the only money context, the only
-  scale source, and the only domain bounds.
-- **Tests:** `financial_analyst_app/tests/m1/test_m1.4_money_spec.py` — **43 test functions, 52 cases,
-  6 `# Hand calc:` asserts, 0 real `pytest.approx`, 0 real `assert no_exception`** (both verified by
-  grep, not assumed).
-- **Verified:** `pytest tests/m1` = **52 passed**. Full suite = **1464 passed** (was 1412). `ruff` clean.
-  `check_collection` exit 0 · `check_naming` OK · `check_no_accidental_deletion` OK (230 baseline) ·
-  `lint-imports` 5 kept / 0 broken.
+### THE PROOF THAT MATTERS MOST (real data, not synthetic)
+
+On the **real captured Deriv frame**, every price is exact through `parse_float=Decimal`, and the
+**same value read the naive way is measurably inexact** — verified both directions on all four OHLC:
+
+```
+real open  84800.418  -> Decimal exact: YES      naive float read: INEXACT
+real high  84819.134  -> Decimal exact: YES      naive float read: INEXACT
+real low   84797.52   -> Decimal exact: YES      naive float read: INEXACT
+real close 84799.93   -> Decimal exact: YES      naive float read: INEXACT
+real close as float   -> MoneyTypeError REJECTED, never coerced
+```
+
+This closes the loop on the `str()` finding: real broker numbers lose precision if read naively, and
+the money authority refuses them rather than accepting a corrupted price. **Synthetic tests could not
+have shown this** — the error only exists at real price magnitudes and real decimal counts.
 
 ### THE TESTS FOUND TWO DEFECTS IN MY OWN SPEC — the spec was corrected, not the tests bent
 
