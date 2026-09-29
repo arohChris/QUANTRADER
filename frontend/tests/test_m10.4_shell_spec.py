@@ -95,24 +95,19 @@ def test_shell_exposes_only_documented_access_surfaces() -> None:
         assert forbidden not in app.lower()
 
 
-def test_existing_day_one_account_panel_remains_available() -> None:
-    account = _FRONTEND / "features" / "account_mode"
-    for filename in ("index.html", "styles.css", "main.js", "guards.js"):
-        assert (account / filename).is_file(), f"existing account panel file missing: {filename}"
-    assert (_FRONTEND / "services" / "account_api.js").is_file()
-
-
 def test_shell_acceptance_test_is_small_and_feature_modular() -> None:
+    # Amendment 2: the Day-1 vanilla account panel (features/account_mode/ +
+    # services/account_api.js) was removed as superseded by the React app. The
+    # architecture locks that guarded it moved to
+    # tests/test_frontend_architecture_locks.py rather than being deleted with it.
     for relative in (
+        "app",
         "design-system",
-        "features",
-        "services",
-        "state",
-        "realtime",
-        "types",
         "shared",
+        "specs",
+        "tests",
     ):
-        assert (_FRONTEND / relative).is_dir(), f"missing M10.4 directory: {relative}"
+        assert (_FRONTEND / relative).is_dir(), f"missing frontend directory: {relative}"
     for path in (_FRONTEND / "app").glob("*"):
         # The 20 kB cap exists to stop HAND-WRITTEN module bloat. A generated data snapshot
         # is the opposite case: capping it just means re-running the generator with a

@@ -3,6 +3,148 @@
 
 ## CURRENT STATUS (UPDATED 2026-09-26)
 # GATE: G0 ENTRY
+# **ACTION 77 - DONE 2026-09-29 (human "lgtm" = Step 8 review).** M2.7 BACKFILL DRIVER
+#   IS NOW `complete` (all 9 AGENTS 0 points recorded in BUILD_STATUS.md:36).
+#   Store GREW 543 bars/9.03h -> 6,116 bars / 2 instruments / 5 days, live from Deriv.
+#   verify_m2.7_backfill_driver.py 9/9 EXIT 0. **COMMIT IS YOURS - still uncommitted.**
+# **THE G0 BLOCKER HAS MOVED (was: no stored data).** It is now: **M8 backtest does not
+#   exist**, and 5 days is short of what a walk-forward needs. Sequence:
+#   load more history (driver is re-runnable) -> M8 walk-forward harness ->
+#   gate0_walkforward.py + expectancy doc -> G0 exit.
+# **ACTION 74 - STILL OPEN: LGTM on the 31 M2.1 ingest-error tests (Step 4).**
+#   That is the ONLY remaining open gate. Its spec (A73) and tests are both written
+#   and the tests are honestly RED (ImportError 'OutageRecord', EXIT 2, registered as
+#   a collection blocker review_by 2026-10-06). Approve and I implement it the same
+#   way I did the driver: 12 gate, tests-first, live verify, then your Step 8.
+# **ACTION 77 - OPEN: Step 8 HUMAN REVIEW of the M2.7 backfill driver.**
+#   ACTIONS 75+76 DONE 2026-09-29 (human "lgtm"). Steps 1-7 complete.
+#   **THE STORE GREW: 543 bars / 9.03h  ->  6,116 bars / 2 instruments /
+#   2026-09-24..29** (CRYPTO.BTCUSD 1,981 over 86.9h; FX.EURUSD 4,135 over 120.0h).
+#   **verify_m2.7_backfill_driver.py = 9/9, EXIT 0** against the LIVE Deriv socket and
+#   LIVE Timescale. Highlights: bars_written == the real DB row delta (1438==1438);
+#   a calendar-CLOSED window (Fri 2026-09-25 21:04Z, after the 21:00 close) cost
+#   **ZERO broker requests, closed_skipped=30**; the real GapLedger.record_permanent
+#   was **NEVER reached**; re-loading the same window added **0 duplicate rows**.
+#   **THE WEEKEND IS CORRECTLY ABSENT (2,881 min) because the calendar never asked.**
+#   Suite 1536 passed, 6/7 guards exit 0, lint-imports 0, ruff clean.
+#   **Status is `implemented, not verified` - NOT complete until you record Step 8.**
+#   **FOUR THINGS I WANT YOU TO LOOK AT, NOT rubber-stamp:**
+#   (a) 1 REAL IMPL BUG: MAX_RANGE was 3650d so the ten-year guard compared >3650
+#       against exactly 3650 and NEVER fired. Now 365d.
+#   (b) 3 TEST BUGS I wrote at Step 3, incl. one that was **UNSATISFIABLE** (asserted
+#       a fresh-cursor run makes 0 requests, contradicting the spec's own --fresh
+#       re-plan rule) and one whose data contradicted its own expectation. All fixed,
+#       each correction justified by the spec, not by my code.
+#   (c) CHECK 6 FAILED on the first live run and **my verify script was wrong** - it
+#       compared a 3-minute resumed run against a full 120h load. Now loads the same
+#       window twice. A check that PASSED for the wrong reason would have been worse.
+#   (d) A measurement that CORRECTS ME: I predicted the un-modelled forex daily break
+#       would cost ~11 phantom minutes/day. It did not - only one real 2-minute no-tick
+#       hole. So the daily break is not costing phantom gaps, which RAISES the relative
+#       importance of the Friday close-time overlay (item #1).
+# **ACTION 76 DONE / ACTION 75 DONE.** **ACTION 74 STILL OPEN: LGTM on the 31 M2.1
+#   ingest-error tests (Step 4) - the other half of the two open gates.**
+# **ACTION 76 - OPEN: LGTM ON M2.7 BACKFILL-DRIVER TESTS (Step 4).**
+#   ACTION 75 DONE 2026-09-29 (human "lgtm"). Spec approved:
+#   docs/specs/m2.7_backfill_driver.spec.md (227 lines).
+#   Tests: tests/m2_market_data/test_m2.7_backfill_driver_spec.py, **34 tests, written
+#   BEFORE any code**. HONEST RED CAPTURED: ModuleNotFoundError
+#   'modules.m2_market_data.backfill_driver', EXIT 2. Registered in
+#   config/known_collection_blockers.yaml (review_by 2026-10-06); check_collection.py
+#   exit 0 and still reports BOTH blockers (not blind to them). **1501 passed from
+#   BOTH repo root and app dir**; ruff All checks passed; 6/7 guards exit 0
+#   (check_structure exit 1 is the pre-existing comment-blind false positive).
+#   **REVIEVING THESE MEANS REVIEWING ONE DESIGN CHOICE:** I2 is enforced
+#   STRUCTURALLY by passing a **PermanentGuardLedger PROXY** to the frozen
+#   BackfillCoordinator, so its record_permanent branch (backfill.py:315-322)
+#   physically cannot write permanence for a calendar-derived window. The test
+#   asserts on a **spy on the INNER ledger**, not on the guard's behaviour - so a
+#   buggy guard fails the test. Chunking math is cross-checked against a SECOND
+#   implementation (set-of-minutes membership + structurally different ceiling
+#   division) per AGENTS 3.1. Zero wall-clock sleeping: throttle and clock injected.
+#   FOUND + FIXED before delivery: E12 built the driver TWICE so asserted on an unused
+#   sleeper; a `driver, inner, *_` bound an uninspected ledger. Both would have made
+#   the suite assert LESS than it appeared to.
+#   After your LGTM: Step 5, ONE new file, ZERO edits to the frozen M2 modules it
+#   reads. An edit to any of them is a STOP + a new 5 proposal.
+# **ACTION 74 STILL OPEN: LGTM on the 31 M2.1 ingest-error tests (Step 4).**
+# **ACTION 75 - OPEN: LGTM ON M2.7 BACKFILL-DRIVER SPEC (Step 1). THE G0 PATH.**
+#   You chose option 1 ("write the backfill driver") after seeing the numbers:
+#   **543 bars = 9.03 hours stored, 1 instrument.** Fetcher cap = 1000 min/request
+#   (history.py:60) so 3 months ~= 130 requests ~= 130,000 bars. G0 exit needs
+#   gate0_walkforward.py + expectancy-after-fees, and a walk-forward CANNOT run on
+#   9 hours. Everything built so far is capability with nothing to exercise.
+#   Spec: docs/specs/m2.7_backfill_driver.spec.md (227 lines, naming/pit/retention OK).
+#   NO tests, NO code.
+#   **THE HEADLINE DECISION:** the driver DELIBERATELY DIVERGES from backfill.py's
+#   T5 rule. Today an empty broker response -> TERMINAL + record_permanent. For a
+#   driver whose windows come from our KNOWN-WRONG calendar that is catastrophic:
+#   forex closes Fri 20:55 not 21:00, so Friday 20:55-21:00 would be requested,
+#   refused, and recorded PERMANENT - ~130 permanent holes, each masking any real
+#   gap in the same window. Rule adopted: **the broker is authoritative about its own
+#   data, the calendar is our config, and on disagreement the broker wins and the
+#   conflict is reported.** record_permanent is NEVER called by this driver.
+#   Also pins the `+1` trap from your gap-detector question (I3: half-open windows,
+#   closed-set +1 would manufacture a phantom gap per window) and the forming-bar
+#   defect (I5: bar with interval_end > run_end is dropped, never stored).
+#   2 additive tables (backfill_cursors, backfill_runs), no migration. Reuses
+#   TradingCalendar.open_intervals - NOT flush_cursors, which is the live ring cursor.
+#   Frozen M2 modules are READ-ONLY; one new file, zero edits to existing modules.
+#   **ACTION 74 STILL OPEN: LGTM on the 31 M2.1 ingest-error tests (Step 4).**
+# **CRYPTO CONFLICT STILL OPEN:** Deriv's trading_times API says BTC 00:00-23:59:59,
+#   all 7 days, no events; the website spec table says daily breaks 20:00-20:05 and
+#   21:05-21:10. Unresolved. Settle by probing active_symbols `exchange_is_open` at
+#   ~20:02 and ~21:07 UTC. Until then our crypto hours are unverified.
+# **ACTION 74 - OPEN: LGTM ON M2.1 INGEST-ERROR TESTS (Step 4).** ACTION 73 DONE
+#   2026-09-29 (human "lgtm lgtm" = spec approved, and calendar #1 is next not the
+#   repair loop #2). Tests: tests/m2_market_data/test_m2.1_ingest_errors_spec.py,
+#   **31 tests, written BEFORE any code**. HONEST RED CAPTURED: ImportError
+#   'OutageRecord', collection error, EXIT 2 - that is the spec-first gate working.
+#   Registered in config/known_collection_blockers.yaml (review_by 2026-10-06) so the
+#   rest of the suite still runs: **1501 passed from BOTH repo root and app dir**;
+#   ruff clean; 6 of 7 guards exit 0 (check_structure exit 1 is the pre-existing
+#   comment-blind false positive on base.py:46, unrelated).
+#   FOUND WHILE WRITING TESTS: **new defect D-E** - `ingestion.py:64` accepts a clock,
+#   stores `self._clock`, and NEVER READS IT; all 4 timestamp sites call module-level
+#   `_now()`. An injected clock is silently discarded and no heartbeat test can be
+#   deterministic (AGENTS 3.5). Spec amended pre-approval with D-E + edges E26-E28.
+#   MOST IMPORTANT TEST = E4: CancelledError is a BaseException in 3.14 so today's
+#   `except Exception` is right BY ACCIDENT; the natural fix (`except BaseException`)
+#   would wedge shutdown. It cannot pass silently.
+#   After your LGTM: Step 5 impl (also needs the 5 sign-off the spec records for this
+#   frozen module) -> Step 6 -> Step 7 live verify.
+# **ACTION 73 - DONE 2026-09-29** (human "lgtm lgtm"): M2.1 ingest-error SPEC approved,
+#   docs/specs/m2.1_ingest_errors.spec.md.
+# **NEXT SLICE AFTER THIS (your call): #1 Friday early-close / SessionRule overlay.**
+#   Daily breaks are CONFIG-ONLY (`daily_windows` already proven to handle them);
+#   only the weekday-dependent close time needs real structure, plus a per-instrument
+#   override (XCUUSD Fri 20:00 vs XAUUSD 20:45). Do NOT start the repair loop (#2) on
+#   the current calendar - it would turn a calendar error into PERMANENT data loss.
+# **CRYPTO CONFLICT STILL OPEN:** Deriv's trading_times API says BTC 00:00-23:59:59,
+#   all 7 days, no events; the website spec table says daily breaks 20:00-20:05 and
+#   21:05-21:10. Unresolved. Settle by probing active_symbols `exchange_is_open` at
+#   ~20:02 and ~21:07 UTC. Until then our crypto hours are unverified.
+# **ACTION 73 - OPEN: LGTM ON M2.1 INGEST-ERROR SPEC (Step 1).** Human "lgtm" 2026-09-29
+#   authorised taking item #4 (ingest silent swallow). Spec drafted:
+#   docs/specs/m2.1_ingest_errors.spec.md (224 lines, check_naming OK). NO tests, NO code.
+#   THE HEADLINE: D34 named ONE defect (`ingestion.py:196 try/except/pass`); reading the
+#   whole file found FOUR, and the serious one is D-B — **two concurrent reconnect loops
+#   with NO LOCK** (`_recv_loop:157` + `_heartbeat_loop:199` -> `_reconnect:201`, separate
+#   Tasks, `_start_lock` guards only start/stop). One outage => 2 sockets, `replace_socket`
+#   orphans the first and NEVER closes it (leaked TCP + live Deriv subscription), backoff
+#   double-counts. Reachable on ANY outage >~35s. Exception surface MEASURED, not assumed:
+#   websockets 17.0.1 `close()` ALREADY swallows ConnectionClosed, so our bare
+#   `except Exception: pass` is a no-op on the benign path and catches only TimeoutError /
+#   OSError - silently. Also found: CancelledError is BaseException so cancellation
+#   correctly escapes TODAY (pinned by edge E4, because `except BaseException` would
+#   silently break shutdown). `ingestion.py` is FROZEN/complete => §5 sign-off required
+#   before any code. Spec has 6 invariants, 25 edges, 6 adversarial, 2-impl requirement.
+#   NEXT after your LGTM: Step 3 tests written BEFORE code -> ACTION 74 = tests LGTM.
+# **ACTION 72 - STILL OPEN: M10.2 envelope impl eyeball + deviation ruling + float decision.**
+# **PARQUET LAKE DATA REMOVED 2026-09-29 (human directive) - 100/100 rows proven recoverable
+#   from git-tracked raw JSONL, `git rm` + %TEMP% backup; Timescale verified ALREADY correct
+#   per A42 (verify_m2.10_warm PASS 22/22, 0 retention jobs is CORRECT per A42). M2.8
+#   parquet MODULE not retired - frozen + is the G0 sink - awaiting your explicit decision.**
 # M1 COMPLETE | M2b.1 COMPLETE | M2.1 COMPLETE (+live capture, A47) | M2.6/2.7/2.8 COMPLETE
 # M2.9 HOT + M2.10 WARM COMPLETE (A47) | **M2.9-ext RING COMPLETE (A53 "lg" 2026-09-26)** | **M4.1 SPEC LGTM'd (A54 "lgtm") + STEP 3 TESTS WRITTEN (honest RED)** | **A55 DONE (directive "no continu with m4" 2026-09-26)** | **A64 DONE ("LGTM" → m4.3 spec) | A65 DONE (tests LGTM + directives) | A66 DONE ("lgtm" → m4.3 impl+verify) | M4.3 COMPLETE | **M3.1 PROVIDER-PORT COMPLETE (A69 "lgtm" 2026-09-26: spec A67 + tests A68 + impl+verify; suite 1050/1050, verify EXIT 0)** | NEXT: **you name the next slice** (A65 9-step law: steps 1-8 now done, only **step 9 API GATEWAY** unstarted, LAST by law; optional open phrase: "lgtm m4.2 live tests") -> builder drafts that spec -> ACTION 70
 # **A57 DONE (your directive 2026-09-26 "let websocket open... see the result of you analysis and strategy"): LIVE SIGNALS CONSOLE built + running, collector collecting (see A57 block)**

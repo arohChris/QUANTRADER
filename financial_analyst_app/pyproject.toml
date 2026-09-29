@@ -35,7 +35,32 @@ testpaths = ["tests"]
 pythonpath = ["."]
 # WHY importlib: human naming uses dots (test_m2.3_spec.py) — default mode
 # treats dots as package separators → "No module named 'test_m2'".
-addopts = "--import-mode=importlib"
+addopts = "--import-mode=importlib --ignore=tests/m2_market_data/test_m2.1_ingest_errors_spec.py --ignore=financial_analyst_app/tests/m2_market_data/test_m2.1_ingest_errors_spec.py"
+# WHY TWO --ignore values: this pytest resolves an ini --ignore against the INVOCATION
+# directory, not against rootdir, even though rootdir is this folder either way. So
+# `tests/...` matched when pytest ran from financial_analyst_app/ and missed when run as
+# `pytest financial_analyst_app/tests` from the repo root - the collection error came
+# back and killed the WHOLE suite, which is the exact D13 failure this exemption exists
+# to prevent. Listing both relative forms makes it work from either directory; the
+# unmatched one is harmless. Verified from both.
+#
+# WHY the --ignore lives HERE and not in a conftest hook: the M2.1 ingest-error tests
+# are RED BY DESIGN (AGENTS.md 2 Step 3 - written against the spec BEFORE
+# implementation), so they raise ImportError on OutageRecord. A collection error hides
+# EVERY other result.
+#
+# A conftest `pytest_ignore_collect` hook was TRIED and REVERTED. It worked from every
+# directory, but it made scripts/check_collection.py BLIND: that guard sees past the
+# exemption by overriding addopts (`-o addopts=--import-mode=importlib`), and a
+# conftest hook cannot be overridden that way. The guard then saw a clean collection
+# and began reporting a still-broken module as a STALE EXEMPTION - i.e. it would have
+# told the human to delete the register entry while the code still did not exist. That
+# is exactly the "works, and is quietly wrong" mode AGENTS.md 3.14 forbids, and the
+# same one already caught in this guard on 2026-09-27. addopts is overridable; a hook
+# is not. Do not move this into conftest.
+#
+# Registered in config/known_collection_blockers.yaml with a review_by so the
+# exemption can never quietly become permanent.
 
 [tool.ruff]
 line-length = 100

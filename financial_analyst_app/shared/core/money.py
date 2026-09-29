@@ -1,14 +1,14 @@
 """
-M1.4 — Money Precision. The single authority for every monetary and numeric value.
+M1.4 â€” Money Precision. The single authority for every monetary and numeric value.
 
 WHY this file exists: AGENTS.md 3.1 cites `shared/core/money.py` as the one place
 ROUND_HALF_UP lives. That file did not exist (defect D33), so every module improvised
-its own arithmetic — and 20+ money fields across the frozen M1.1 contracts were typed
+its own arithmetic â€” and 20+ money fields across the frozen M1.1 contracts were typed
 `float`. This module makes the correct path the only path.
 
 Spec: docs/specs/m1.4_money_precision.spec.md
 
-WHY Decimal and not float — measured on this stack, not asserted:
+WHY Decimal and not float â€” measured on this stack, not asserted:
   float("2000000075959.342") stores 2000000075959.342041015625 (error +4.1e-5) yet
   PRINTS identically. 100,000 additions of 0.0000001 give 0.009999999999994874 and
   `== 0.01` is False. IEEE-754 addition is not associative, so a ledger summed in a
@@ -39,16 +39,27 @@ from collections.abc import Iterable
 from decimal import ROUND_HALF_UP, Context, Decimal, InvalidOperation, localcontext
 from typing import Any, Final
 
+# WHY the literal guard is imported from the CONTRACTS layer, not defined here:
+# shared/contracts/base.py needs the identical primitive to validate every MoneyDecimal
+# field, and `shared.contracts must never import shared.core` is a machine-checked
+# architectural law. So the primitive lives in the root layer
+# (shared/contracts/_money_literal.py) and BOTH sides import it â€” one implementation,
+# correct direction (core may depend on contracts, never the reverse). Duplicating the
+# parser here would let the contract guard and the money authority drift apart, which is
+# the exact failure this module exists to prevent.
+from ..contracts._money_literal import MAX_ADJUSTED as _MAX_ADJUSTED
+from ..contracts._money_literal import MoneyLiteralError
+from ..contracts._money_literal import parse_money_literal as _parse_money_literal
+
 # WHY 34: see module docstring. Exposed because a test asserts it is NOT the default.
 MONEY_PREC: Final[int] = 34
 
 # WHY this ceiling: a literal beyond this is not a money value, it is a bug or an
 # attack. Set well above the 16-digit domain so legitimate magnitudes pass and
 # absurd ones (1e400) are rejected as a type problem rather than silently accepted.
-_MAX_ADJUSTED: Final[int] = 100
 
 # WHY 1e15 / 1e9 / 1e18: sized for the largest ACCUMULATOR a field will ever hold,
-# not a single trade (industry guidance, and AGENTS.md 3.13 — refuse absurd values).
+# not a single trade (industry guidance, and AGENTS.md 3.13 â€” refuse absurd values).
 # max_balance 1e15 is ~500x our largest realistic account, so it is a guard rail and
 # not a business limit; max_qty 1e9 lots is already far beyond any real position.
 DOMAIN_BOUNDS: Final[dict[str, Decimal]] = {
@@ -104,7 +115,7 @@ MONEY_SCALES: Final[dict[str, int]] = {
 # WHY there is deliberately NO price-scale table here: an instrument's price quantum
 # is the BROKER's `pip_size`, read live from `active_symbols` and verified against our
 # config by scripts/verify_m2b.5_broker_reference.py. Hardcoding one is the exact
-# defect this project already found once — BTC was 0.01 in our config while the broker
+# defect this project already found once â€” BTC was 0.01 in our config while the broker
 # said 0.001, and XAG 0.01 vs 0.0001 (a 100x error that silently discarded two orders
 # of magnitude of price). A hand-written table would reintroduce that class of bug, so
 # price scale is DERIVED from the authoritative pip_size via scale_from_pip_size(), and
@@ -156,7 +167,7 @@ def _decimal_places(amount: Decimal) -> int:
 def _as_decimal(value: Decimal | str) -> Decimal:
     if isinstance(value, Decimal):
         if not value.is_finite():
-            raise MoneyTypeError(f"{value} is non-finite — NaN and Infinity are not money")
+            raise MoneyTypeError(f"{value} is non-finite â€” NaN and Infinity are not money")
         return value
     return assert_decimal(value)
 
@@ -168,42 +179,17 @@ def assert_decimal(value: Any) -> Decimal:
     Accepts `Decimal` and `str` ONLY. Rejects float, int and bool: an int is a count
     and a float has already lost the value. Rejecting rather than coercing is the
     whole point — `Decimal(0.1)` would import 0.10000000000000000555...
+
+    WHY this delegates instead of re-implementing: the identical primitive validates
+    every MoneyDecimal field in shared/contracts. One implementation means the contract
+    guard and the money authority can never drift apart. The leaf primitive raises
+    MoneyLiteralError; it is re-raised here as MoneyTypeError so callers of the money
+    authority keep catching money errors without importing the contracts layer.
     """
-    if isinstance(value, (bool, int, float)):
-        raise MoneyTypeError(
-            f"money must be Decimal or str, got {type(value).__name__} ({value!r}). "
-            "A float has already lost precision and an int is a count, not an amount."
-        )
-    if isinstance(value, bytes):
-        raise MoneyTypeError("money literal must be str, not bytes")
-    if value is None:
-        raise MoneyTypeError("money value is None — absent is not zero")
-    if isinstance(value, Decimal):
-        if not value.is_finite():
-            raise MoneyTypeError(f"{value} is non-finite — NaN and Infinity are not money")
-        if abs(value.adjusted()) > _MAX_ADJUSTED:
-            raise MoneyTypeError(
-                f"{value} has magnitude 1e{value.adjusted()}, beyond any money domain"
-            )
-        return value
-    if not isinstance(value, str):
-        raise MoneyTypeError(f"money must be Decimal or str, got {type(value).__name__}")
-
-    text = value.strip()
-    if not _LITERAL.match(text):
-        raise MoneyTypeError(f"{value!r} is not a valid money literal")
     try:
-        result = Decimal(text)
-    except InvalidOperation as exc:  # pragma: no cover - regex already gates this
-        raise MoneyTypeError(f"{value!r} is not a valid money literal") from exc
-
-    if not result.is_finite():
-        raise MoneyTypeError(f"{value!r} is not finite — NaN and Infinity are not money")
-    if abs(result.adjusted()) > _MAX_ADJUSTED:
-        raise MoneyTypeError(
-            f"{value!r} has magnitude 1e{result.adjusted()}, beyond any money domain"
-        )
-    return result
+        return _parse_money_literal(value)
+    except MoneyLiteralError as exc:
+        raise MoneyTypeError(str(exc)) from exc
 
 
 def quantize_money(
@@ -216,7 +202,7 @@ def quantize_money(
 
     WHY once, at the boundary: rounding per step is how an institution loses a cent
     per fill. WHY HALF_UP: float's round() is banker's rounding on top of binary
-    error, so it gives 0.01 for 0.015 and 2.67 for 2.675 — both wrong for money.
+    error, so it gives 0.01 for 0.015 and 2.67 for 2.675 â€” both wrong for money.
 
     `reject_excess_scale` turns "value carries more precision than this column can
     hold" into an error. Silent truncation is how money goes missing, so a caller
@@ -229,7 +215,7 @@ def quantize_money(
     if reject_excess_scale and _decimal_places(amount) > scale:
         raise ScaleError(
             f"{amount} carries {_decimal_places(amount)} decimals, "
-            f"more than the declared scale of {scale} — refusing to truncate"
+            f"more than the declared scale of {scale} â€” refusing to truncate"
         )
 
     with localcontext(_context()):
@@ -240,7 +226,7 @@ def quantize_money(
                 f"{amount} cannot be represented at scale {scale} within prec={MONEY_PREC}"
             ) from exc
 
-    # WHY: a ledger must never carry negative zero — it breaks equality and printing.
+    # WHY: a ledger must never carry negative zero â€” it breaks equality and printing.
     return abs(rounded) if rounded.is_zero() else rounded
 
 
@@ -267,7 +253,7 @@ def scale_of(kind: str, key: str) -> int:
 
     WHY raise for an unknown key rather than defaulting to 2: a wrong default is
     silent, and a silent scale corrupts every figure derived from it. An instrument
-    is NOT a currency, so `scale_of("money", "BTC")` raises — BTC has no ISO 4217
+    is NOT a currency, so `scale_of("money", "BTC")` raises â€” BTC has no ISO 4217
     minor units and its settlement scale comes from the asset-class standard.
     """
     registry = {"money": MONEY_SCALES}.get(kind)
@@ -277,7 +263,7 @@ def scale_of(kind: str, key: str) -> int:
             "For an instrument price, use scale_from_pip_size(broker pip_size)."
         )
     if key not in registry:
-        raise ScaleError(f"{key!r} is not a known ISO 4217 currency — refusing to assume a scale")
+        raise ScaleError(f"{key!r} is not a known ISO 4217 currency â€” refusing to assume a scale")
     return registry[key]
 
 
@@ -287,7 +273,7 @@ def scale_from_pip_size(pip_size: Decimal | str) -> int:
     WHY this exists instead of a price table: the venue is the authority on its own
     tick quantum. Deriv reports pip_size per symbol (BTC 0.001, XAG 0.0001, EURUSD
     0.00001), and our job is to obey it, not to remember it. Deriving scale from that
-    value is what makes a config drift loud — a mismatch fails
+    value is what makes a config drift loud â€” a mismatch fails
     scripts/verify_m2b.5_broker_reference.py at boot instead of silently truncating
     prices for months.
     """

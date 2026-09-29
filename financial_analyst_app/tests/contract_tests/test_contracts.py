@@ -12,7 +12,8 @@ Each contract is tested for:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
@@ -69,7 +70,7 @@ def test_market_data_frozen_and_quality() -> None:
 
 
 def test_market_data_candle() -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     candle = Candle(
         open=1.085, high=1.086, low=1.084, close=1.0855,
         interval="1m", interval_start=now, interval_end=now,
@@ -81,11 +82,14 @@ def test_market_data_candle() -> None:
 def test_analytics_result_features() -> None:
     ar = AnalyticsResult(symbol="EURUSD", broker="deriv", timeframe="1m", features={"rsi_14": 68.2, "atr_14": 0.0012})
     assert ar.features["rsi_14"] == 68.2
+    # WHY still 1.0: AnalyticsResult did NOT change in the v2 bump. Only the contracts
+    # that actually changed may report 2.0 — otherwise the version field lies and the
+    # whole "no silent drift" guarantee (AGENTS.md 5) becomes decorative.
     assert ar.version == "1.0"
 
 
 def test_signal_strength_and_valid_until() -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sig = Signal(
         signal_id=uuid.uuid4(),
         strategy_id="trend_following::ema_trend",
@@ -108,7 +112,7 @@ def test_signal_strength_and_valid_until() -> None:
 
 
 def test_trade_plan_has_sl_tp_and_timing() -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     tp = TradePlan(
         trade_plan_id=uuid.uuid4(), signal_id=uuid.uuid4(), strategy_id="momentum_v3@3.2.1",
         version="3.2.1", instrument_id="FX.EURUSD", broker="deriv", user_id="42",
@@ -124,9 +128,12 @@ def test_trade_plan_has_sl_tp_and_timing() -> None:
 
 
 def test_risk_decision_approved_vs_rejected() -> None:
-    approved = RiskDecision(decision_id=uuid.uuid4(), signal_id=uuid.uuid4(), approved=True, approved_qty=0.4, rejected_reason=None)
+    # v2: balance/required_margin/trading_account_id are REQUIRED so a decision is
+    # reconstructable (D35) — see docs/CONTRACT_V2_PROPOSAL.md.
+    approved = RiskDecision(decision_id=uuid.uuid4(), signal_id=uuid.uuid4(), approved=True, approved_qty=Decimal("0.4"), rejected_reason=None, trading_account_id=uuid.uuid4(), balance=Decimal("1000.00"), required_margin=Decimal("87.94"))
     assert approved.approved is True
-    rejected = RiskDecision(decision_id=uuid.uuid4(), signal_id=uuid.uuid4(), approved=False, approved_qty=None, rejected_reason=ErrorCode.insufficient_margin)
+    assert isinstance(approved.approved_qty, Decimal)
+    rejected = RiskDecision(decision_id=uuid.uuid4(), signal_id=uuid.uuid4(), approved=False, approved_qty=None, rejected_reason=ErrorCode.insufficient_margin, trading_account_id=uuid.uuid4(), balance=Decimal("80.00"), required_margin=Decimal("87.94"))
     assert rejected.rejected_reason == ErrorCode.insufficient_margin
 
 
@@ -134,23 +141,30 @@ def test_order_client_order_id_deterministic() -> None:
     # WHY test? client_order_id must be deterministic uuid5(trade_plan_id), not random uuid4
     trade_plan_id = uuid.uuid4()
     cid = str(uuid.uuid5(uuid.NAMESPACE_URL, str(trade_plan_id)))
-    o1 = Order(order_id=uuid.uuid4(), client_order_id=cid, symbol="EURUSD", broker="deriv", side="buy", qty=0.4)
-    o2 = Order(order_id=uuid.uuid4(), client_order_id=cid, symbol="EURUSD", broker="deriv", side="buy", qty=0.4)
+    o1 = Order(order_id=uuid.uuid4(), client_order_id=cid, instrument_id="FX.EURUSD", broker="deriv", side="buy", qty=Decimal("0.4"), trading_account_id=uuid.uuid4())
+    o2 = Order(order_id=uuid.uuid4(), client_order_id=cid, instrument_id="FX.EURUSD", broker="deriv", side="buy", qty=Decimal("0.4"), trading_account_id=uuid.uuid4())
     assert o1.client_order_id == o2.client_order_id
 
 
 def test_order_state_default_pending() -> None:
-    o = Order(order_id=uuid.uuid4(), client_order_id="cid-123", symbol="EURUSD", broker="deriv", side="buy", qty=0.1)
+    o = Order(order_id=uuid.uuid4(), client_order_id="cid-123", instrument_id="FX.EURUSD", broker="deriv", side="buy", qty=Decimal("0.1"), trading_account_id=uuid.uuid4())
     assert o.state == "pending"
 
 
 def test_execution_result_with_fills() -> None:
     er = ExecutionResult(
         order_id=uuid.uuid4(), broker_order_id="brok-123",
-        fills=[Fill(fill_id="f1", price=1.085, qty=0.4)], avg_fill_price=1.085,
-        state="filled", latency_ms=120, slippage_bps=1.2,
+        fills=[Fill(fill_id="f1", price=Decimal("1.085"), qty=Decimal("0.4"), filled_at=1790496960)],  # type: ignore[arg-type]  (epoch int is accepted by AwareUtcDatetime)
+        avg_fill_price=Decimal("1.085"),
+        state="filled", latency_ms=120, slippage_bps=Decimal("1.2"),
     )
-    assert er.fills[0].price == 1.085
+    # NOTE: this used to be `== 1.085` and PASSED under v1's float field. It is now
+    # False, because Decimal('1.085') is not equal to the float 1.085 (which is really
+    # 1.08499999999999996...). That is the bump working as intended: code comparing
+    # money against a float literal now FAILS instead of silently agreeing.
+    assert er.fills[0].price == Decimal("1.085")
+    assert er.fills[0].price != 1.085  # guards against a regression back to float
+    assert er.fills[0].filled_at == datetime.fromtimestamp(1790496960, tz=UTC)
 
 
 def test_reconciliation_report_matched_vs_mismatched() -> None:
@@ -161,7 +175,7 @@ def test_reconciliation_report_matched_vs_mismatched() -> None:
 
 
 def test_portfolio_state_per_tenant() -> None:
-    ps = PortfolioState(user_id="42", broker="deriv", equity=1000, margin_used=400, margin_available=600)
+    ps = PortfolioState(trading_account_id=uuid.uuid4(), user_id="42", broker="deriv", equity=Decimal(1000), margin_used=Decimal(400), margin_available=Decimal(600))
     assert ps.user_id == "42"
     assert ps.broker == "deriv"
 
@@ -245,10 +259,10 @@ def _internal_tick_minimal(**overrides) -> dict:
     base = {
         "event_id": uuid.uuid4(),
         "processing_sequence": 1,
-        "observed_at": datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+        "observed_at": datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC),
         "provider": "deriv",
         "symbol": "frxEURUSD",
-        "timestamp": datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+        "timestamp": datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC),
         "ask": __import__("decimal").Decimal("1.08542"),
         "bid": __import__("decimal").Decimal("1.08538"),
         "quality": "ok",

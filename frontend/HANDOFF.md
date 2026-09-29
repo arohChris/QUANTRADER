@@ -9,11 +9,11 @@
 ## 1. Mental model — the 8 laws you must think with
 
 1. **One system, three planes — the browser touches exactly one.** The product = QUERY plane (REST from our API) + STREAM plane (WS updates) + BROKER gateway (Deriv, account info + trade execution). You only ever build against plane 1 (and later plane 2). Deriv, the trading chain, tokens, vault — all live behind our backend; full design: `docs/architecture_integration_layer.md` (backend doc, read §1–§3 for context).
-2. **The swap-point doctrine.** Features NEVER call `fetch`. All HTTP goes through `services/*_api.ts` — one module per backend domain, mock implementation today, real HTTP later. When contracts freeze, **only the service file changes; feature code must not.** This is why you can build 6 slices before a single backend contract exists.
-3. **Nothing is real until it's frozen.** Backend publishes an OpenAPI snapshot → a frontend test pins your `types/` to it → drift fails CI, not production. The proposal §7 table (`Proposed → frozen`) is the scoreboard. Never wire to an endpoint just because it answers on localhost.
-4. **UI hides, backend enforces.** `X-Role` is local-demo only and may never branch a feature (it dies in Phase 2). You disable/omit UI per role for UX; the backend re-authorizes every single call. A hidden button is *never* a security control.
+2. **The swap-point doctrine.** Features NEVER call `fetch`. All HTTP goes through `services/*_api.ts` — one module per backend domain. When contracts freeze, **only the service file changes; feature code must not.** The doctrine is unchanged, but as of 2026-09-27 it has **zero implementations**: the last one was a vanilla-JS file, now deleted. The `services/` layer is the first deliverable of the gateway work. See `FRONTEND_BACKEND_INTEGRATION_PROPOSAL.md` §6.2.
+3. **Nothing is real until it's frozen.** Backend publishes an OpenAPI snapshot → a frontend test pins your generated types to it → drift fails CI, not production. The proposal §7 table (`Proposed → frozen`) is the scoreboard. Never wire to an endpoint just because it answers on localhost. No `openapi.json` exists yet.
+4. **UI hides, backend enforces.** `X-Role` is local-demo only and may never branch a feature (it dies when OIDC lands). You disable/omit UI per role for UX; the backend re-authorizes every single call. A hidden button is *never* a security control.
 5. **Zero business math in the browser.** No RSI/PnL/margin/sizing — backend computes, you render **with provenance**: `as_of`, quality, staleness always visible. A number without its timestamp is a lie in a trading UI. Forming candles / provisional analytics are visibly provisional (badges), never presented as final.
-6. **Realtime: sequence law.** Snapshot on subscribe → accept only the next contiguous sequence → on gap **stop applying**, request replay, show `RECONNECTING/STALE` → never mix snapshots. One module in `realtime/` owns this; features subscribe and never implement sequencing themselves.
+6. **Realtime: ticks only (amended 2026-09-27).** One multiplexed socket per browser; the client subscribes to `market.ticks.{instrument_id}.{timeframe}` topics. Tick frames carry the **absolute latest value** plus a per-topic `sequence` — full replace, **not** JSON-Patch. Discard any frame whose `sequence` is not greater than the last applied value, which makes reconnect safe with no replay buffer. **Tick topics are public and carry no `user_id`**: market data is stored once per `provider + instrument` and fanned out to all tenants of that broker. The per-tenant gap-free pipe (sequence/replay/`RECONNECTING`) is **deferred**, so private state is fetched over REST on navigate. The client **never** builds a candle from ticks — candles come from `GET /api/v1/market/candles`.
 7. **Failures are visible, success is earned.** No success on non-2xx: typed backend response required, confirmation dialog for writes, error state (never a success toast on a 403). Kill/resume/live-arm flows get elevated confirmation.
 8. **Serial slices.** One slice at a time, strictly: tests written first → **human LGTM** → implement → all gates green → **human merge**. You never self-approve, never self-merge, never "fix the tests" to make an impl pass — the tests encode the spec (AGENTS §2, the repo's blocking law).
 
@@ -51,20 +51,31 @@ frontend/
   app/nav_config.ts                                        # M10.4.1 role-based navigation config
   shared/ui/index.ts                                     # primitives land in a later M10.4 slice
   design-system/foundations/                             # colors/spacing/typography css
-  features/account_mode/                                 # Day-1 breaker panel — dependency-free static ES modules
-  services/account_api.js                                # ONLY module that talks to the real backend
-  components/ realtime/ state/ types/ specs/             # empty scaffolds awaiting their slice
-  tests/test_account_mode_page.py     # 11 — Day-1 panel architecture
-  tests/test_m10.4_shell_spec.py      # 8  — shell acceptance
+  specs/                                                 # frontend specs
+  tests/test_frontend_architecture_locks.py              # 7 — architecture invariants (no page-specific tests)
+  tests/test_m10.4_shell_spec.py                         # 7  — shell acceptance
   pytest.ini ruff.toml .gitignore                         # test/ruff/ignore config (importlib mode: REQUIRED for dotted test names)
 ```
 
-- **M10.4.0 status:** implemented; tests LGTM'd 2026-09-25; **27/27** frontend green; typecheck+build green; awaiting human impl review + merge (`FRONTEND_BUILD_STATUS` Merge Log).
+> **Removed 2026-09-27 (Amendment 2):** `features/account_mode/` (Day-1 breaker panel) and
+> `services/account_api.js`. The vanilla-JS panel was superseded by the React app. Its
+> architectural locks were **moved** into `tests/test_frontend_architecture_locks.py` —
+> including `test_frontend_has_no_backend_module_imports`, the guard that stops a browser
+> bundle from importing backend Python. That lock must not be lost.
+>
+> `components/`, `realtime/`, `state/`, and `types/` were empty and untracked scaffolds;
+> they have been removed so that layout tests only assert directories that survive a clean
+> checkout.
+
+- **M10.4.0 status:** implemented; tests LGTM'd 2026-09-25; frontend green; typecheck+build green; awaiting human impl review + merge (`FRONTEND_BUILD_STATUS` Merge Log).
 - **M10.4.1 status:** complete; tests and implementation LGTM'd 2026-09-26; awaiting human commit/merge.
 - **M10.4.2 status:** complete; tests and implementation LGTM'd 2026-09-26; awaiting human commit/merge.
 - **M10.4.3 status:** queued for Trader Dashboard and Chart Experiment; tests must be written before implementation.
-- **Day-1 panel** (`features/account_mode/index.html`) is the only piece hitting the real backend: `GET/POST http://127.0.0.1:8000/api/v1/account/{status,mode,auto-trade}` (M1.3 two-gate API). It works without npm — keep it alive (tests guard its 4 files). Vite shell (root `index.html`) coexists by design (structure B).
-- **Backend account API facts (live now):** GET needs no permission; POST needs `X-Role: owner|admin` (403 viewer/unknown/missing — no default); 409 gate-state conflict; 422 invalid body; responses are spec-frozen (no envelope yet). Local demo only.
+- **No working frontend-to-backend integration remains.** The Day-1 panel was the last
+  consumer and is gone. The four account-gate routes are curl-only. Building the typed
+  `services/*_api.ts` layer is the first task of the gateway work — see
+  `FRONTEND_BACKEND_INTEGRATION_PROPOSAL.md` §6.2.
+- **Backend account API facts (live now):** GET needs no permission; POST needs `X-Role: admin` (403 viewer/unknown/missing — no default); 409 gate-state conflict; 422 invalid body; responses are spec-frozen (no envelope yet). Local demo only. `X-Role` is a client-supplied header and is **not authentication**.
 
 ## 5. Your slice playbook (next = M10.4.3)
 

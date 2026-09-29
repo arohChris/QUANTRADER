@@ -1,1 +1,52 @@
-# KNOWN COLLECTION BLOCKERS - currently EMPTY.## WHY this file exists (defect D13, raised 2026-09-27): a missing module made pytest unable to# COLLECT the repository, so the full suite could not run and AGENTS.md 2 Step 6 was# unsatisfiable for every sub-module. scripts/check_collection.py FAILS on any collection# error not listed here, FAILS if a listed blocker passes its review_by, and FAILS if a# listed blocker no longer blocks anything.## D13 was CLEARED on 2026-09-27: modules/reference/execution_profiles.py was implemented and# all 43 M2b.3 tests pass. The entry was deleted rather than left to rot.## Every NEW entry MUST carry: file, owner, why, how_to_clear, raised_on, review_by.blockers: []
+# KNOWN COLLECTION BLOCKERS
+#
+# WHY this file exists (defect D13, raised 2026-09-27): a missing module made pytest
+# unable to COLLECT the repository, so the full suite could not run and AGENTS.md 2
+# Step 6 was unsatisfiable for every sub-module. scripts/check_collection.py FAILS on
+# any collection error not listed here, FAILS if a listed blocker passes its
+# review_by, and FAILS if a listed blocker no longer blocks anything.
+#
+# D13 was CLEARED on 2026-09-27: modules/reference/execution_profiles.py was
+# implemented and all 43 M2b.3 tests pass. The entry was deleted rather than left
+# to rot.
+#
+# Every NEW entry MUST carry: file, owner, why, how_to_clear, raised_on, review_by.
+#
+# ---------------------------------------------------------------------------
+# This entry is NOT a defect and NOT technical debt. It is the NORMAL, EXPECTED
+# pre-implementation state of the AGENTS.md 2 Step 3 test-first gate: the tests
+# for M2.1 ingest errors were written against the spec BEFORE any implementation,
+# so the symbol they pin does not exist yet. The tests are RED BY DESIGN and that
+# is the evidence the order was respected.
+# ---------------------------------------------------------------------------
+blockers:
+  - file: tests/m2_market_data/test_m2.1_ingest_errors_spec.py
+    owner: builder
+    defect: >
+      ImportError: cannot import name 'OutageRecord' from
+      'modules.m2_market_data.ingestion'. The spec (docs/specs/m2.1_ingest_errors.spec.md,
+      human LGTM 2026-09-29 / ACTION 73) defines a new in-module frozen model
+      OutageRecord plus IngestionManager.outages(broker). Neither exists yet.
+    why: >
+      Deliberate. The 31 tests were written against the SPEC, not against code, per
+      AGENTS.md 2 Step 3 ("tests written against the spec - before implementation
+      exists"). A suite written after the code would merely encode whatever the code
+      happened to do. Exit code 2 (collection error) is the honest RED state and was
+      captured deliberately.
+    impact: >
+      This ONE file cannot be collected, so its 31 tests do not run. The rest of the
+      suite is unaffected and still runs (1501 tests). It does NOT weaken any other
+      sub-module's Step 6 evidence.
+    how_to_clear: >
+      Implement the M2.1 ingest error contract per the approved spec: add OutageRecord,
+      add IngestionManager.outages(broker), honour the injected clock (D-E), serialise
+      reconnect with a per-broker lock (D-B), and stop swallowing close failures
+      without a log record (D-A). Then delete THIS ENTRY - check_collection.py will
+      report it as stale (a blocker that no longer blocks) and demand removal.
+    raised_on: 2026-09-29
+    review_by: 2026-10-06
+#
+# The M2.7 backfill-driver entry that was here on 2026-09-29 was DELETED the same day,
+# after the implementation landed and its 35 tests went green. That is the entry doing
+# its job: check_collection.py reports a blocker that no longer blocks as STALE and
+# demands removal, so a cleared exemption cannot rot. See BUILD_STATUS.md.

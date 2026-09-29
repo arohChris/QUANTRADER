@@ -72,7 +72,7 @@ def pytest_collection_finish(session: object) -> None:
         print(
             f"\n[INCOMPLETE SUITE] {len(entries)} registered collection blocker(s) excluded: "
             f"{names}\n"
-            "    This run does NOT cover the whole system. "
-            "See config/known_collection_blockers.yaml.\n",
+            f"    This run does NOT cover the whole system. "
+            f"See config/known_collection_blockers.yaml.\n",
             file=sys.stderr,
         )

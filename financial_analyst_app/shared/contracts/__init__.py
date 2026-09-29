@@ -4,6 +4,7 @@ WHY re-export? `from shared.contracts import MarketData, Signal` — one import 
 """
 from .analytics import AnalyticsResult
 from .base import BaseContract, Explainability, Provenance
+from .drop import Drop, DropReason
 from .errors import (
     ErrorCode,
     ReferenceError,
@@ -11,7 +12,6 @@ from .errors import (
     UnknownBrokerError,
     UnknownInstrumentError,
 )
-from .drop import Drop, DropReason
 from .execution import ExecutionResult, Fill
 from .instrument import AssetClass
 from .internal_tick import InternalTick
@@ -54,17 +54,17 @@ __all__ = [
     "PortfolioState",
     "Position",
     "Provenance",
+    "ReconciliationReport",
     "ReferenceError",
     "ReferenceValidationError",
-    "ReconciliationReport",
     "RiskDecision",
     "Signal",
     "StopSpec",
     "TargetSpec",
     "Tick",
     "TimingSpec",
-    "TradePrint",
     "TradePlan",
+    "TradePrint",
     "UnknownBrokerError",
     "UnknownInstrumentError",
 ]
@@ -72,24 +72,43 @@ __all__ = [
 # Rebuild Pydantic forward refs — WHY? BaseContract uses Provenance before it's defined,
 # and all contracts inherit BaseContract. Without rebuild, "not fully defined" error.
 # This makes `from shared.contracts import MarketData` just work.
-try:
-    from .base import BaseContract as _BC
+#
+# WHY the outer `try: ... except Exception: pass` was REMOVED (not just narrowed):
+# it wrapped the BaseContract import too. If that import failed, the bare except
+# swallowed it and the package imported "successfully" with a broken base class —
+# the worst possible failure mode, because every downstream error would be a lie.
+# A failed BaseContract import is already a loud ImportError on its own.
+from .base import BaseContract as _BC
 
-    _BC.model_rebuild()
-    for _cls in [
-        MarketData,
-        AnalyticsResult,
-        Signal,
-        TradePlan,
-        PortfolioState,
-        RiskDecision,
-        Order,
-        ExecutionResult,
-        ReconciliationReport,
-    ]:
+_BC.model_rebuild()
+for _cls in [
+    MarketData,
+    AnalyticsResult,
+    Signal,
+    TradePlan,
+    PortfolioState,
+    RiskDecision,
+    Order,
+    ExecutionResult,
+    ReconciliationReport,
+]:
+    try:
         _cls.model_rebuild()
-except Exception:
-    pass  # tests will surface real error
+    except Exception as exc:
+        # WHY this was `except: pass` and why that was wrong: model_rebuild() fails on
+        # an unresolvable forward reference. The bare except swallowed it AND abandoned
+        # the rest of the loop, so every contract AFTER the failing one stayed
+        # un-rebuilt with no error anywhere — surfacing much later as a baffling
+        # validation error inside M5/M6, far from the cause. The old comment claimed
+        # "tests will surface real error"; they surface a SYMPTOM, not the cause.
+        #
+        # The v2 contract bump (MoneyDecimal / AwareUtcDatetime Annotated types) is
+        # precisely the change most likely to break a forward reference, so this is
+        # now a loud, named failure instead of a silent one.
+        raise RuntimeError(
+            f"contract {_cls.__name__} failed model_rebuild() — the contract graph has an "
+            f"unresolvable forward reference. Original error: {exc!r}"
+        ) from exc
 
 # Version of the contracts package — bump on breaking change
 # 1.1.0: additive AssetClass enum (M2b.1 commodity scope) — minor bump per AGENTS.md §5

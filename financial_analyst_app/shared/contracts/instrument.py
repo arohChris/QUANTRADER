@@ -25,7 +25,7 @@ class AssetClass(str, Enum):
     commodity = "commodity"
 
     @classmethod
-    def from_yaml_value(cls, raw: str) -> "AssetClass":
+    def from_yaml_value(cls, raw: str) -> AssetClass:
         """Validate a YAML asset_class string; raise ValueError with field name on unknown."""
         try:
             return cls(raw)

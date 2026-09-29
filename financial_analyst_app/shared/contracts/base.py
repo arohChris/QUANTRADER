@@ -14,17 +14,66 @@ WHY this file exists:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
+from decimal import Decimal
+from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
+
+from ._money_literal import parse_money_literal
 
 
 def _now_utc() -> datetime:
     # WHY UTC only? Broker clocks differ. System clock is UTC via M1.2 clock.py.
     # Never use naive datetime — always timezone-aware to avoid DST bugs.
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
+
+
+def _coerce_money(value: Any) -> Decimal:
+    """Money fields go through the ONE money literal guard. WHY here and not per field:
+
+    Measured on pydantic 2.13.4 — a bare `qty: Decimal` in LAX mode silently ACCEPTS
+    `float 0.4` and yields `Decimal('0.4')`, because pydantic coerces via `str`. That
+    is worse than useless: it looks like the field is protected when nothing is. And
+    `Field(strict=True)` is no answer either — it also rejects `str`, which we need at
+    the config and wire boundary.
+
+    So every money field is `MoneyDecimal`, whose validator delegates to
+    _money_literal.parse_money_literal — the SAME primitive shared/core/money.py uses.
+    One implementation, so the contract and the money authority cannot drift.
+
+    WHY that primitive is not imported from shared.core.money: an earlier revision did
+    exactly that and it BROKE a machine-checked architectural law —
+    `shared.contracts must never import shared.core`. Contracts are the ROOT vocabulary
+    and must not depend on infrastructure. The primitive therefore lives in the root
+    layer (_money_literal.py) and core imports IT, not the other way round.
+    """
+    return parse_money_literal(value)
+
+
+def _coerce_aware_utc(value: Any) -> datetime:
+    """WHY this exists (D38): `timestamp: str | None` invited `timestamp[:10]`, which
+    silently mis-reads a fill at a timezone edge. Deriv sends epoch INTEGERS, so the
+    conversion is made explicit here and a NAIVE datetime is refused rather than
+    assumed to be UTC (AGENTS.md 3.8)."""
+    if isinstance(value, bool):
+        # TypeError not ValueError: a bool is a wrong TYPE, not a bad value. (bool is
+        # an int subclass, so without this a True would silently become epoch 1.)
+        raise TypeError("timestamp must be an aware datetime or epoch seconds, not a bool")
+    if isinstance(value, (int, float, Decimal)):
+        return datetime.fromtimestamp(float(value), tz=UTC)
+    if isinstance(value, datetime):
+        if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+            raise ValueError(f"naive datetime rejected: {value!r} — supply tzinfo or epoch seconds")
+        return value.astimezone(UTC)
+    raise ValueError(f"timestamp must be an aware datetime or epoch seconds, got {type(value).__name__}")
+
+
+# WHY an annotated alias instead of repeating Field(...) on ~25 fields: one definition,
+# one behaviour, and `grep MoneyDecimal` lists every money field in the codebase.
+MoneyDecimal = Annotated[Decimal, BeforeValidator(_coerce_money)]
+AwareUtcDatetime = Annotated[datetime, BeforeValidator(_coerce_aware_utc)]
 
 
 class BaseContract(BaseModel):
@@ -50,6 +99,11 @@ class BaseContract(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
+    # WHY 1.0 here and not 2.0? Only the contracts that actually CHANGED may bump.
+    # An earlier revision set this default to 2.0, which made unchanged contracts
+    # (AnalyticsResult, Signal, MarketData) falsely report v2 — a silent-drift bug in
+    # the versioning mechanism itself, which is the one thing AGENTS.md 5 relies on.
+    # The four bumped contracts override this to "2.0" explicitly.
     version: str = Field(default="1.0", description="Schema version — bump on field add/remove")
     correlation_id: UUID = Field(
         default_factory=uuid.uuid4,

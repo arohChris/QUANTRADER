@@ -49,7 +49,7 @@ Status values are limited to:
 | Module | Sub | Spec/design | Tests | Test status | Backend dependency | Frontend status | Human review | Merge status |
 |---|---|---|---:|---|---|---|---|---|
 | M10.4 | Design lock | ✓ ``frontend/specs/frontend_spec.md`` REV2.3 | — | — | none | complete | ✓ ACTION 16F | reference only |
-| M10.4 | Day-1 account panel | ✓ existing account_mode feature | 11 | existing account architecture tests | M1.3 account API only | implemented | prior design/implementation review | not a full M10.4 merge |
+| M10.4 | Day-1 account panel | ✓ former account_mode feature | 0 | architectural locks preserved in `test_frontend_architecture_locks.py` | none | **removed 2026-09-27** | Amendment 2 — superseded by the React app | panel + `services/account_api.js` deleted; locks kept, not deleted with it |
 | M10.4.0 | Vite/React/TypeScript shell | ✓ frozen design + integration proposal | 8 (`frontend/tests/test_m10.4_shell_spec.py`) | **8/8 PASS** + typecheck + build green 2026-09-25; whole frontend **27/27** | none; mock data only | implemented, not verified | tests LGTM ✓ 2026-09-25 (impl review pending) | pending human merge |
 | M10.4.1 | Role-based shell and navigation | ✓ access proposal + UI/UX design plan | 8 (`frontend/tests/test_m10.4.1_role_nav_spec.py`) | **8/8 PASS** + typecheck + build green 2026-09-26 | none; mock data only | **complete** | ✓ tests + impl LGTM 2026-09-26 | pending human commit/merge |
 | M10.4.2 | Public Viewer dashboard | ✓ role proposal + UI/UX design plan | 8 (`frontend/tests/test_m10.4.2_viewer_dashboard_spec.py`) | **8/8 PASS** + typecheck + build green 2026-09-26; whole frontend **35/35** | none; mock data only | **complete** | ✓ tests + impl LGTM 2026-09-26 | pending human commit/merge |
