@@ -142,7 +142,17 @@ async def test_request_matches_the_documented_schema() -> None:
     assert req["style"] == "candles"
     assert req["granularity"] == 60
     assert req["count"] == 10
-    assert req["start"] == int(lo.timestamp()) and isinstance(req["start"], int)
+    # MEASURED live 2026-09-29: `ticks_history` with `count` returns the `count` bars
+    # ENDING AT `end`, i.e. (end - count*60, end] - `start` does not select bars at all.
+    # The caller's window is [lo, lo+10m), whose 10 bars are lo .. lo+9m. Requesting
+    # start=lo, end=lo+10m therefore returns lo+1m .. lo+10m: the FIRST bar is silently
+    # lost and the LAST bar returned lies outside the caller's window. Shifting both
+    # bounds back one minute (start=lo-1m, end=lo+9m, count unchanged) yields exactly
+    # lo .. lo+9m. Verified: start=T0-60 end=T0+540 count=10 -> first bar == T0.
+    # This assertion previously pinned the buggy shape, so it is the test that moved.
+    assert req["start"] == int((lo - timedelta(minutes=1)).timestamp())
+    assert isinstance(req["start"], int)
+    assert req["end"] == str(int((lo + timedelta(minutes=9)).timestamp()))
     # `end` is a STRING matching ^(latest|[0-9]{1,10})$ - sending an int is a contract error
     assert isinstance(req["end"], str) and req["end"].isdigit()
     assert req["adjust_start_time"] == 1

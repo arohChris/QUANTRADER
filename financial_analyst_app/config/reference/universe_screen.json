@@ -1,0 +1,320 @@
+{
+  "screened_at": "2026-09-29T16:43:48.355047+00:00",
+  "criterion": "trade_count",
+  "top": 25,
+  "in_scope_count": 31,
+  "selected": [
+    {
+      "native": "frxXAUUSD",
+      "asset_class": "commodity",
+      "submarket": "metals",
+      "trade_count": 14793,
+      "pip_size": 0.01,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "cryBTCUSD",
+      "asset_class": "crypto",
+      "submarket": "non_stable_coin",
+      "trade_count": 5417,
+      "pip_size": 0.001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxEURUSD",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 4074,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxUSDJPY",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 1980,
+      "pip_size": 0.001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxGBPUSD",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 1955,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxXAGUSD",
+      "asset_class": "commodity",
+      "submarket": "metals",
+      "trade_count": 1502,
+      "pip_size": 0.0001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxAUDUSD",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 1387,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "cryETHUSD",
+      "asset_class": "crypto",
+      "submarket": "non_stable_coin",
+      "trade_count": 1262,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxUSDCAD",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 1053,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxUSDCHF",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 1010,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxEURGBP",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 923,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxEURJPY",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 831,
+      "pip_size": 0.001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxEURCHF",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 766,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxAUDJPY",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 674,
+      "pip_size": 0.001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxAUDNZD",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 670,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxNZDUSD",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 669,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxGBPJPY",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 648,
+      "pip_size": 0.001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxGBPAUD",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 458,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxGBPCHF",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 422,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxAUDCAD",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 349,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxEURAUD",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 346,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxEURCAD",
+      "asset_class": "forex",
+      "submarket": "major_pairs",
+      "trade_count": 276,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxAUDCHF",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 154,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxGBPNZD",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 112,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxEURNZD",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 100,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    }
+  ],
+  "excluded": [
+    {
+      "native": "frxGBPCAD",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 98,
+      "pip_size": 1e-05,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxNZDJPY",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 84,
+      "pip_size": 0.001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxUSDMXN",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 69,
+      "pip_size": 0.0001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxUSDPLN",
+      "asset_class": "forex",
+      "submarket": "minor_pairs",
+      "trade_count": 50,
+      "pip_size": 0.0001,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxXPTUSD",
+      "asset_class": "commodity",
+      "submarket": "metals",
+      "trade_count": 18,
+      "pip_size": 0.01,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    },
+    {
+      "native": "frxXPDUSD",
+      "asset_class": "commodity",
+      "submarket": "metals",
+      "trade_count": 11,
+      "pip_size": 0.01,
+      "exchange_is_open": 1,
+      "is_trading_suspended": 0,
+      "screened_at": "2026-09-29"
+    }
+  ]
+}

@@ -165,6 +165,21 @@ class DerivHistoryFetcher:
                 "bound - refusing rather than silently truncating"
             )
         self._req_id += 1
+        # WHY the request window is shifted back one minute, MEASURED live 2026-09-29:
+        # with `count` set, `ticks_history` returns the `count` bars ENDING AT `end`
+        # (i.e. (end - count*60, end]) - `start` does NOT select bars, verified by
+        # changing `start` alone and getting an identical response. The caller's window
+        # is [A, B) = N bars at A .. B-60, but asking end=B returns B-60N+60 .. B: the
+        # bar at A is silently lost AND one bar outside the window comes back. Asking
+        # end=B-60 returns exactly A .. B-60. `start` is also shifted back so the
+        # adjustment anchor cannot pull the window earlier than the caller's own start.
+        # The span - and therefore `count` - is unchanged, so this cannot over-fetch.
+        # WHY the clip is NOT shifted: `start`/`end` above stay the CALLER's window, and
+        # the response filter below enforces them. If a response is re-anchored (see
+        # `adjust_start_time`) its bars fall outside the caller's window and are dropped
+        # rather than stored as if they were the requested period.
+        req_start = start - timedelta(minutes=1)
+        req_end = end - timedelta(minutes=1)
         request = {
             "ticks_history": to_native(instrument_id, broker),
             "style": "candles",
@@ -172,10 +187,18 @@ class DerivHistoryFetcher:
             "count": int((end - start).total_seconds() // 60),
             # `end` is a STRING matching ^(latest|[0-9]{1,10})$ per the docs; `start` is an
             # integer. The asymmetry is real and sending an int for `end` is rejected.
-            "end": str(int(end.timestamp())),
-            "start": int(start.timestamp()),
-            # 1 = adjust backwards if the market is shut at `end` or the licence limit is
-            # before it. This is a REQUEST flag; the response does not echo it.
+            "end": str(int(req_end.timestamp())),
+            "start": int(req_start.timestamp()),
+            # MEASURED 2026-09-29. Correction 2026-09-29: an earlier note here claimed
+            # `adjust_start_time: 0` "returns ZERO candles" - that was WRONG. It returns
+            # `InputValidationFailed`, and the probe recorded the error as an empty
+            # result. The value 0 is simply not accepted, so 1 is the only usable setting.
+            # The re-anchoring half of the original claim IS real and still measured:
+            #   * when `end` lands in a closure the flag anchors to the last available
+            #     candle and walks BACKWARD `count` bars: asked Sun 21:00->23:00 (120m),
+            #     got Fri 18:56->20:55. Those bars are valid OHLC for the WRONG period.
+            # The caller's-window clip below is what contains that; the driver also never
+            # requests inside a closure, so it does not arise in practice.
             "adjust_start_time": 1,
             "req_id": self._req_id,
         }

@@ -31,6 +31,47 @@ FX.GBPUSD:
     deriv: frxGBPUSD
     mt5: GBPUSD
 
+# --- UNIVERSE SCREEN ADDITION 2026-09-29 (human LGTM "lgtm") -------------------------
+# WHY: the 25-asset universe appears in five spec/doc places (m2b.4_trading_calendar
+# .spec.md:147,166; m2.6_gap_calendar.spec.md:157,167; BUILD_STATUS.md:457) and sized
+# three design decisions, but only 2 forex instruments were ever configured. The 19
+# below were DERIVED, not hand-picked: scripts/verify_m2b.7_universe_screen.py ranks the
+# live `active_symbols.trade_count` and the selection is written to
+# config/reference/universe_screen.json with its `screened_at` timestamp.
+#
+# WHY `pip`/`tick_size` are derived from the broker's OWN `pip_size` and NOT hardcoded:
+# the live call returns 1e-05 for most pairs and 0.001 for the JPY crosses. A fixed
+# 0.00001 tick on USDJPY is a 100x error in the same shape as the BTC/XAG pip_size defect
+# this project already found and fixed (see BUILD_STATUS.md D-pip_size). The venue is
+# the authority on its own tick quantum (scale_from_pip_size).
+#
+# WHY `min_qty` is 0.01 here while EURUSD/GBPUSD above say 0.001: 0.01 is what Deriv's
+# own specification table states for the STANDARD pairs ("Min size 0.01"). The two
+# pre-existing entries are NOT changed by this slice - the discrepancy is recorded as an
+# OPEN QUESTION rather than silently edited, because it is not this slice's call.
+#
+# WHY `contract_size` is quoted: the strict money law (D13) forbids bare YAML numbers in
+# a money field, because a bare number is already a float by the time it is read.
+FX.AUDUSD:  {canonical_symbol: AUDUSD,  display_name: AUDUSD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxAUDUSD,  mt5: AUDUSD}}
+FX.USDCAD:  {canonical_symbol: USDCAD,  display_name: USDCAD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxUSDCAD,  mt5: USDCAD}}
+FX.USDCHF:  {canonical_symbol: USDCHF,  display_name: USDCHF, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxUSDCHF,  mt5: USDCHF}}
+FX.EURGBP:  {canonical_symbol: EURGBP,  display_name: EURGBP, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxEURGBP,  mt5: EURGBP}}
+FX.EURJPY:  {canonical_symbol: EURJPY,  display_name: EURJPY, asset_class: forex, pip: 0.01,  tick_size: "0.001",   contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxEURJPY,  mt5: EURJPY}}
+FX.EURCHF:  {canonical_symbol: EURCHF,  display_name: EURCHF, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxEURCHF,  mt5: EURCHF}}
+FX.USDJPY:  {canonical_symbol: USDJPY,  display_name: USDJPY, asset_class: forex, pip: 0.01,  tick_size: "0.001",   contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxUSDJPY,  mt5: USDJPY}}
+FX.AUDJPY:  {canonical_symbol: AUDJPY,  display_name: AUDJPY, asset_class: forex, pip: 0.01,  tick_size: "0.001",   contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxAUDJPY,  mt5: AUDJPY}}
+FX.AUDNZD:  {canonical_symbol: AUDNZD,  display_name: AUDNZD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxAUDNZD,  mt5: AUDNZD}}
+FX.NZDUSD:  {canonical_symbol: NZDUSD,  display_name: NZDUSD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxNZDUSD,  mt5: NZDUSD}}
+FX.GBPJPY:  {canonical_symbol: GBPJPY,  display_name: GBPJPY, asset_class: forex, pip: 0.01,  tick_size: "0.001",   contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxGBPJPY,  mt5: GBPJPY}}
+FX.GBPAUD:  {canonical_symbol: GBPAUD,  display_name: GBPAUD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxGBPAUD,  mt5: GBPAUD}}
+FX.GBPCHF:  {canonical_symbol: GBPCHF,  display_name: GBPCHF, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxGBPCHF,  mt5: GBPCHF}}
+FX.AUDCAD:  {canonical_symbol: AUDCAD,  display_name: AUDCAD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxAUDCAD,  mt5: AUDCAD}}
+FX.EURAUD:  {canonical_symbol: EURAUD,  display_name: EURAUD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxEURAUD,  mt5: EURAUD}}
+FX.EURCAD:  {canonical_symbol: EURCAD,  display_name: EURCAD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxEURCAD,  mt5: EURCAD}}
+FX.AUDCHF:  {canonical_symbol: AUDCHF,  display_name: AUDCHF, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxAUDCHF,  mt5: AUDCHF}}
+FX.GBPNZD:  {canonical_symbol: GBPNZD,  display_name: GBPNZD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxGBPNZD,  mt5: GBPNZD}}
+FX.EURNZD:  {canonical_symbol: EURNZD,  display_name: EURNZD, asset_class: forex, pip: 0.0001, tick_size: "0.00001", contract_size: "100000", min_qty: "0.01", qty_step: "0.01", brokers: [deriv, mt5], broker_native: {deriv: frxEURNZD,  mt5: EURNZD}}
+
 # M3.1 profiles (bible §4) — per-asset-class analytic params; precedence:
 # request param_overrides > this profile > analytic REQUIREMENTS.defaults.
 # WHY rsi_14 only: profile entries are per-asset overrides, not a feature list —

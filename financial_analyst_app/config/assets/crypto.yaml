@@ -14,6 +14,30 @@ CRYPTO.BTCUSD:
     deriv: cryBTCUSD
     mt5: BTCUSD
 
+# --- UNIVERSE SCREEN ADDITION 2026-09-29 (human LGTM "lgtm") -------------------------
+# WHY: CRYPTO.ETHUSD is one of the 2 crypto instruments in the derived 25-asset
+# universe (scripts/verify_m2b.7_universe_screen.py, ranked 8th by live
+# `active_symbols.trade_count` with 1,262 trades). It was the only selected instrument
+# missing from config.
+#
+# WHY `tick_size` is 0.00001 and NOT the class default 0.00000001: the live broker
+# reports `pip_size` 1e-05 for cryETHUSD. Per-instrument tick_size overrides the class
+# standard, and the venue is the authority on its own tick quantum - the same rule that
+# fixed the BTC 0.01-vs-0.001 defect. Deriving it from a hand-written table would
+# reintroduce that class of error.
+CRYPTO.ETHUSD:
+  canonical_symbol: ETHUSD
+  display_name: Ethereum
+  asset_class: crypto
+  tick_size: "0.00001"
+  contract_size: "1"
+  min_qty: "0.001"
+  qty_step: "0.001"
+  brokers: [deriv, mt5]
+  broker_native:
+    deriv: cryETHUSD
+    mt5: ETHUSD
+
 # M3.1 profiles (bible §4) — same shape as forex.yaml (see comment there).
 analytics:
   rsi_14:
