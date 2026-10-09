@@ -1,0 +1,19 @@
+{"at": "2026-09-30T13:13:03Z", "exit": 0, "verdict": "no RESULT line - the monitor did not run", "trigger": "once"}
+{"at": "2026-09-30T13:14:32Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "once"}
+{"at": "2026-09-30T13:15:45Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:17:15Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:18:42Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:20:09Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:22:50Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:24:17Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:25:46Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:27:13Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:28:36Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:30:05Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:31:27Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:33:00Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:34:46Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:36:32Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+{"at": "2026-09-30T13:53:39Z", "exit": 1, "verdict": "RED (exit 1) - see log; the audit is the authority", "trigger": "once"}
+{"at": "2026-09-30T20:13:13Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "once"}
+{"at": "2026-10-07T21:05:15Z", "exit": 0, "verdict": "IDLE - idle: newest bar 2026-10-07T20:33:00+00:00 already audited, last verdict GREEN", "trigger": "every 30m", "kind": "idle"}

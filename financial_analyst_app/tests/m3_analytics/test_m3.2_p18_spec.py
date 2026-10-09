@@ -71,7 +71,6 @@ def _series(closes: list[float], *, interval: str = "5m", end: datetime = _T0) -
                 high=close,
                 low=close,
                 close=close,
-                tick_count=1,
                 interval=interval,
                 interval_start=start,
                 interval_end=start + timedelta(minutes=5),
@@ -92,7 +91,6 @@ def _series_ohlc(bars: list[tuple[float, float, float]], *, end: datetime = _T0)
                 high=high,
                 low=low,
                 close=close,
-                tick_count=1,
                 interval="5m",
                 interval_start=start,
                 interval_end=start + timedelta(minutes=5),
@@ -559,10 +557,19 @@ def test_compute_signature_isolation_contract():
 
 def test_from_package_discovers_p17_plus_p18_batch():
     # Declared amendment #1 (m3.2_p18 spec): P17 lock extends 3 -> 15 names.
+    # 2026-09-30: 14 -> 24, Book Feature Library batch 1 — declared §7 amendment,
+    # m3.2_book_feature_library spec (tests LGTM'd before this edit).
+    # 2026-10-02: 24 -> 34, m4.7 Tier-1 analytics batch — declared amendment 2,
+    # m4.7_playbook_tier1 spec (tests LGTM'd before this edit).
     names = AnalyticsRegistry.from_package().names()
     assert sorted(names) == [
-        "adx_14", "atr_14", "bb_percent", "choppiness", "donchian_20", "ema_20",
-        "hurst", "macd", "returns", "rsi_14", "sma_20", "std_20", "tick_rate",
+        "adx_14", "anchored_twap", "atr_14", "atr_percentile_rank", "bar_low",
+        "bb_percent", "bollinger_bandwidth", "bollinger_bandwidth_percentile",
+        "choppiness", "close_change", "close_position", "donchian_20",
+        "efficiency_ratio", "ema_20", "ema_21", "ema_55", "ema_8", "hurst",
+        "last_close", "macd", "market_state", "ols_r_squared", "rejection_bar",
+        "returns", "rsi_14", "sma_20", "std_20", "supertrend_flip",
+        "sweep_reversal", "swing_high", "swing_low", "variance_ratio",
         "vol_regime", "zscore_20",
     ]
 

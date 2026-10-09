@@ -45,6 +45,31 @@ blockers:
       report it as stale (a blocker that no longer blocks) and demand removal.
     raised_on: 2026-09-29
     review_by: 2026-10-06
+  # The M4.7 strategy-bearing entry (tests/m3_analytics/test_m4.7_playbook_tier1_spec.py)
+  # was DELETED 2026-10-02: the 5 Tier-1 strategy modules were implemented, the file
+  # collects and passes 44 tests (0 skipped), and the pyproject --ignore pair for it was
+  # withdrawn in the same change. That is the entry doing its job — check_collection.py
+  # reports a blocker that no longer blocks as STALE and demands removal.
+  #
+  # The M2.14 Gap-Repair Coverage entry that was here on 2026-09-30 was DELETED the same
+  # day, after the implementation landed and all 14 tests went green. That is the entry
+  # doing its job: check_collection.py reports a blocker that no longer blocks as STALE
+  # and demands removal, so a cleared exemption cannot rot. The register/pyproject
+  # --ignore pair was withdrawn in the same change.
+  #
+  #
+  # A third entry was added for tests/m3_analytics/test_m4.7_playbook_tier1_analytics_spec.py
+  # on 2026-09-30 and then DELETED the same hour: an early run reported it failing to import
+  # `close_change`, but a direct run collects and passes 120 tests, so the import error was
+  # transient (stale __pycache__) and not a real blocker. check_collection.py FAILS on a
+  # registered blocker that no longer blocks, so leaving it in would have been a false
+  # exemption - worse than no exemption.
+  #
+# The M3.2 Book Feature Library entry that was here on 2026-09-30 was DELETED the same
+# day: human LGTM granted the slice, the 10 analytics were implemented, and all 65 tests
+# went green (then this comment took its place). That is the entry doing its job —
+# check_collection.py reports a blocker that no longer blocks as STALE and demands
+# removal, so a cleared exemption cannot rot.
 #
 # The M2.7 backfill-driver entry that was here on 2026-09-29 was DELETED the same day,
 # after the implementation landed and its 35 tests went green. That is the entry doing

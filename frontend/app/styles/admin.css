@@ -188,6 +188,57 @@
   cursor: not-allowed;
 }
 
+/* --- M4.9 approval states ------------------------------------------------------
+   Chips for the frozen strategy-approval matrix (strategy_approval_store.py).
+   `is-rejected` already exists above; the other four are added so all five states
+   read distinctly (spec m4.9 section 3). */
+.state-chip.is-draft {
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.state-chip.is-testing {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.state-chip.is-approved {
+  border-color: var(--positive);
+  color: var(--positive);
+}
+
+.state-chip.is-discontinued {
+  border-color: var(--dim);
+  color: var(--dim);
+}
+
+/* One button per LEGAL_TRANSITIONS target, plus Refresh. Unlike .admin-danger this
+   control is live — the backend re-decides every click; disabled only in-flight. */
+.admin-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--type-micro);
+  cursor: pointer;
+}
+
+.admin-action:hover:not(:disabled) {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.admin-action:disabled {
+  color: var(--dim);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 @media (max-width: 900px) {
   .admin-surface {
     padding: 0.85rem;

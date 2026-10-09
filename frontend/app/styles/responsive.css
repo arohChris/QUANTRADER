@@ -43,29 +43,16 @@
     border-bottom: 1px solid var(--border);
   }
 
+  /* M10.4.12: collapsed on mobile means HIDDEN. The desktop glyph rail makes no
+     sense below 900px, so the menu appears only after the header toggle (and
+     closes on outside click, Escape, or a nav tap). */
   .sidebar.is-collapsed {
-    flex-basis: auto;
-  }
-
-  .sidebar.is-collapsed .primary-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 0.4rem 0.5rem;
-  }
-
-  .sidebar.is-collapsed .primary-nav a {
-    justify-content: flex-start;
-    padding: 0.4rem 0.55rem;
-  }
-
-  .sidebar.is-collapsed .nav-label {
-    display: inline;
+    display: none;
   }
 
   /* The rail becomes a horizontal band, so the groups must flow with it: a vertical
      group block inside a wrapping row would stack the whole nav into one column. */
-  .primary-nav,
-  .sidebar.is-collapsed .primary-nav {
+  .primary-nav {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -74,8 +61,7 @@
     padding: 0.4rem 0.5rem;
   }
 
-  .nav-group,
-  .sidebar.is-collapsed .nav-group {
+  .nav-group {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -85,8 +71,7 @@
     border-top: 0;
   }
 
-  .nav-group + .nav-group,
-  .sidebar.is-collapsed .nav-group + .nav-group {
+  .nav-group + .nav-group {
     margin: 0;
     padding: 0;
     border-top: 0;
@@ -94,8 +79,7 @@
 
   /* Group headings are useful in the band — they are the only thing separating the
      sections once everything is on one line. */
-  .nav-group-label,
-  .sidebar.is-collapsed .nav-group-label {
+  .nav-group-label {
     display: block;
     margin: 0;
     padding: 0;
@@ -103,8 +87,7 @@
 
   /* Access sits inline at the end of the band, and is always visible here because the
      rail no longer collapses to glyphs. */
-  .sidebar-access,
-  .sidebar.is-collapsed .sidebar-access {
+  .sidebar-access {
     visibility: visible;
     display: flex;
     flex-wrap: wrap;

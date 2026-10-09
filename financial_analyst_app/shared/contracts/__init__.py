@@ -29,7 +29,11 @@ from .portfolio import PortfolioState, Position
 from .reconciliation import Diff, ReconciliationReport
 from .risk import RiskDecision
 from .signal import Signal
+from .strategy_admin import StrategyAdmin
+from .strategy_approval import StrategyApproval, StrategyState
+from .strategy_subscription import StrategySubscription
 from .trade_plan import EntrySpec, StopSpec, TargetSpec, TimingSpec, TradePlan
+from .trading_preferences import TradingPreferences
 
 __all__ = [
     "AnalyticsResult",
@@ -60,11 +64,16 @@ __all__ = [
     "RiskDecision",
     "Signal",
     "StopSpec",
+    "StrategyAdmin",
+    "StrategyApproval",
+    "StrategyState",
+    "StrategySubscription",
     "TargetSpec",
     "Tick",
     "TimingSpec",
     "TradePlan",
     "TradePrint",
+    "TradingPreferences",
     "UnknownBrokerError",
     "UnknownInstrumentError",
 ]
@@ -117,4 +126,9 @@ for _cls in [
 # 2.0.0: MAJOR — AssetClass narrowed to forex|crypto|commodity only (index/equity/synthetic removed)
 #        per human directive 2026-09-22; breaking for any code that used removed members.
 # 2.1.0: minor — InternalTick 1.1 (Deriv field map: optional sizes/quote/pip_size); re-export InternalTick.
-__version__ = "2.1.0"
+# 2.2.0: minor — additive M1.5 briefing contracts (StrategyAdmin, TradingPreferences,
+#        StrategySubscription) — new consumers only, no existing field changed (AGENTS.md §5).
+# 2.3.0: minor — additive M4.8 approval-lifecycle contract (StrategyApproval,
+#        StrategyState) — new consumers only (M4 runner gate, M10.2 admin API);
+#        no existing contract field changed (AGENTS.md §5).
+__version__ = "2.3.0"

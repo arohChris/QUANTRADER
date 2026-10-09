@@ -313,7 +313,9 @@ def test_trader_ticket_has_required_manual_inputs() -> None:
     path = _FRONTEND / "app" / "TradingTicket.tsx"
     assert path.is_file()
     text = path.read_text(encoding="utf-8")
-    for field in ("Instrument", "Side", "Order type", "Quantity", "Entry", "Stop loss", "Take profit", "Preview", "Confirm"):
+    # Amendment m10.4.10 (logged in frontend/specs/m10.4.10_timeframe_dropdown.spec.md):
+    # "Timeframe" added to the required manual inputs — the ticket gains the field.
+    for field in ("Instrument", "Side", "Order type", "Quantity", "Entry", "Stop loss", "Take profit", "Timeframe", "Preview", "Confirm"):
         assert field in text
 
 

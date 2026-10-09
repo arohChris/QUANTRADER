@@ -155,6 +155,55 @@ class SessionRule:
     close_minute: int
     effective_from: datetime | None
     daily_windows: tuple[tuple[int, int], ...] = ()
+    #: ISO `YYYY-MM-DD` dates on which this class is shut ALL DAY, inherited from the class
+    #: standard (`asset_classes.yaml: holidays`, derived from the venue's `trading_times`
+    #: events rather than hand-kept). Per-INSTRUMENT holidays still arrive through the
+    #: constructor and are checked separately; this set is the class-wide half.
+    holidays: frozenset[str] = frozenset()
+    #: ISO date -> minute-of-day at which trading shuts early on that date ONLY. A RESTRICTION
+    #: and never an extension: it can only close the day earlier, never open it later. Metals
+    #: close at 16:30 on 2026-11-26 / 2027-01-18 / 2027-02-15 while normally running to 21:00.
+    early_closes: dict[str, int] = None  # type: ignore[assignment]
+    #: weekday (0=Mon) -> ((open_minute, close_minute), ...). Present only when the venue's
+    #: week is NOT one repeating span - e.g. metals, which runs two sessions Mon-Thu and ONE
+    #: on Friday. A day absent from this map is SHUT, so the map is exhaustive by
+    #: construction: forgetting Saturday means Saturday is closed, not open.
+    weekday_windows: dict[int, tuple[tuple[int, int], ...]] = None  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        # A frozen dataclass still needs real dicts for defaulted mutable fields; doing it
+        # here keeps the defaults immutable at class level and avoids a shared-dict bug where
+        # one rule's holidays or sessions would leak into another's.
+        if self.early_closes is None:
+            object.__setattr__(self, "early_closes", {})
+        if self.weekday_windows is None:
+            object.__setattr__(self, "weekday_windows", {})
+
+    def sessions_on(self, at: datetime) -> tuple[tuple[int, int], ...] | None:
+        """The windows for `at`'s weekday, or None when no per-weekday schedule is in force.
+
+        None (not an empty tuple) means "this rule does not use a per-weekday schedule", so
+        the caller falls back to the weekly window. An EMPTY tuple would mean "shut all day",
+        which is a different fact and must not be conflated.
+        """
+        if not self.weekday_windows:
+            return None
+        return self.weekday_windows.get(at.weekday(), ())
+
+    def in_weekday_window(self, at: datetime) -> bool:
+        """Minute-of-day membership in that weekday's windows. Half-open, so the exact close
+        minute is already shut. A day with no entry is shut all day."""
+        minute = at.hour * 60 + at.minute
+        return any(
+            start <= minute < end for start, end in (self.weekday_windows.get(at.weekday(), ()))
+        )
+
+    def closed_early_at(self, at: datetime) -> int | None:
+        """The early close minute for `at`'s date, or None if it is an ordinary day."""
+        return self.early_closes.get(at.date().isoformat())
+
+    def is_holiday(self, at: datetime) -> bool:
+        return at.date().isoformat() in self.holidays
 
     def window(self, at: datetime) -> tuple[datetime, datetime]:
         """The concrete [open, close) WEEKLY window containing `at`, in UTC.
@@ -300,6 +349,17 @@ class TradingCalendar:
             close_weekday=int(merged.get("close_weekday", 4)),
             close_minute=int(merged.get("close_minute", 0)),
             effective_from=effective_from,
+            # Class-wide dated exceptions, INHERITED from the class standard. A per-instrument
+            # override may add to them but never shrink them: a class-level closure is a fact
+            # about the venue's schedule, and one instrument cannot be "open" on Christmas.
+            holidays=frozenset(merged.get("holidays") or ()),
+            early_closes={
+                k: int(v) for k, v in (merged.get("early_closes") or {}).items()
+            },
+            weekday_windows={
+                int(day): tuple((int(a), int(b)) for a, b in wins)
+                for day, wins in (merged.get("weekday_windows") or {}).items()
+            },
         )
 
     def is_open(self, instrument_id: str, at: datetime, broker: str = "deriv") -> bool:
@@ -312,12 +372,29 @@ class TradingCalendar:
         _require_known_broker(broker)
         rule = self.rule_for(instrument_id, at)
 
-        # A holiday is a CLOSURE and beats any session window.
+        # A holiday is a CLOSURE and beats any session window. Two sources, both checked:
+        # a per-INSTRUMENT set passed to the constructor, and the class-wide set inherited
+        # from the class standard.
         if at.date() in self._holiday_dates.get(instrument_id, frozenset()):
+            return False
+        if rule.is_holiday(at):
+            return False
+
+        # A dated EARLY CLOSE is a restriction and never an extension: it can only shut the
+        # day sooner, never open it later. Checked BEFORE the always_open shortcut, because a
+        # venue maintenance closure applies to a 24/7 class too - crypto simply publishes none.
+        early = rule.closed_early_at(at)
+        if early is not None and (at.hour * 60 + at.minute) >= early:
             return False
 
         if rule.always_open:
             return True
+
+        # A per-WEEKDAY schedule supersedes both the weekly window and daily_windows: it is
+        # the only one of the three that can express "two sessions Mon-Thu, one on Friday".
+        # Checked before daily_windows so a class that declares it is unambiguous.
+        if rule.weekday_windows:
+            return rule.in_weekday_window(at)
 
         # An explicit daily window is a DIFFERENT concept from the weekly window: it is
         # membership in a minute-of-day range, not containment in a spanning week.
@@ -382,11 +459,32 @@ class TradingCalendar:
         while day < end:
             next_day = day + timedelta(days=1)
             lo, hi = max(day, start), min(next_day, end)
-            # A holiday is a whole-day closure and beats any session window.
-            if lo < hi and day.date() not in holiday_dates:
-                rule = self.rule_for(instrument_id, day)
+            # WHY the rule is resolved FIRST and the exceptions read off IT, rather than only
+            # the per-instrument holiday set: the class standard now carries venue-derived
+            # holidays and dated early closes, and `is_open` honours all three sources. If
+            # this function consulted only `self._holiday_dates` the two would DISAGREE - and
+            # the docstring above says a drifting second copy "would silently mislabel market
+            # closure as data loss, which is the exact failure this whole slice exists to
+            # prevent". Two agreeing implementations beat one correct and one stale.
+            rule = self.rule_for(instrument_id, day)
+            is_holiday = (
+                day.date() in holiday_dates or rule.is_holiday(day)
+            )
+            early = rule.closed_early_at(day)
+            if early is not None:
+                # A restriction, never an extension: clip the DAY's span to the early close.
+                hi = min(hi, day + timedelta(minutes=early))
+            if lo < hi and not is_holiday:
                 if rule.always_open:
                     spans.append((lo, hi))
+                elif rule.weekday_windows:
+                    # Same source of truth as `is_open`, read off the SAME rule - the two
+                    # must not drift, or closure gets mislabelled as data loss.
+                    for open_min, close_min in rule.weekday_windows.get(day.weekday(), ()):
+                        a = max(day + timedelta(minutes=open_min), lo)
+                        b = min(day + timedelta(minutes=close_min), hi)
+                        if a < b:
+                            spans.append((a, b))
                 elif rule.daily_windows:
                     for open_min, close_min in rule.daily_windows:
                         a = max(day + timedelta(minutes=open_min), lo)

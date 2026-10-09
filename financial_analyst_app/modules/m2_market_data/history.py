@@ -278,7 +278,12 @@ class DerivHistoryFetcher:
         return HistoryBar(
             instrument_id=instrument_id, broker=broker,
             interval_start=at, interval_end=at + timedelta(seconds=GRANULARITY),
-            open=o, high=h, low=low, close=c, tick_count=1, source="backfill:deriv",
+            open=o, high=h, low=low, close=c, source="backfill:deriv",
+            # WHY `tick_count` is NOT passed here (Candle 2.0.0, human §5 2026-09-29): the
+            # venue does not send one, so any value written here is invented. The field
+            # survives on HistoryBar ONLY as the T9 presence guard's input (backfill.py:390),
+            # where 1 means "unattested", not "one tick". It never reaches the Candle contract
+            # or the store, which is where the fabrication used to do real damage.
         )
 
 
@@ -300,6 +305,11 @@ class WebSocketTransport:
         self._connect = connect
         self._timeout = timeout
         self._ws: Any = None
+        # Replies seen that answered some OTHER request, kept so a later request can still
+        # claim them. Skipping-and-discarding a foreign frame loses real data: if request 2's
+        # reply arrives while we are waiting on request 1, dropping it means request 2 then
+        # blocks until its own reply never comes. Keyed by req_id, which the venue echoes.
+        self._pending: dict[Any, dict[str, Any]] = {}
 
     async def __aenter__(self) -> Self:
         if self._connect is not None:
@@ -316,6 +326,11 @@ class WebSocketTransport:
     async def __call__(self, request: dict[str, Any]) -> dict[str, Any]:
         if self._ws is None:
             raise BrokerHistoryError("transport is not connected; use `async with`")
+        want_req_id = request.get("req_id")
+        # A reply for this request may already be waiting from an earlier out-of-order
+        # arrival. Claim it before touching the socket at all.
+        if want_req_id is not None and want_req_id in self._pending:
+            return self._pending.pop(want_req_id)
         await self._ws.send(json.dumps(request))
         while True:
             raw = await asyncio_wait(self._ws, self._timeout)
@@ -332,8 +347,29 @@ class WebSocketTransport:
                 )
             if "error" in frame:
                 return frame
-            if frame.get("msg_type") in self._ACTIONABLE:
-                return frame
+            if frame.get("msg_type") not in self._ACTIONABLE:
+                continue
+            # CORRELATE BY req_id, NOT BY ARRIVAL ORDER. MEASURED 2026-09-30: this used to
+            # accept any actionable frame, so a late or out-of-order reply was handed back
+            # as if it answered the current request - and the caller then stored ANOTHER
+            # INSTRUMENT'S BARS. It surfaced in the audit as class C1 "mismatches" that were
+            # not corrupt data but crossed values (FX.GBPAUD stored=1.89154 matching
+            # FX.GBPCHF broker=1.89154). The venue demonstrably echoes req_id: req_id 901 for
+            # frxGBPCHF returned open 1.10812 and req_id 902 for frxGBPAUD returned 1.9101,
+            # correctly matched. So the correlation was available and simply unused.
+            #
+            # A frame that OMITS req_id is still accepted: we cannot prove it foreign, and
+            # rejecting it would turn a cosmetic omission into an infinite wait for a reply
+            # that never comes. An error frame above is likewise returned unconditionally -
+            # an error IS an answer, and swallowing it would make a rate-limit refusal look
+            # like a hang.
+            got_req_id = frame.get("req_id")
+            if want_req_id is not None and got_req_id is not None and got_req_id != want_req_id:
+                # Not ours, but it is a real answer to a real request - keep it so whoever
+                # asked for it can collect it, rather than discarding it on the floor.
+                self._pending[got_req_id] = frame
+                continue
+            return frame
 
 
 async def websockets_connect(url: str) -> Any:

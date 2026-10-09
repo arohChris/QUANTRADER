@@ -119,16 +119,18 @@ def history_candles_from_response(msg: object, *, timeframe: str = "1m") -> list
         if not all(map(_finite, (open_, high, low, close))):
             continue
         start = datetime.fromtimestamp(epoch, tz=UTC)
-        volume = row.get("volume")
         candles.append(
             Candle(
                 open=open_,
                 high=high,
                 low=low,
                 close=close,
-                tick_count=volume
-                if isinstance(volume, int) and not isinstance(volume, bool)
-                else 0,
+                # WHY `volume` is no longer mapped to a tick count (Candle 2.0.0, human §5
+                # 2026-09-29): the venue sends no tick count and no volume, and this mapping
+                # invented one — a real int when the row happened to carry `volume`, and a
+                # silent 0 when it did not, so a missing field and a genuine zero-minute were
+                # indistinguishable in the store. The field is gone from the contract; there
+                # is nothing honest left to put here.
                 interval=timeframe,
                 interval_start=start,
                 interval_end=start + timedelta(seconds=_GRANULARITY_S),
@@ -205,17 +207,18 @@ def append_series(series: list[Candle], candle: Candle) -> None:
 def candle_row(c: Candle) -> dict[str, object]:
     """WHY ONE serializer for every candle jsonl row (spec helper 7, amended
     2026-09-26 ACTION 62): the live writer hand-rolled a 4-key dict (missing
-    interval_end/high/low) while the seed writer emitted 7 — every live bar was a
-    partial the m4.6 reader had to skip+count. One shape, seed == live."""
+    interval_end/high/low) while the seed writer emitted 7 -> every live bar was a
+    partial the m4.6 reader had to skip+count. One shape, seed == live.
+
+    6 keys as of 2026-09-29 (was 7): `tick_count` is gone with the Candle 2.0.0 field."""
     return {
         "interval_start": c.interval_start.isoformat(),
         "interval_end": c.interval_end.isoformat(),
         "open": c.open,
         "high": c.high,
         "low": c.low,
-        "close": c.close,
-        "tick_count": c.tick_count,
-    }
+            "close": c.close,
+        }
 
 
 def reconnect_delay(

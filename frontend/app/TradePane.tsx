@@ -1,5 +1,6 @@
 import { Bot, UserRound } from "lucide-react";
 import { ExperimentChart, MarketToolbar, type MarketControls, type Theme } from "./MarketPanel";
+import TradeSummaryHeader from "./TradeSummaryHeader";
 import TradingTicket from "./TradingTicket";
 import type { ExperimentMarket } from "./experiment_market";
 
@@ -39,6 +40,7 @@ export default function TradePane({
 
   return (
     <section className="workspace trade-pane" aria-label="Trade pane">
+      <TradeSummaryHeader />
       <div className="trade-pane-main">
         <section className="panel chart-panel">
           <h2>Execution chart</h2>

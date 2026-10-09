@@ -1,9 +1,9 @@
-"""WHY: M4.2 Live Signals Console Step 3 — tests written against
+"""WHY: M4.2 Live Signals Console Step 3 Ã¢â‚¬â€ tests written against
 docs/specs/m4.2_live_signals.spec.md BEFORE scripts/verify_m4.2_live_signals.py
 exists (human directive ACTION 57, 2026-09-26, blanket covering this observation
-tool end-to-end; no new calculations — pure conversion/composition helpers only).
+tool end-to-end; no new calculations Ã¢â‚¬â€ pure conversion/composition helpers only).
 
-RED at collection: FileNotFoundError on the script import — honest
+RED at collection: FileNotFoundError on the script import Ã¢â‚¬â€ honest
 tests-before-code, same discipline as test_m4.1_spec.py.
 """
 from __future__ import annotations
@@ -64,16 +64,7 @@ def test_history_three_candles_roundtrip_sorted_and_fields():
     assert first.interval_end == datetime.fromtimestamp(E1 + 60, tz=UTC)
     assert first.open == 1.08540 and first.close == 1.08570
     assert first.high == 1.08600 and first.low == 1.08500
-    assert first.tick_count == 0
     assert first.quality_status == "COMPLETE"
-
-
-def test_history_volume_int_becomes_tick_count():
-    candles = mod.history_candles_from_response(
-        {"candles": [_row(epoch=E1, volume=12), _row(epoch=E2, volume=3.7)]}
-    )
-    assert candles[0].tick_count == 12
-    assert candles[1].tick_count == 0  # non-int volume → 0, never coerced
 
 
 def test_history_rejects_non_dict_msg():
@@ -88,7 +79,7 @@ def test_history_rejects_missing_candles_key():
 
 
 def test_history_rejects_empty_candles_seed_never_passes():
-    # E3 mirror: an empty seed must never pass — the console exits 1 on it.
+    # E3 mirror: an empty seed must never pass Ã¢â‚¬â€ the console exits 1 on it.
     with pytest.raises(HistoryResponseError, match="empty"):
         mod.history_candles_from_response({"candles": []})
 
@@ -103,9 +94,9 @@ def test_history_skips_invalid_rows_keeps_valid():
     msg = {
         "candles": [
             _row(epoch=E1),
-            _row(epoch="abc"),  # bad epoch → skipped
-            _row(epoch=True),  # bool epoch → skipped (adversarial)
-            _row(epoch=E1 + 300, close="abc"),  # non-numeric OHLC → skipped
+            _row(epoch="abc"),  # bad epoch Ã¢â€ â€™ skipped
+            _row(epoch=True),  # bool epoch Ã¢â€ â€™ skipped (adversarial)
+            _row(epoch=E1 + 300, close="abc"),  # non-numeric OHLC Ã¢â€ â€™ skipped
             _row(epoch=E2 + 300),
         ]
     }
@@ -148,7 +139,7 @@ def test_slot_features_complete_then_evaluate_matches_m4_2_golden():
     assert mapped == {"fast": 101.0, "slow": 100.0, "rsi": 65.0}
     assert missing == []
     # Hand calc (m4.2 golden): fast 101 > slow 100, gap = 1.0% >= full 1.0%,
-    # rsi 65 >= threshold 60 → full long strength 1.0
+    # rsi 65 >= threshold 60 Ã¢â€ â€™ full long strength 1.0
     assert trend_following.evaluate(mapped, dict(trend_following.PARAM_DEFAULTS)) == 1.0
 
 
@@ -175,7 +166,7 @@ def test_slot_features_adversarial_none_analytics_all_missing():
     assert missing == ["z=zscore_20"]
 
 
-# --- append_series: replace-or-append (amended spec §helper 5) -----------------
+# --- append_series: replace-or-append (amended spec Ã‚Â§helper 5) -----------------
 
 
 def test_append_series_appends_new_interval():
@@ -216,7 +207,7 @@ def test_append_series_adversarial_duplicate_only_once():
 
 
 def test_verdict_direction_goldens():
-    # Hand calc: m4.2 strength contract — +long, -short, 0 none, boundaries inclusive
+    # Hand calc: m4.2 strength contract Ã¢â‚¬â€ +long, -short, 0 none, boundaries inclusive
     assert mod.verdict(0.75) == ("LONG", "0.75")
     assert mod.verdict(-0.5) == ("SHORT", "-0.5")
     assert mod.verdict(0.0) == ("NONE", "0.0")
@@ -266,19 +257,19 @@ def test_reconnect_delay_adversarial_million_attempts_no_overflow():
 
 
 # --- candle_row: ONE serializer for all candle jsonl rows ---------------------
-# (amended spec helper 7 — ACTION 62, 2026-09-26: the live writer emitted only
-#  interval_start/open/close/tick_count; missing interval_end/high/low made every
-#  live bar a partial the m4.6 reader had to skip — test written BEFORE the fix)
+# (spec helper 7, ACTION 62 2026-09-26: the live writer emitted only 4 keys, so every
+#  live bar was a partial the m4.6 reader had to skip. One shape, seed == live.)
+#
+# (Candle 2.0.0, 2026-09-29: 7 keys -> 6. `tick_count` is gone with the contract field.)
 
 
-def test_candle_row_seven_fields_match_history_writer():
-    c = mod.history_candles_from_response(
-        {"candles": [_row(epoch=E1, volume=17)]}
-    )[0]
+def test_candle_row_six_fields_match_history_writer():
+    c = mod.history_candles_from_response({"candles": [_row(epoch=E1)]})[0]
     row = mod.candle_row(c)
     assert set(row) == {
-        "interval_start", "interval_end", "open", "high", "low", "close", "tick_count",
+        "interval_start", "interval_end", "open", "high", "low", "close",
     }
+    assert "tick_count" not in row, "the field is gone; a stale 7-key row would lie again"
     assert row["interval_start"] == c.interval_start.isoformat()
     assert row["interval_end"] == c.interval_end.isoformat()  # start + 60s
     assert (row["open"], row["high"], row["low"], row["close"]) == (
@@ -287,16 +278,24 @@ def test_candle_row_seven_fields_match_history_writer():
 
 
 def test_candle_row_json_roundtrip_keeps_interval_end():
-    row = mod.candle_row(
-        mod.history_candles_from_response({"candles": [_row(epoch=E1, volume=17)]})[0]
-    )
+    row = mod.candle_row(mod.history_candles_from_response({"candles": [_row(epoch=E1)]})[0])
     back = json.loads(json.dumps(row))
-    # Regression: the pre-fix live row had NO interval_end — reader skipped it
+    # Regression: the pre-fix live row had NO interval_end -> the reader skipped it
     assert back["interval_end"] == datetime.fromtimestamp(E1 + 60, tz=UTC).isoformat()
-    assert back["tick_count"] == 17
 
 
-def test_candle_row_adversarial_zero_tick_candle_still_complete():
-    c = mod.history_candles_from_response({"candles": [_row(epoch=E2)]})[0]
-    assert c.tick_count == 0  # absent volume -> 0, never coerced
-    assert len(mod.candle_row(c)) == 7
+def test_history_response_ignores_volume_entirely():
+    """The venue sends no volume, and Candle 2.0.0 removed the field it was mapped into.
+
+    This function used to read `row["volume"]`, pass a real int through when the row had
+    one, and write a silent 0 when it did not - so a MISSING field and a genuine
+    zero-volume minute were indistinguishable downstream. Now neither is invented.
+    """
+    with_volume = mod.history_candles_from_response(
+        {"candles": [_row(epoch=E1, volume=17)]}
+    )[0]
+    without = mod.history_candles_from_response({"candles": [_row(epoch=E2)]})[0]
+    assert "tick_count" not in type(with_volume).model_fields
+    # identical OHLC, identical field set, whatever the row claimed
+    assert set(mod.candle_row(with_volume)) == set(mod.candle_row(without))
+    assert len(mod.candle_row(without)) == 6

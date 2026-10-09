@@ -124,7 +124,6 @@ class CandleBuilder:
                 "low": price,
                 "close": price,
                 "close_ts": exchange,
-                "tick_count": 1,
                 "spreads": [],
             }
         else:
@@ -137,7 +136,6 @@ class CandleBuilder:
             if exchange >= self._open["close_ts"]:
                 self._open["close"] = price
                 self._open["close_ts"] = exchange
-            self._open["tick_count"] += 1
             if md.quality == DataQuality.gapped:
                 self._gapped = True
 
@@ -182,7 +180,6 @@ class CandleBuilder:
             high=o["high"],
             low=o["low"],
             close=o["close"],
-            tick_count=o["tick_count"],
             average_spread=avg_spread,
             min_spread=min_spread,
             max_spread=max_spread,

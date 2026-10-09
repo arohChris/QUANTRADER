@@ -1,25 +1,25 @@
 """
-P16 / M3.1 Feature Engine — orchestration — Spec tests (WRITTEN BEFORE CODE).
-WHY: AGENTS.md §2 Step 3 — tests first against docs/specs/m3.1_feature_engine.spec.md
+P16 / M3.1 Feature Engine â€” orchestration â€” Spec tests (WRITTEN BEFORE CODE).
+WHY: AGENTS.md Â§2 Step 3 â€” tests first against docs/specs/m3.1_feature_engine.spec.md
 REV3 (ACTION 36 change list applied 2026-09-25).
 
-Direct impl import ONLY — no importorskip. Collection RED until Step 5
+Direct impl import ONLY â€” no importorskip. Collection RED until Step 5
 (honest "not implemented"; house style per test_m3.0_spec.py); after impl,
-100% pass, 0 skips (§2 Step 6).
+100% pass, 0 skips (Â§2 Step 6).
 
-Covers REV3 §Test plan (36 named) + 2 edge-coverers (profile-missing-at-load,
+Covers REV3 Â§Test plan (36 named) + 2 edge-coverers (profile-missing-at-load,
 commodity profile map) = 38. Contract tests import ONLY frozen AnalyticsResult
-path via engine output — no shared contract change (no bump).
-No money path -> no hand-calc (spec §Test plan "Money: none").
+path via engine output â€” no shared contract change (no bump).
+No money path -> no hand-calc (spec Â§Test plan "Money: none").
 
-ACTION 36 amendments (now spec'd in REV3 §Contracts/§Edges):
+ACTION 36 amendments (now spec'd in REV3 Â§Contracts/Â§Edges):
   M3.1-a: provides_regime module must expose REGIME_LABEL(value)->str
           (engine sets result.regime = REGIME_LABEL(computed_value)).
   M3.1-b: registry.register validates compute signature == (candles, params)
-          at register time (Isolation Law enforcement, spec §Contracts).
+          at register time (Isolation Law enforcement, spec Â§Contracts).
   M3.1-c: Profiles maps asset_class "commodity" -> commodities.yaml.
   36-REV3: planner dependency union; PIT-vs-depth (as_of != depth);
-          §6a.4 broker parity; completion guard; calendar-TF ban;
+          Â§6a.4 broker parity; completion guard; calendar-TF ban;
           partial history never silently truncated.
 """
 from __future__ import annotations
@@ -39,7 +39,7 @@ from pydantic import ValidationError
 from modules.m2_market_data import candles as m2_candles
 from modules.m3_analytics.capability.capability_registry import CapabilityRegistry
 
-# Direct impl import — fails collection until Step 5 (honest RED).
+# Direct impl import â€” fails collection until Step 5 (honest RED).
 from modules.m3_analytics.engine.analytics_registry import (
     AnalyticsRegistry,
     DataRequirement,
@@ -65,7 +65,7 @@ _T0 = datetime(2026, 1, 1, 12, 0, tzinfo=_UTC)
 
 
 class FakeProvider:
-    """Records every get_candles call (§6a.4 port shape)."""
+    """Records every get_candles call (Â§6a.4 port shape)."""
 
     def __init__(self, candles: list[Candle] | None = None, error: Exception | None = None):
         self.candles = candles or []
@@ -88,7 +88,7 @@ class FakeProvider:
                 "window_start": window_start,
                 "window_end": window_end,
                 "as_of": as_of,
-                "broker": broker,  # §6a.4 parity — REV3 restored the arg
+                "broker": broker,  # Â§6a.4 parity â€” REV3 restored the arg
             }
         )
         if self.error is not None:
@@ -152,7 +152,7 @@ def _candles(n: int, *, interval: str = "5m", start: datetime = _T0) -> list[Can
 
 
 class _FixtureAnalytic:
-    """D4 fixture analytic — exposes exactly NAME / REQUIREMENTS / compute (spec §Contracts)."""
+    """D4 fixture analytic â€” exposes exactly NAME / REQUIREMENTS / compute (spec Â§Contracts)."""
 
     NAME: str
     REQUIREMENTS: DataRequirement
@@ -251,7 +251,7 @@ def _request(
     )
 
 
-# --- 1-3: request validation (spec §Edges) ---
+# --- 1-3: request validation (spec Â§Edges) ---
 
 
 async def test_request_validated_timeframe_unknown_rejected():
@@ -262,7 +262,7 @@ async def test_request_validated_timeframe_unknown_rejected():
 
 def test_naive_as_of_rejected():
     with pytest.raises(ValidationError):
-        _request(as_of=datetime(2026, 1, 1, 12, 0))  # noqa: DTZ001 — WHY naive: the rejection case itself
+        _request(as_of=datetime(2026, 1, 1, 12, 0))  # noqa: DTZ001 â€” WHY naive: the rejection case itself
 
 
 def test_empty_features_rejected():
@@ -290,9 +290,9 @@ async def test_all_unavailable_returns_empty_unavailable_no_raise(
     monkeypatch: pytest.MonkeyPatch,
 ):
     # D4 compliance proof: a scan of an EMPTY analytics/ package = empty, not crash.
-    # DECLARED AMENDMENT (m3.2 spec §Amendment, spec LGTM 2026-09-25): the former
+    # DECLARED AMENDMENT (m3.2 spec Â§Amendment, spec LGTM 2026-09-25): the former
     # literal `from_package().names() == ()` broke the moment P17 compute files
-    # landed — fix (a) monkeypatches a SYNTHETIC empty package into the scan
+    # landed â€” fix (a) monkeypatches a SYNTHETIC empty package into the scan
     # (zero production change; from_package() signature stays frozen).
     real_import = importlib.import_module
 
@@ -314,15 +314,42 @@ async def test_all_unavailable_returns_empty_unavailable_no_raise(
     assert "unknown_feature" in res.capability_warning
 
 
-async def test_proxy_feature_included_with_warning():
+async def test_proxy_feature_included_with_warning(tmp_path):
+    """The PROXY_LIMITED MECHANISM, tested against a capability config of its own.
+
+    This test used to read the shipped `config/capabilities.yaml` and borrow the real
+    `tick_rate` entry (PROXY_LIMITED, warning "tick_count != volume") as its example. That
+    coupled a unit test to config CONTENT, so deleting that entry as part of the Candle 2.0.0
+    migration broke the mechanism test for no reason. A synthetic PROXY_LIMITED feature now
+    proves the same behaviour, and this test keeps proving it regardless of which real
+    features are proxies - or whether any are.
+    """
+    cap_yaml = tmp_path / "capabilities.yaml"
+    cap_yaml.write_text(
+        "version: 1\n"
+        "features:\n"
+        "  synthetic_proxy:\n"
+        "    status: PROXY_LIMITED\n"
+        "    method: derived_from_something\n"
+        "    warning: 'synthetic_proxy is a stand-in'\n"
+        "    requires: [price]\n",
+        encoding="utf-8",
+    )
     reg = AnalyticsRegistry()
-    reg.register(_analytic("tick_rate"))
-    engine = _engine(provider=FakeProvider(_candles(12)), registry=reg)
-    res = await engine.get_features(_request(features=("tick_rate",)))
-    assert res.features == {"tick_rate": 42.0}
+    reg.register(_analytic("synthetic_proxy"))
+    engine = _engine(
+        provider=FakeProvider(_candles(12)),
+        registry=reg,
+        cap_registry=CapabilityRegistry.from_yaml(cap_yaml),
+    )
+    res = await engine.get_features(_request(features=("synthetic_proxy",)))
+    assert res.features == {"synthetic_proxy": 42.0}
     assert res.capability_status is CapabilityStatus.PROXY_LIMITED
     assert res.capability_warning is not None
-    assert "tick_count \u2260 volume" in res.capability_warning
+    assert "synthetic_proxy is a stand-in" in res.capability_warning
+    # PROXY_LIMITED is a WARNING, not a refusal - the value is still returned.
+    # UNAVAILABLE (asserted in the test above) is the status that drops the feature.
+    assert res.features["synthetic_proxy"] == 42.0
 
 
 async def test_unknown_analytic_dropped_with_warning():
@@ -349,7 +376,7 @@ async def test_dependency_computed_before_dependent():
     assert res.features == {"ema_20": 42.0}  # dep value computed but NOT returned
 
 
-# --- 9-10: §8b quality gates ---
+# --- 9-10: Â§8b quality gates ---
 
 
 async def test_insufficient_history_omitted_with_warning():
@@ -374,7 +401,7 @@ async def test_warmup_history_computed_with_flag():
     assert "WARMUP_INCOMPLETE:rsi_14" in res.capability_warning
 
 
-# --- 11: param precedence (spec §Scope: overrides > profile > defaults) ---
+# --- 11: param precedence (spec Â§Scope: overrides > profile > defaults) ---
 
 
 async def test_param_precedence_overrides_beat_profile_beat_defaults():
@@ -674,7 +701,7 @@ def test_tf_registry_parity_with_m2_candles():
     assert INTERVAL_MINUTES == m2_candles._INTERVAL_MINUTES  # drift-proof lock
 
 
-# --- 31-32: profile loader edges (spec §Edges + amendment M3.1-c) ---
+# --- 31-32: profile loader edges (spec Â§Edges + amendment M3.1-c) ---
 
 
 def test_profile_missing_at_load_fails_loud():
@@ -690,7 +717,7 @@ def test_profile_commodity_maps_to_commodities_yaml():
     assert isinstance(profiles.get("forex"), dict)
 
 
-# --- 33-38: ACTION 36 / REV3 — planner union, PIT-vs-depth, §6a.4, guards ---
+# --- 33-38: ACTION 36 / REV3 â€” planner union, PIT-vs-depth, Â§6a.4, guards ---
 
 
 async def test_planner_window_widens_to_dependency_requirements():
@@ -729,7 +756,7 @@ async def test_as_of_shift_keeps_depth_span_constant():
 
 
 async def test_provider_receives_broker_argument():
-    # §6a.4 signature parity: broker is part of the port (REV3; REV2 dropped it).
+    # Â§6a.4 signature parity: broker is part of the port (REV3; REV2 dropped it).
     provider = FakeProvider(_candles(12))
     reg = AnalyticsRegistry()
     reg.register(_analytic("rsi_14"))

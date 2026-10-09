@@ -376,3 +376,34 @@ export const MOCK_RISK_DECISION: RiskDecision = {
   },
   latency_budget_ms: 10,
 };
+
+// M10.4.11 trade summary (dashboard header). Bucket semantics are ours; the SCOPING
+// fields are contract-shaped: user_id/broker (portfolio.py), Order.state buckets
+// (order.py: pending/submitted/acked/partially_filled = active, filled = closed,
+// rejected = rejected). The VALUES are precomputed mock aggregates — the frontend
+// never derives them (frontend_spec.md money law); real figures wire to M6/M7 later.
+// Hand check: the day record reconciles to MOCK_ORDERS above (2 active incl. the
+// unknown probe, 1 filled closed, 1 rejected); larger periods are mock growth from
+// the same account. Period keys are lowercase words (spec Amendment A1) so they
+// never collide with the chart-timeframe literals banned app-wide by M10.4.10.
+export type TradeSummaryPeriod = "day" | "week" | "month" | "year" | "all";
+
+export type TradeSummary = {
+  period: TradeSummaryPeriod;
+  user_id: string | null;
+  broker: string | null;
+  active: number;
+  closed: number;
+  rejected: number;
+  total_pnl: number | null; // backend-owned money, precomputed, signed USD
+};
+
+export const TRADE_SUMMARY_PERIODS: TradeSummaryPeriod[] = ["day", "week", "month", "year", "all"];
+
+export const MOCK_TRADE_SUMMARY: Record<TradeSummaryPeriod, TradeSummary> = {
+  day: { period: "day", user_id: "42", broker: "deriv", active: 2, closed: 1, rejected: 1, total_pnl: 42.1 },
+  week: { period: "week", user_id: "42", broker: "deriv", active: 3, closed: 7, rejected: 2, total_pnl: 218.45 },
+  month: { period: "month", user_id: "42", broker: "deriv", active: 4, closed: 24, rejected: 5, total_pnl: -86.2 },
+  year: { period: "year", user_id: "42", broker: "deriv", active: 5, closed: 168, rejected: 17, total_pnl: 1240.55 },
+  all: { period: "all", user_id: "42", broker: "deriv", active: 5, closed: 402, rejected: 39, total_pnl: 2964.3 },
+};

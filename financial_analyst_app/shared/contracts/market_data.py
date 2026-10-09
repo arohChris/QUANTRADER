@@ -43,7 +43,7 @@ class CapabilityStatus(str, Enum):
 
     FULLY_SUPPORTED = "FULLY_SUPPORTED"
     DERIVED = "DERIVED"  # e.g., ATR from tick range proxy — honest
-    PROXY_LIMITED = "PROXY_LIMITED"  # tick_count as volume proxy — must warn UI
+    PROXY_LIMITED = "PROXY_LIMITED"  # derived from a proxy, not a native venue field — warn UI
     UNAVAILABLE = "UNAVAILABLE"  # order_book_imbalance on Deriv
     REQUIRES_EXTERNAL_DATA = "REQUIRES_EXTERNAL_DATA"
 
@@ -60,12 +60,30 @@ class Tick(BaseModel):
 
 
 class Candle(BaseModel):
+    """One OHLC bar. **Contract version 2.0.0** (2026-09-29, human §5 sign-off).
+
+    Consumers: M2.4 (legacy tick-built builder, being archived), M2.7 backfill, M2.10 WARM/Timescale,
+    M2.11 live E2E, M2.13 broker-candle ingest, M3.1/M3.2/P18 analytics, M4.2 live signals, M10.2.
+
+    **2.0.0 REMOVED `tick_count: int = 0`.** WHY: the venue's `ticks_history style:"candles"`
+    carries no tick count and no volume — the schema is `additionalProperties: false`. So every
+    broker-sourced bar was writing a FABRICATED `tick_count=1` (103,867 of 104,069 stored rows),
+    which made `tick_rate` return a constant 1.0 across the whole store and read as a real
+    measurement. A fabricated metric that looks real is worse than an absent one.
+    Consequence for readers: a bar's provenance is `quality_status` (`BROKER` = the venue's own
+    OHLC, `COMPLETE` = tick-built, `GAP_AFFECTED` = watermark hole), never a count.
+
+    **2.0.0 ALSO ADDED the `version` field this contract never had.** AGENTS.md §5 requires
+    versioned contracts; `Candle` was unversioned. It is added HERE, inside the deliberate
+    major bump, and not as an incidental implementation detail.
+    """
+
     model_config = ConfigDict(frozen=True, extra="forbid")
+    version: str = Field(default="2.0.0", description="Contract version — 2.0.0 dropped tick_count")
     open: float
     high: float
     low: float
     close: float
-    tick_count: int = 0
     average_spread: float | None = None
     min_spread: float | None = None
     max_spread: float | None = None

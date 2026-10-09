@@ -1,9 +1,12 @@
 """WHY: M3.2 Step 7 — real-data verification of the 12 P18 compute files
 (spec docs/specs/m3.2_p18_per_asset.spec.md §Verify). NOT unit tests: proves D4
-discovery finds all 15 (P17+P18) files, the hand goldens hold outside pytest,
-TWO independent atr_14/adx_14 implementations agree on a deterministic 60-bar
-walk seeded from a REAL sample close, and an engine e2e over the walk returns all
-12 features FULLY_SUPPORTED with real forex profiles.
+discovery finds all 34 (P17+P18+Book batch 1 + m4.7 batch — declared §7
+amendments; also removes the
+stale `tick_rate` expectation left since the Candle 2.0.0 deletion), the hand
+goldens hold outside pytest, TWO independent atr_14/adx_14 implementations agree
+on a deterministic 60-bar walk seeded from a REAL sample close, and an engine
+e2e over the walk returns all 12 features FULLY_SUPPORTED with real forex
+profiles.
 
 Usage: python scripts/verify_m3.2_p18.py
 Exit: 0 = all checks OK · 1 = any check failed. Latency line is ADVISORY only
@@ -52,24 +55,74 @@ _ASSETS_DIR = ROOT / "config" / "assets"
 _WALK_SEED = 20260925
 _REAL_SAMPLE_CLOSE = 1.08548  # from data/sample_ticks_realistic.jsonl (M2.4 output)
 
-_EXPECTED_15 = [
+_EXPECTED_34 = [
     "adx_14",
+    "anchored_twap",
     "atr_14",
+    "atr_percentile_rank",
+    "bar_low",
     "bb_percent",
+    "bollinger_bandwidth",
+    "bollinger_bandwidth_percentile",
     "choppiness",
+    "close_change",
+    "close_position",
     "donchian_20",
+    "efficiency_ratio",
     "ema_20",
+    "ema_21",
+    "ema_55",
+    "ema_8",
     "hurst",
+    "last_close",
     "macd",
+    "market_state",
+    "ols_r_squared",
+    "rejection_bar",
     "returns",
     "rsi_14",
     "sma_20",
     "std_20",
-    "tick_rate",
+    "supertrend_flip",
+    "sweep_reversal",
+    "swing_high",
+    "swing_low",
+    "variance_ratio",
     "vol_regime",
     "zscore_20",
 ]
-_P18 = [name for name in _EXPECTED_15 if name not in ("ema_20", "rsi_14", "tick_rate")]
+# P18 batch = everything that is NOT P17 (ema/rsi) and NOT Book batch 1 (§7 amendment).
+_P17 = ("ema_20", "rsi_14")
+_BOOK = (
+    "anchored_twap",
+    "atr_percentile_rank",
+    "bollinger_bandwidth",
+    "bollinger_bandwidth_percentile",
+    "efficiency_ratio",
+    "market_state",
+    "ols_r_squared",
+    "swing_high",
+    "swing_low",
+    "variance_ratio",
+)
+# m4.7 batch (declared amendment 2) — excluded so _P18 stays exactly the 12 P18 files.
+_M47 = (
+    "bar_low",
+    "close_change",
+    "close_position",
+    "ema_21",
+    "ema_55",
+    "ema_8",
+    "last_close",
+    "rejection_bar",
+    "supertrend_flip",
+    "sweep_reversal",
+)
+_P18 = [
+    name
+    for name in _EXPECTED_34
+    if name not in _P17 and name not in _BOOK and name not in _M47
+]
 
 _failures: list[str] = []
 
@@ -81,8 +134,10 @@ def _check(label: str, ok: bool, detail: str = "") -> bool:
     return ok
 
 
-def _mk_candles(closes: list[float], *, ticks: int = 5) -> list[Candle]:
-    """Minimal 1m candles with given closes (fixture series for computes)."""
+def _mk_candles(closes: list[float]) -> list[Candle]:
+    """Minimal 1m candles with given closes (fixture series for computes).
+    WHY no tick_count: Candle 2.0.0 removed the field (extra=forbid) — the old
+    `tick_count=ticks` arg raised ValidationError after the contract migration."""
     end = datetime(2026, 6, 1, 12, 0, tzinfo=UTC)  # tz-aware: as_of validator
     out = []
     for i, close in enumerate(closes):
@@ -93,7 +148,6 @@ def _mk_candles(closes: list[float], *, ticks: int = 5) -> list[Candle]:
                 high=close,
                 low=close,
                 close=close,
-                tick_count=ticks,
                 interval="1m",
                 interval_start=start,
                 interval_end=start + timedelta(minutes=1),
@@ -169,7 +223,7 @@ async def main() -> int:
     # --- 1. D4 discovery -------------------------------------------------------
     names = sorted(AnalyticsRegistry.from_package().names())
     print(f"discovery ({len(names)}): {names}")
-    _check("D4 discovery finds exactly the 15 P17+P18 names", names == _EXPECTED_15)
+    _check("D4 discovery finds exactly the 34 P17+P18+Book+m4.7 names", names == _EXPECTED_34)
     _check("all 12 P18 files discoverable", all(n in names for n in _P18))
 
     # --- 2. golden exactness (outside pytest, from the spec table) -------------

@@ -1,8 +1,10 @@
 """WHY: M4.1 Step 7 — real-config verification of the Strategy Registry
-(spec docs/specs/m4.1_strategy_registry.spec.md §Verify, EXIT 0/1). NOT unit
-tests: re-runs the P22 gate against the REAL 7 strategy files, the REAL
+(spec docs/specs/m4.1_strategy_registry.spec.md §Verify, EXIT 0/1; m4.7 spec
+DECLARED AMENDMENT 4 2026-10-02: exact-7 count -> the discovered 12, eligibility
+stays iterate-all over names). NOT unit tests: re-runs the P22 gate against the
+REAL 12 strategy files (7 legacy + 5 m4.7 Tier-1 cards), the REAL
 config/strategies merge precedence (defaults 55 -> yaml 60 -> request 65), the
-REAL capabilities.yaml deriv matrix (6 True / microstructure_flow False), and
+REAL capabilities.yaml deriv matrix (11 True / microstructure_flow False), and
 golden Signals through the REAL runner + registries using the A40-LGTM'd
 canned AnalyticsResult hands (trend +1.0 long, rsi 85 -> -0.75 short, blocked
 strategy -> None with zero engine calls). NOTE honestly: full FeatureEngine E2E
@@ -38,8 +40,11 @@ from shared.contracts.market_data import MarketData, Tick
 _TS = datetime(2026, 9, 26, 12, 0, tzinfo=UTC)
 _TREND = {"ema_20": 101.0, "sma_20": 100.0, "rsi_14": 65.0}  # m4.2 hand: +1.0
 _RSI_HOT = {"rsi_14": 85.0}                                  # m4.2 hand: -0.75
-_SEVEN = ("donchian_breakout", "mean_reversion", "microstructure_flow",
-          "pullback", "regime_based", "rsi_overbought_oversold", "trend_following")
+_EXPECTED_12 = ("donchian_breakout", "failed_breakout_sweep_reversal",
+                "mean_reversion", "microstructure_flow", "n_bar_donchian_breakout",
+                "pullback", "regime_based", "rsi_overbought_oversold",
+                "supertrend_adx_filter", "trend_following",
+                "trend_pullback_ema_stack_rsi", "trend_pullback_to_dynamic_support")
 
 _failures: list[str] = []
 
@@ -105,8 +110,8 @@ async def _verify() -> None:
     registry.load()
     names = registry.names()
     print(f"P22 discovery ({len(names)}): {list(names)}")
-    _check("registry.load() discovers exactly the 7 sorted names", names == _SEVEN,
-           f"got {names!r}")
+    _check("registry.load() discovers exactly the 12 sorted names",
+           names == _EXPECTED_12, f"got {names!r}")
     _check("entries() are frozen StrategyEntry objects",
            all(isinstance(e, StrategyEntry) for e in registry.entries()),
            f"n={len(registry.entries())}")

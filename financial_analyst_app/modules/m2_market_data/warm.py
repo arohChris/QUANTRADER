@@ -54,7 +54,12 @@ __all__ = [
 ]
 
 # M2.4 emits only these two (candles.py:160) — anything else is junk at the door
-ALLOWED_QUALITY_STATUS = frozenset({"COMPLETE", "GAP_AFFECTED"})
+#: Why each value exists. `COMPLETE` once meant "our accumulation found no hole" and was
+#: PROVEN wrong — a bar with tick_count=0 still got labelled COMPLETE. `BROKER` (M2.13) is
+#: the value that replaces that ambiguity for venue-sourced bars: the OHLC came from the
+#: venue, not from our tick digestion, so the question "did we miss a tick" no longer applies.
+#: Additive, so existing rows and existing writers are unaffected.
+ALLOWED_QUALITY_STATUS = frozenset({"COMPLETE", "GAP_AFFECTED", "BROKER"})
 _INTERVAL_1M = "1m"
 _BAR = timedelta(minutes=1)
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
@@ -130,7 +135,6 @@ _DDL: tuple[str, ...] = (
         high double precision NOT NULL,
         low double precision NOT NULL,
         close double precision NOT NULL,
-        tick_count bigint NOT NULL,
         average_spread double precision,
         min_spread double precision,
         max_spread double precision,
@@ -156,6 +160,19 @@ _DDL: tuple[str, ...] = (
         "timescaledb.compress_orderby = 'interval_start DESC')"
     ),
     "SELECT add_compression_policy('candles_1m', INTERVAL '7 days', if_not_exists => TRUE)",
+    # ---- Candle 2.0.0 migration (human §5 sign-off 2026-09-29) ----------------
+    # WHY `DROP NOT NULL` and NOT `DROP COLUMN`: a dropped column cannot be brought back by
+    # reverting the commit - the code returns, the 104,069 stored values do not. AGENTS.md 12
+    # Q6 demands reversibility, so the column is demoted, not destroyed. The physical DROP
+    # COLUMN is a SEPARATE, later, explicitly-approved decision.
+    # WHY a DO block: a database created fresh from the DDL above never had the column, and a
+    # bare ALTER would abort startup there. This is idempotent and safe on old and new alike.
+    (
+        "DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns "
+        "WHERE table_name = 'candles_1m' AND column_name = 'tick_count') THEN "
+        "ALTER TABLE candles_1m ALTER COLUMN tick_count DROP NOT NULL; "
+        "END IF; END $$"
+    ),
     """CREATE TABLE IF NOT EXISTS flush_cursors (
         provider text NOT NULL,
         instrument_id text NOT NULL,
@@ -195,7 +212,7 @@ async def apply_ddl(conn: Any) -> int:
 
 _REQUIRED_COLUMNS = (
     "interval_start", "interval_end", "open", "high", "low", "close",
-    "tick_count", "expected_duration_ms", "quality_status", "aggregation_version",
+    "expected_duration_ms", "quality_status", "aggregation_version",
 )
 
 
@@ -217,7 +234,6 @@ def encode_candle_row(
         "high": candle.high,
         "low": candle.low,
         "close": candle.close,
-        "tick_count": candle.tick_count,
         "average_spread": candle.average_spread,
         "min_spread": candle.min_spread,
         "max_spread": candle.max_spread,
@@ -239,7 +255,6 @@ def decode_candle_row(row: Mapping[str, object]) -> Candle:
             high=float(row["high"]),  # type: ignore[arg-type]
             low=float(row["low"]),  # type: ignore[arg-type]
             close=float(row["close"]),  # type: ignore[arg-type]
-            tick_count=int(row["tick_count"]),  # type: ignore[arg-type]
             average_spread=row.get("average_spread"),  # type: ignore[arg-type]
             min_spread=row.get("min_spread"),  # type: ignore[arg-type]
             max_spread=row.get("max_spread"),  # type: ignore[arg-type]
@@ -264,8 +279,8 @@ def _validate_identity(provider: str, instrument_id: str) -> None:
 
 
 def _validate_candle(candle: Candle) -> None:
-    if candle.tick_count < 0:
-        raise StoreValidationError(f"tick_count must be >= 0, got {candle.tick_count}")
+    # WHY the `tick_count >= 0` check is gone with the field: it validated a number the venue
+    # never sent. Keeping a bound check on a fabricated value is theatre, not safety.
     if candle.interval_start > candle.interval_end:
         raise StoreValidationError("interval_start must be <= interval_end")
     if candle.quality_status not in ALLOWED_QUALITY_STATUS:
@@ -423,7 +438,7 @@ class Candles1mStore:
         pool = self._require_pool()
         sql = (
             "SELECT provider, instrument_id, interval_start, interval_end, open, high, low, close, "
-            "tick_count, average_spread, min_spread, max_spread, expected_duration_ms, "
+            "average_spread, min_spread, max_spread, expected_duration_ms, "
             "quality_status, aggregation_version, reference_snapshot_id "
             "FROM candles_1m "
             "WHERE provider = $1 AND instrument_id = $2 "

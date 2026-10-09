@@ -1,0 +1,15 @@
+{
+  "instrument": "COMMODITY.XAUUSD",
+  "cutoff": "2026-08-31T00:00:00Z",
+  "rows_removed": 65148,
+  "rows_remaining": 29733,
+  "span_before": {
+    "lo": "2026-01-23T12:00:00Z",
+    "hi": "2026-09-30T12:01:00Z"
+  },
+  "span_after": {
+    "lo": "2026-08-31T09:44:00Z",
+    "hi": "2026-09-30T12:01:00Z"
+  },
+  "reason": "151-day hole between two disjoint segments left by a killed 250-day load; removed the pre-cutoff segment to restore a contiguous uniform 30-day panel"
+}

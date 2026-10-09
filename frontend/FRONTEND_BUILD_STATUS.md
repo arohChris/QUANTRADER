@@ -10,9 +10,9 @@
 
 ---
 
-## Current Frontend Phase: M10.4.3 Trader Dashboard & Chart Experiment — awaiting human implementation review
+## Current Frontend Phase: M10.4.12 Mobile menu hidden until clicked — tests LGTM (plan approval), implemented, gates green, awaiting human implementation review
 
-**Entry:** 2026-09-26  
+**Entry:** 2026-09-30  
 **Backend gate:** Does not advance or bypass G0.  
 **Backend changes in this slice:** None.  
 **Backend interfaces:** Documented for later integration; no endpoint or contract is invented in frontend code.
@@ -60,6 +60,9 @@ Status values are limited to:
 | M10.4.6 | Market/analytics chart surfaces | ✓ frontend design | 0 | not started | M2/M3 APIs later | not started | pending | blocked |
 | M10.4.7 | Realtime snapshot/delta UI | ✓ synchronization proposal | 0 | not started | M10.1 contract later | not started | pending | blocked |
 | M10.4.8 | Command Center — registry-driven picker | ✓ `app/commands.ts` (27 commands) + `app/CommandCenter.tsx` | 6 (`frontend/tests/test_m10.4.8_command_center_spec.py`) | **6/6 PASS** + typecheck + build green 2026-09-26; whole frontend **91/91** | none; mock data only | **implemented, not verified** | ✓ tests approved by human 2026-09-26 (impl review pending) | pending human commit/merge |
+| M10.4.10 | Trade-ticket timeframe dropdown + asset chooser | ✓ `frontend/specs/m10.4.10_timeframe_dropdown.spec.md` (+ Amendment A) | 8 (`frontend/tests/test_m10.4.10_timeframe_dropdown_spec.py`) + 1 amended in `test_m10.4.3:316` | **139/139 PASS** + ruff + `tsc` + build green 2026-09-30 | none; mock data only, parity test reads backend registry (test-only, app imports zero backend) | **implemented, not verified** | ✓ tests LGTM @you 2026-09-30 (8, honest RED first); impl line-by-line review **pending** | pending human commit/merge |
+| M10.4.11 | Trade Summary Header — dashboard P&L + active/closed/rejected counts, period switch | ✓ `frontend/specs/m10.4.11_trade_summary_header.spec.md` (+ Amendment A1) | 9 (`frontend/tests/test_m10.4.11_trade_summary_header_spec.py`) | **148/148 PASS** (whole frontend) + ruff + `tsc` + build green 2026-09-30 | none; precomputed mock aggregates, display-only (signedMoney formatter) | **complete** | ✓ tests LGTM via standing directive + impl LGTM @you 2026-09-30 | pending human commit/merge |
+| M10.4.12 | Mobile menu hidden until clicked (small screen follows big screen) | ✓ `frontend/specs/m10.4.12_mobile_menu.spec.md` | 7 (`frontend/tests/test_m10.4.12_mobile_menu_spec.py`) | **155/155 PASS** (whole frontend) + ruff + `tsc` + build + dev HTTP 200, 2026-09-30 | none; text-parses App.tsx + responsive.css only | **implemented, not verified** | ✓ tests LGTM via written plan + "build" directive 2026-09-30 (honest RED 5/7 first); impl line-by-line review **pending** | pending human commit/merge |
 
 ---
 
@@ -123,6 +126,152 @@ TP2 · Stop Loss · R · Best Time · Holding Period · Confidence` plus the exp
 `/why` detail. Backend-owned numbers (entry/TP/SL, R:R, sizing, best time, holding
 period, confidence) must come from frozen-contract mock data, **not** be computed in
 the browser.
+
+---
+
+## Amendment round 20 — M10.4.12: mobile menu hidden until clicked (2026-09-30)
+
+**155/155** whole frontend suite; ruff 0; `tsc` 0; `vite build` ✓; dev server HTTP 200.
+Nothing committed/merged — human owns both.
+
+### Why this slice exists
+
+Human: "fix the frontend so that when we minimise to mobile size it doesnt show the
+menu unless it been click" → then "it has already been done on bigger screen so the
+small screen should follow suit". Root cause: `App.tsx` started `useState(false)`
+(expanded at every width) **and** ≤900px showed the sidebar in BOTH states (expanded =
+list, collapsed = horizontal band) — mobile literally had no hidden state.
+
+### What changed (behaviour only, no redesign)
+
+- `app/App.tsx` — lazy `useState(() => window.matchMedia("(max-width: 900px)").matches)`
+  (mobile starts collapsed, desktop keeps today's expanded default); `matchMedia`
+  `change` listener with cleanup mirrors state across the breakpoint; `closeOnMobile`
+  onClick on nav `<Link>` (desktop tap = no-op via the same media check).
+- `app/styles/responsive.css` (≤900px block) — `.sidebar.is-collapsed { display: none; }`
+  replaces `flex-basis: auto`; the now-unreachable collapsed-band rules deleted
+  (dead-CSS law): 3 exclusive rules removed, collapsed selectors de-scoped from 5 shared
+  multi-selector rules. Survivors allowed by test: the `display: none` rule itself and
+  the **max-height desktop-rail compaction rule** (live for desktop, kept).
+- `specs/ui_ux_design_plan.md` — §sidebar gains the ≤900px bullet.
+- Desktop untouched: `shell.css` not edited (glyph rail, hover expand, short-window
+  compaction all intact — `test_m10.4.3` pins still green).
+
+### Discipline record
+
+- Honest RED **5 failed / 2 passed** (the 2 passing = pre-existing regression pins:
+  never-unmounted + outside-click/Escape).
+- Step-4 LGTM: written plan + human "build / small screen should follow suit" (standing,
+  same precedent as A40).
+- One self-caught mismatch: multiline `useState(` didn't match the test's one-line
+  string → code reformatted to one line (test intent unchanged, no test amendment).
+- **Strategy-rename queue item CANCELLED same session** (human: "leave strategy name
+  alone") — recorded in main `BUILD_STATUS.md` Open Questions; strategy files/names
+  untouched by this slice.
+
+**Status:** 7 tests, gates green; **impl line-by-line review pending**; not
+committed/merged. Dev server http://localhost:5173 — shrink the window ≤900px and the
+menu starts hidden; hamburger shows it, nav tap/outside click/Escape closes it.
+
+---
+
+## Amendment round 19 — M10.4.11: trade summary header, period switch, vocabulary conflict (2026-09-30)
+
+**148/148** whole frontend suite; `ruff check tests` 0; `tsc --noEmit` 0; `vite build` ✓
+(dev server HTTP 200, HMR live). Nothing committed/merged — human owns both.
+
+### Why this slice exists
+
+Human directive 2026-09-30: "dashboard show trades info, active closed, rejected, at
+the header total profit and loss etc for day, but we should week month and yr and yrs
+for each user — lgtm lgtm go on". Standing LGTM recorded for §2 Step 4 (tests were
+still written against the spec FIRST, with an honest 9/9 RED before any code).
+
+### What changed
+
+- `app/TradeSummaryHeader.tsx` (new) — header on the Trader dashboard: **Total P&L**
+  (shared `signedMoney`, tone `is-positive`/`is-negative`), **Active / Closed /
+  Rejected** counts (0 renders as 0), period switch **Day (current day) / Week /
+  Month / Year / All**, default Day, unknown-key fallback to the Day record, mock
+  provenance note. Presentation only: no `.reduce`/`.filter`/`Math.`, no I/O, no
+  `MOCK_ORDERS` derivation — all banned by test.
+- `app/mock_trader_data.ts` — `TradeSummaryPeriod` + `TRADE_SUMMARY_PERIODS` +
+  `MOCK_TRADE_SUMMARY` (5 precomputed per-user records, `user_id`/`broker` scoping
+  fields). Hand check: day record reconciles to `MOCK_ORDERS` (2 active incl. the
+  unknown probe, 1 filled closed, 1 rejected); month is a losing period (-86.20) so
+  the negative tone path is exercised.
+- `app/TradePane.tsx` — header rendered as first child above the chart/ticket grid.
+- `app/styles/panels.css` — `.trade-summary-header { grid-column: 1 / -1; ... }`
+  spans both columns (chart/ticket layout untouched; existing ≤900px rule stacks it).
+
+### Conflict caught and resolved pre-merge (Amendment A1)
+
+First full-suite run after implementation: **`test_m10.4.10`'s app-wide ban on
+timeframe literals (`"1D"`) failed** — my period keys had started as `1D/1W/...`.
+Resolution: the established protection stays untouched, the newcomer adapts — keys
+renamed to `day/week/month/year/all` (labels keep the human's "Day = current day"
+directive; the raw `1D` vocabulary never enters `app/`). Logged in the spec as A1.
+
+**Status:** `complete` — 9 tests, Step-4 LGTM via standing human directive, gates all
+green, **impl LGTM @you 2026-09-30**; not committed/merged (human owns both). Dev
+server on http://localhost:5173 (Trader → Trading).
+
+---
+
+## Amendment round 18 — M10.4.10: all-9 timeframes, ticket select, asset chooser (2026-09-30)
+
+**139/139** whole frontend suite; `ruff check tests`, `tsc --noEmit`, `vite build` green
+(no new warnings, bundle unchanged ~514 kB). Dev server verified HTTP 200. Nothing
+committed/merged — human owns both.
+
+### Why this slice exists
+
+`m3.2_book_feature_library.spec.md` §10 Q5 recorded the gap: the ticket demanded
+instrument/side/type/quantity/entry/SL/TP but **no timeframe**, and the chart's
+`MOCK_TIMEFRAMES` = `["1m","5m","15m","1H","4H","1D"]` was a **vocabulary mismatch** —
+`1H/4H/1D` are not in `shared/timeframes.py` (the backend hard-rejects them), while
+`30m/40m/2h/24h` were missing. Human queue-picked this slice, then directed
+**"include all timeframes"**.
+
+### What changed (spec first, tests first, LGTM, then code — §2 order held)
+
+- `app/experiment_market.ts` — `MOCK_TIMEFRAMES` + `TIMEFRAME_WINDOW` now carry
+  **exactly the 9 registry keys**, parity-locked by
+  `test_timeframe_registry_parity_is_exact_nine` (parses backend
+  `shared/timeframes.py` in the same cross-tree read style as
+  `test_frontend_architecture_locks.py`; **app code still imports zero backend**).
+  Constant name kept — it still drives the mock chart window; WHY comment records the lock.
+- `app/TradingTicket.tsx` — required `#trade-timeframe` select: placeholder
+  `Select timeframe` + `useState("")` (**no silent default**, spec I2), options mapped
+  from the shared constant (single source, I5).
+- **Amendment A (same session, human):** instrument became a **catalogue select** over
+  `MOCK_INSTRUMENTS` (value = canonical id, default `FX.EURUSD` = the old hardcoded
+  value, no free text); **A2** records "N concurrent trades, no one-trade lock" as
+  design-by-absence (no code, no test — a future lock must be specced).
+
+### Test amendments (all logged, none weakened)
+
+- `test_m10.4.3:316` field list **gains `"Timeframe"`** (strengthening).
+- My own test bug caught by self-review before implementation: the no-silent-default
+  regex was written `useState<?string>?` — it *required* the literal `"string"` and
+  could never match house style `useState("")`. Fixed to `useState(?:<string>)?`;
+  intent (empty default) unchanged.
+- `specs/ui_ux_design_plan.md:208` corrected: values now the 9-registry set with the
+  parity note.
+
+### Baseline correction (pre-existing drift, flagged not caused here)
+
+Status claimed **136/136**; actual pre-slice collection was **131** —
+`tests/test_account_mode_page.py` was deleted with the Day-1 account panel
+(removed 2026-09-27, per the Day-1 row above) but the count was never corrected;
+a stale `.pyc` still sits in `tests/__pycache__/`. Corrected baseline: **131 old +
+8 new = 139**.
+
+**Status:** 8 new tests, human **LGTM'd the tests 2026-09-30** (honest RED: 6+1 failed
+before code); implementation gates all green; **impl line-by-line review pending**;
+not committed/merged. Main `BUILD_STATUS.md` updated (Last Updated + Open Questions:
+DB preference/subscription design locked, Signal `trading_account_id`, result delivery,
+parked dashboard analytics).
 
 ---
 

@@ -80,27 +80,25 @@ def test_single_tick_opens_bucket_returns_none() -> None:
 
 
 def test_close_single_tick_candle_ohlc_equal() -> None:
-    # Hand calc: one tick price=1.08400 → O=H=L=C=1.08400, tick_count=1
+    # Hand calc: one tick price=1.08400 → O=H=L=C=1.08400
     b = _builder()
     b.on_tick(_md(price=1.08400, exchange=BASE + timedelta(seconds=10)))
     c = b.close()
     assert isinstance(c, Candle)
     assert c.open == c.high == c.low == c.close == 1.08400
-    assert c.tick_count == 1
     assert c.interval == "1m"
     assert c.interval_start == BASE
     assert c.interval_end == BASE + timedelta(minutes=1)
 
 
-def test_same_price_multiple_ticks_tick_count_n() -> None:
-    # Hand calc: 3 ticks all 1.08400 → O=H=L=C=1.08400, tick_count=3
+def test_same_price_multiple_ticks_single_bar() -> None:
+    # Hand calc: 3 ticks all 1.08400 → O=H=L=C=1.08400
     b = _builder()
     for s in (5, 15, 25):
         b.on_tick(_md(price=1.08400, exchange=BASE + timedelta(seconds=s)))
     c = b.close()
     assert isinstance(c, Candle)
     assert c.open == c.high == c.low == c.close == 1.08400
-    assert c.tick_count == 3
 
 
 def test_ohlc_from_multiple_prices() -> None:
@@ -115,7 +113,6 @@ def test_ohlc_from_multiple_prices() -> None:
     assert c.high == 1.08450
     assert c.low == 1.08350
     assert c.close == 1.08350
-    assert c.tick_count == 3
 
 
 def test_out_of_order_within_open_bucket_updates_ohlc() -> None:
@@ -140,7 +137,6 @@ def test_out_of_order_within_open_bucket_updates_ohlc() -> None:
     assert c.high == 1.08400
     # LATEST timestamp closes the bar, not the last packet seen
     assert c.close == 1.08400
-    assert c.tick_count == 2
 
 
 def test_out_of_order_reversed_arrival_closes_on_latest_timestamp() -> None:
@@ -192,7 +188,6 @@ def test_boundary_cross_closes_prior_opens_new() -> None:
     # Implementation choice: on_tick returns the closed Candle when crossing
     assert isinstance(r, Candle)
     assert r.close == 1.08400
-    assert r.tick_count == 1
     assert r.interval_start == BASE
     # new bucket is open
     c2 = b.close()
@@ -272,7 +267,7 @@ def test_adversarial_future_beyond_5s_drops_future_timestamp() -> None:
 
 
 def test_adversarial_many_ticks_exact_count() -> None:
-    # Hand calc: 10000 ticks → tick_count=10000 exact
+    # Hand calc: 10000 ticks →
     b = _builder()
     for i in range(10000):
         b.on_tick(
@@ -280,7 +275,6 @@ def test_adversarial_many_ticks_exact_count() -> None:
         )
     c = b.close()
     assert isinstance(c, Candle)
-    assert c.tick_count == 10000
 
 
 def test_identity_multi_instrument_isolated_builders() -> None:
@@ -379,7 +373,6 @@ def test_multi_minute_interval_stays_open_across_minute_boundary() -> None:
     assert r1 is None and r2 is None  # still open
     c = b.close()
     assert isinstance(c, Candle)
-    assert c.tick_count == 2
     assert c.interval_start == datetime(2026, 3, 22, 19, 45, 0, tzinfo=UTC)
     assert c.interval_end == datetime(2026, 3, 22, 19, 50, 0, tzinfo=UTC)
 
@@ -398,7 +391,6 @@ def test_spread_stats_present_when_bid_ask() -> None:
     assert c.min_spread is not None and abs(c.min_spread - 0.00010) < 1e-9
     assert c.max_spread is not None and abs(c.max_spread - 0.00030) < 1e-9
     assert c.average_spread is not None and abs(c.average_spread - 0.00020) < 1e-9
-    assert c.tick_count == 3
 
 
 def test_spread_stats_none_when_any_bid_or_ask_missing() -> None:
@@ -411,4 +403,3 @@ def test_spread_stats_none_when_any_bid_or_ask_missing() -> None:
     assert c.average_spread is None
     assert c.min_spread is None
     assert c.max_spread is None
-    assert c.tick_count == 2

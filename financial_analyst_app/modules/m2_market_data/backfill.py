@@ -76,7 +76,11 @@ class HistoryBar(BaseModel):
     high: Decimal
     low: Decimal
     close: Decimal
-    tick_count: int
+    #: WHY this survives Candle 2.0.0 while the contract field is gone: it is the INPUT to the
+    #: T9 presence guard in `_clip` (`tick_count <= 0` -> not data), which is a real rule with
+    #: real tests. `1` therefore means "the venue attested nothing", NOT "one tick". It is
+    #: internal to this module and is never written to a `Candle` or to the store.
+    tick_count: int = 1
     #: WHY provenance is carried on the bar: a repaired bar must be distinguishable from a
     #: live-ingested one forever, or a later audit cannot tell what was reconstructed.
     source: str = "backfill"

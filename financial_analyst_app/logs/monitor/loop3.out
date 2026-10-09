@@ -1,0 +1,12 @@
+monitor loop: every 1m, catchup=48h, verdicts -> C:\Users\MY PC\Desktop\QUANTRADER2\financial_analyst_app\logs\monitor\verdicts.jsonl
+work to do: idle check unavailable (ModuleNotFoundError) - assuming work to do
+next run in 0m
+work to do: idle check unavailable (ModuleNotFoundError) - assuming work to do
+next run in 0m
+work to do: idle check unavailable (ModuleNotFoundError) - assuming work to do
+next run in 0m
+work to do: idle check unavailable (ModuleNotFoundError) - assuming work to do
+next run in 0m
+work to do: idle check unavailable (ModuleNotFoundError) - assuming work to do
+next run in 0m
+work to do: idle check unavailable (ModuleNotFoundError) - assuming work to do

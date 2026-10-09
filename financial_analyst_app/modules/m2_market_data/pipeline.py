@@ -235,7 +235,6 @@ def warm_readback_matches(flushed: Sequence[Candle], rows: Sequence[Candle]) -> 
             and r.high == f.high
             and r.low == f.low
             and r.close == f.close
-            and r.tick_count == f.tick_count
             for r in rows
         ):
             return False

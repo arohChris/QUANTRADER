@@ -49,11 +49,76 @@ features:
   hurst:
     status: FULLY_SUPPORTED
     requires: [price]
-  tick_rate:
-    status: PROXY_LIMITED
-    method: tick_count_proxy
-    warning: "tick_count ≠ volume"
-    requires: [tick_count]
+  # Book Feature Library batch 1 (m3.2_book_feature_library spec) — price-only,
+  # deriv-capable day-1; book gates B1/B3/D1/C2/A1/A3/E1/S2 read these.
+  efficiency_ratio:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  atr_percentile_rank:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  ols_r_squared:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  variance_ratio:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  swing_high:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  swing_low:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  market_state:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  bollinger_bandwidth:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  bollinger_bandwidth_percentile:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  anchored_twap:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  # m4.7 Tier-1 batch (docs/specs/m4.7_playbook_tier1.spec.md) — price-only,
+  # deriv-capable day-1; analytics discovery lock 24 -> 34 = declared amendment 2.
+  ema_8:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  ema_21:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  ema_55:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  last_close:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  bar_low:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  close_position:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  close_change:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  rejection_bar:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  sweep_reversal:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  supertrend_flip:
+    status: FULLY_SUPPORTED
+    requires: [price]
+  # `tick_rate` REMOVED 2026-09-29 (Candle 2.0.0, human §5 sign-off). WHY: it was
+  # mean(Candle.tick_count), and the venue sends no tick count — the broker candle schema
+  # is additionalProperties:false. Backfill fabricated `tick_count=1`, so this analytic
+  # returned a constant 1.0 across 103,867 of 104,069 stored rows while advertising
+  # PROXY_LIMITED, which reads as a measurement. A constant masquerading as a proxy is
+  # worse than an absent feature, and the strategies never depended on it.
   order_book_imbalance:
     status: UNAVAILABLE # default global; broker overrides below
     reason: "needs bid_levels"
@@ -85,3 +150,17 @@ strategies:
     requires_analytics: [adx_14, zscore_20]
   regime_based:
     requires_analytics: [choppiness, hurst]
+  # M4.7 Tier-1 playbook cards (spec m4.7_playbook_tier1.spec.md — requires
+  # == exact FEATURE_SLOTS union per card; all price-only -> FULLY_SUPPORTED).
+  trend_pullback_to_dynamic_support: # A1
+    requires_analytics: [market_state, adx_14, efficiency_ratio, ols_r_squared,
+      atr_14, ema_20, rsi_14, swing_low, last_close, bar_low, close_position]
+  n_bar_donchian_breakout: # B1
+    requires_analytics: [atr_percentile_rank, donchian_20, efficiency_ratio]
+  failed_breakout_sweep_reversal: # D1
+    requires_analytics: [sweep_reversal, atr_percentile_rank]
+  trend_pullback_ema_stack_rsi: # S1
+    requires_analytics: [adx_14, ema_8, ema_21, ema_55, rsi_14, atr_14,
+      last_close, close_change, rejection_bar]
+  supertrend_adx_filter: # S5
+    requires_analytics: [supertrend_flip, adx_14]

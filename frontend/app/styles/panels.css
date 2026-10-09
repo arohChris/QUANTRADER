@@ -17,6 +17,48 @@
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
 }
 
+/* M10.4.11 summary header: spans both columns so the chart/ticket grid below
+   keeps its two-column layout untouched. */
+.trade-summary-header {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.summary-stat {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.summary-label {
+  color: var(--muted);
+  font-size: var(--type-caption);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.summary-provenance {
+  margin: 0 0 0 auto;
+  font-size: var(--type-micro);
+}
+
 .trade-pane-main {
   display: grid;
   gap: 1rem;
@@ -131,3 +173,37 @@
   color: var(--dim);
   background: var(--surface-soft);
 }
+
+/* ---------------------------------------------------------------------------
+   Live market chart (M10.2). WHY the freshness badge has three tones: our store was
+   28.8 hours stale for two days and NOTHING in the UI said so. A badge that only ever
+   renders in one colour is decoration; three states make "is this feed alive?" a
+   question the dashboard answers without the user having to know to ask it.
+   --------------------------------------------------------------------------- */
+.market-chart { display: flex; flex-direction: column; gap: 10px; }
+.market-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chart-canvas { width: 100%; min-height: 340px; }
+
+.freshness-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+  padding: 3px 8px; border-radius: 999px; border: 1px solid transparent;
+}
+.freshness-ok   { color: #1f7a4d; background: rgba(38,166,154,0.12); border-color: rgba(38,166,154,0.4); }
+.freshness-warn { color: #8a6100; background: rgba(245,166,35,0.14); border-color: rgba(245,166,35,0.45); }
+.freshness-bad  { color: #a12b2b; background: rgba(239,83,80,0.12); border-color: rgba(239,83,80,0.45); }
+
+.chart-status { font-size: 12px; opacity: 0.7; }
+.chart-error {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 10px 12px; border-radius: 6px;
+  background: rgba(239,83,80,0.10); border: 1px solid rgba(239,83,80,0.4);
+  font-size: 12px;
+}
+.chart-empty { padding: 10px 12px; font-size: 12px; opacity: 0.75; }
+
+.instrument-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.instrument-chip {
+  font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer;
+  background: transparent; border: 1px solid rgba(127,140,160,0.4); color: inherit;
+}
+.instrument-chip.is-active { background: rgba(38,166,154,0.16); border-color: rgba(38,166,154,0.5); }

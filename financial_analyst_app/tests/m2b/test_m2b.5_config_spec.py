@@ -74,6 +74,28 @@ def test_shipped_standard_file_exists_and_loads() -> None:
         assert std.name == name
 
 
+def test_SHIPPED_forex_hours_match_the_published_venue_hours() -> None:
+    """A golden on the SHIPPED file, not on a test fixture.
+
+    The gap this closes: for years the only assertions on session hours read a throwaway
+    `VALID` fixture, so the real `config/reference/asset_classes.yaml` could be wrong and
+    every test would still pass. That is exactly how "Sun 21:00 -> Fri 21:00" survived in
+    the shipped file while the venue published Mon 00:00 -> Fri 20:55.
+
+    Values below are the venue's, from the auth-free `trading_times` endpoint on
+    2026-09-29. If Deriv ever changes its week, THIS test is what should fail and prompt a
+    re-read of `trading_times` - not a silent 180-minute-per-instrument-per-week drift.
+    """
+    forex = load_standards(standard_path())["forex"].session
+    assert forex["open_weekday"] == 0, "venue trading_days start Monday, not Sunday"
+    assert forex["open_minute"] == 0, "venue Monday open is 00:00Z"
+    assert forex["close_weekday"] == 4, "venue trading_days end Friday"
+    # 20:56, EXCLUSIVE. The venue publishes close "20:55:00" as the last trade instant, but
+    # a 1m bar with interval_start 20:55 demonstrably exists, so the minute 20:55-20:56 is
+    # tradable. Pinning 20:55 here would make the audit report that real bar as invented.
+    assert forex["close_minute"] == 20 * 60 + 56, "last open minute is 20:55"
+
+
 def test_adding_an_asset_class_is_a_yaml_edit_not_a_code_change(tmp_path: Path) -> None:
     """The expansion case the directive is about: a brand new class, no Python touched."""
     body = VALID + """

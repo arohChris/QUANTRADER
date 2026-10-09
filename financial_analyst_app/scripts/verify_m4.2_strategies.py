@@ -1,9 +1,13 @@
-"""WHY: M4.2 Step 7 — real-config verification of the 7 strategy files
-(spec docs/specs/m4.2_strategy_files.spec.md §Verify). NOT unit tests: proves all
-7 files import + discover, the hand goldens hold outside pytest, the REAL
-config/capabilities.yaml manifest lists all 7 (donchian stub fulfilled), and the
-M3.0 eligibility gate returns 6 × True / microstructure_flow × False on deriv
-honestly naming the unavailable order_book_imbalance.
+"""WHY: M4.2 Step 7 — real-config verification of the strategy files
+(spec docs/specs/m4.2_strategy_files.spec.md §Verify; m4.7 spec DECLARED
+AMENDMENT 4 2026-10-02: exact-7/counts assertions -> iterate-all form since the
+5 Tier-1 playbook cards joined the package — 12 total). NOT unit tests: proves
+all 12 files import + discover against package discovery, the hand goldens of
+the original 7 hold outside pytest, the REAL config/capabilities.yaml manifest
+lists exactly the discovered set (donchian stub fulfilled), and the M3.0
+eligibility gate returns 11 x True / microstructure_flow x False on deriv
+honestly naming the unavailable order_book_imbalance. (m4.7 card goldens live
+in scripts/verify_m4.7_playbook_tier1.py.)
 
 Usage: python scripts/verify_m4.2_strategies.py [--config config/capabilities.yaml]
 Exit: 0 = all checks OK · 1 = any check failed. Latency line is ADVISORY only.
@@ -11,6 +15,7 @@ Exit: 0 = all checks OK · 1 = any check failed. Latency line is ADVISORY only.
 from __future__ import annotations
 
 import argparse
+import pkgutil
 import statistics
 import sys
 import time
@@ -21,15 +26,21 @@ sys.path.insert(0, str(ROOT))
 
 import yaml
 
+from modules.m3_analytics import strategies as strategies_pkg
 from modules.m3_analytics.capability.capability_registry import CapabilityRegistry
 from modules.m3_analytics.strategies import (
     donchian_breakout,
+    failed_breakout_sweep_reversal,
     mean_reversion,
     microstructure_flow,
+    n_bar_donchian_breakout,
     pullback,
     regime_based,
     rsi_overbought_oversold,
+    supertrend_adx_filter,
     trend_following,
+    trend_pullback_ema_stack_rsi,
+    trend_pullback_to_dynamic_support,
 )
 
 MODULES = (
@@ -40,6 +51,11 @@ MODULES = (
     pullback,
     regime_based,
     microstructure_flow,
+    n_bar_donchian_breakout,
+    failed_breakout_sweep_reversal,
+    trend_pullback_to_dynamic_support,
+    trend_pullback_ema_stack_rsi,
+    supertrend_adx_filter,
 )
 
 _failures: list[str] = []
@@ -59,21 +75,18 @@ def main() -> int:
     args = parser.parse_args()
     config = Path(args.config)
 
-    # --- 1. discovery: all 7 import + expose the contract ----------------------
+    # --- 1. discovery: all import + expose the contract (iterate-all) ---------
     names = sorted(mod.NAME for mod in MODULES)
-    print(f"discovery (7): {names}")
+    discovered = sorted(
+        info.name
+        for info in pkgutil.iter_modules(strategies_pkg.__path__)
+        if not info.ispkg
+    )
+    print(f"discovery ({len(names)}): {names}")
     _check(
-        "7 strategy files import with names == capabilities ids",
-        names
-        == [
-            "donchian_breakout",
-            "mean_reversion",
-            "microstructure_flow",
-            "pullback",
-            "regime_based",
-            "rsi_overbought_oversold",
-            "trend_following",
-        ],
+        f"{len(names)} strategy files import; NAME set == package discovery",
+        names == discovered,
+        f"discovered {discovered}",
     )
     for mod in MODULES:
         _check(
@@ -111,7 +124,10 @@ def main() -> int:
     # --- 3. REAL manifest + deriv eligibility matrix ---------------------------
     manifest = yaml.safe_load(config.read_text(encoding="utf-8"))["strategies"]
     print(f"manifest ({config}): {sorted(manifest)}")
-    _check("real yaml lists all 7 strategies", sorted(manifest) == names)
+    _check(
+        f"real yaml lists exactly the {len(names)} discovered strategies",
+        sorted(manifest) == names,
+    )
     _check(
         "donchian stub fulfilled: [donchian_20, choppiness]",
         manifest["donchian_breakout"]["requires_analytics"] == ["donchian_20", "choppiness"],
@@ -132,7 +148,7 @@ def main() -> int:
         reason,
     )
 
-    # --- 4. ADVISORY latency: 100 x evaluate x 7 files -------------------------
+    # --- 4. ADVISORY latency: 100 x evaluate x every discovered file ----------
     fixtures = {
         "trend_following": {"fast": 101.0, "slow": 100.0, "rsi": 65.0},
         "rsi_overbought_oversold": {"rsi": 85.0},
@@ -141,6 +157,19 @@ def main() -> int:
         "pullback": {"trend": 30.0, "entry": -2.0},
         "regime_based": {"chop": 30.0, "hurst": 0.7},
         "microstructure_flow": {"imb": 1.0},
+        # m4.7 cards (fixture = their spec golden feature sets)
+        "n_bar_donchian_breakout": {"atr_rk": 40.0, "chan": 125.0, "er": 0.5},
+        "failed_breakout_sweep_reversal": {"sweep": 1.0, "atr_rk": 75.0},
+        "trend_pullback_to_dynamic_support": {
+            "state": 1.0, "adx": 50.0, "er": 0.5, "r2": 0.8, "atr": 1.0,
+            "ema": 100.0, "rsi": 60.0, "swlow": 95.0, "close": 100.0,
+            "low": 96.0, "cpos": 0.7,
+        },
+        "trend_pullback_ema_stack_rsi": {
+            "adx": 30.0, "e8": 101.0, "e21": 100.5, "e55": 100.0, "rsi": 45.0,
+            "atr": 1.0, "close": 100.6, "chg": 0.5, "rej": 0.0,
+        },
+        "supertrend_adx_filter": {"flip": 1.0, "adx": 30.0},
     }
     medians: dict[str, float] = {}
     for mod in MODULES:
@@ -152,9 +181,10 @@ def main() -> int:
         medians[mod.NAME] = statistics.median(samples)
     slowest = max(medians, key=lambda k: medians[k])
     print(
-        f"\n[ADVISORY] 7 evaluate() median range {min(medians.values()):.4f}.."
-        f"{medians[slowest]:.4f}ms (slowest={slowest}) over 100 runs each vs "
-        f"§4.1 context — reported NOT gated"
+        f"\n[ADVISORY] {len(medians)} evaluate() median range "
+        f"{min(medians.values()):.4f}..{medians[slowest]:.4f}ms "
+        f"(slowest={slowest}) over 100 runs each vs §4.1 context — "
+        f"reported NOT gated"
     )
 
     if _failures:

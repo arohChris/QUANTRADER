@@ -252,13 +252,12 @@ async def test_candle_builder_close_finalizes_open_bucket() -> None:
     assert len(candles) == 1
     c = candles[0]
     # Hand calc: quotes 1.08540, 1.08545 in the same 19:46 bucket ->
-    # O=1.08540 H=1.08545 L=1.08540 C=1.08545, tick_count=2
-    assert (c.open, c.high, c.low, c.close, c.tick_count) == (
+    # O=1.08540 H=1.08545 L=1.08540 C=1.08545
+    assert (c.open, c.high, c.low, c.close) == (
         1.08540,
         1.08545,
         1.08540,
         1.08545,
-        2,
     )
     assert c.interval_start == BASE_TS.replace(second=0, microsecond=0)
 

@@ -50,10 +50,17 @@ def test_E1_crypto_asset_inherits_always_open() -> None:
     assert std.session["always_open"] is True
 
 
-def test_E2_forex_asset_inherits_sunday_evening_to_friday() -> None:
+def test_E2_forex_asset_inherits_monday_open_to_friday_early_close() -> None:
+    """CORRECTED 2026-09-29 to the venue's published hours: Mon 00:00Z -> Fri 20:55Z.
+
+    20:55 is 20*60 + 55, written as arithmetic rather than as a bare 1255 so the test still
+    reads as a clock time and keeps failing informatively if the number is edited blindly.
+    """
     std = class_standard("forex")
-    assert std.session["open_weekday"] == 6 and std.session["open_minute"] == 21 * 60
-    assert std.session["close_weekday"] == 4 and std.session["close_minute"] == 21 * 60
+    assert std.session["open_weekday"] == 0 and std.session["open_minute"] == 0
+    # 20:56 EXCLUSIVE: the venue publishes close 20:55:00 as the last trade instant, but a
+    # 1m bar with interval_start 20:55 exists, so 20:55-20:56 is still tradable.
+    assert std.session["close_weekday"] == 4 and std.session["close_minute"] == 20 * 60 + 56
 
 
 def test_E3_commodity_asset_inherits_metals_hours() -> None:

@@ -29,6 +29,12 @@
 
 crypto:
   # 24/7. No weekday fields: they would contradict always_open.
+  # VERIFIED against the venue 2026-09-30 across a 251-date sweep: crypto publishes NO events
+  # at all - `trading_days` is Sun..Sat and there is not one closure or early close, including
+  # on Christmas and New Year. So these are empty BY MEASUREMENT, not by omission, and
+  # `always_open` stays correct.
+  holidays: []
+  early_closes: {}
   always_open: true
   price_dp: 8
   tick_size: "0.00000001"
@@ -36,22 +42,95 @@ crypto:
   qty_step: "0.00001"
 
 forex:
-  # Sun 21:00 UTC -> Fri 21:00 UTC, as a 7-day repeating window.
-  open_weekday: 6      # 0=Mon .. 6=Sun
-  open_minute: 1260     # 21:00 UTC, minutes from midnight
+  # Mon 00:00 UTC -> Fri 20:55 UTC, as a 5-day repeating window.
+  #
+  # CORRECTED 2026-09-29. This said "Sun 21:00 -> Fri 21:00", which was wrong at BOTH ends.
+  # The venue is the authority on its own hours, and it publishes them:
+  #   trading_times (auth-free, https://developers.deriv.com/llms/trading-times.md)
+  #     trading_days = [Mon, Tue, Wed, Thu, Fri]
+  #     Monday       open ['00:00:00']  close ['23:59:59']
+  #     Sunday       open ['--']        close ['--']        <- closed all day
+  #     Friday       open ['00:00:00']  close ['20:55:00']
+  #     event: "Fridays - Closes early (at 20:55)"
+  # Swept 2026-09-30 -> 2027-06-07: 33 of 36 Fridays close 20:55; the other three are
+  # Christmas 2026-12-25 and New Year 2027-01-01 (both Fridays, fully closed) and Good
+  # Friday 2027-03-26, on which FOREX still trades 00:00 -> 20:55. See the holidays note
+  # below - those are NOT modelled yet, which is a known gap, not a silent one.
+  #
+  # WHY the old value was not merely untidy: a calendar that thinks the market is open for
+  # 3h every Sunday asks the venue for 180 minutes per instrument per week that do not
+  # exist, and reports them as LOST DATA forever. Over a 250-day load that is ~36 weeks x
+  # 25 instruments of wasted requests, and the data audit can never certify the store while
+  # it runs.
+  #
+  # NOTE: there is NO forex daily break at this venue. Mon-Thu is continuous 00:00-23:59.
+  # An earlier "un-modelled daily break around 20:59-21:10" was carried in the calendar
+  # docstring and in verify_universe_data.py's KNOWN LIMITATIONS; the venue says it does not
+  # exist, and modelling it would have MANUFACTURED ~11 phantom minutes per instrument per
+  # weekday. Corrected here; the stale claim is recorded in BUILD_STATUS.md.
+  open_weekday: 0      # 0=Mon .. 6=Sun
+  open_minute: 0        # 00:00 UTC, minutes from midnight
   close_weekday: 4     # Friday
-  close_minute: 1260   # 21:00 UTC
+  # 20:56, NOT 20:55, and the difference is MEASURED rather than stylistic. The venue
+  # publishes close "20:55:00" - the last TRADE instant - but the store demonstrably holds a
+  # 1-minute bar whose interval_start IS 20:55, i.e. the minute 20:55-20:56 is tradable.
+  # `close_minute` is EXCLUSIVE, so 1255 would classify that real bar as sitting inside a
+  # closed window and the audit would report invented data that does not exist. 1256 makes
+  # 20:55 the last open minute and 20:56 the first shut one.
+  # Verified against the live store: last FX bar Fri 2026-09-25 20:55, first FX bar Mon 00:00.
+  close_minute: 1256    # 20:56 UTC, exclusive - last OPEN minute is 20:55
+  # Dated closures. DERIVED from the venue, never hand-kept: run
+  #   python scripts/derive_venue_calendar_exceptions.py --days 250 --emit-yaml
+  # and merge the fragment. Re-running it is how a newly published holiday gets noticed.
+  # Both land on a FRIDAY, so they compound with the 20:55 weekly close rather than sitting
+  # on an ordinary weekday. Good Friday is deliberately ABSENT: the venue trades it for FX
+  # and closes only metals, so putting it here would be wrong for this class.
+  holidays: ["2026-12-25", "2027-01-01"]
+  early_closes: {}
   price_dp: 5
   tick_size: "0.00001"
   min_qty: "0.01"
   qty_step: "0.01"
 
 commodity:
-  # Metals open an hour later than FX and close an hour earlier: Sun 22:00 -> Fri 21:00.
+  # Metals run TWO sessions Mon-Thu and ONE on Friday. Measured from `trading_times`
+  # 2026-09-30 (open/close arrays are positional pairs):
+  #     Mon-Thu  open ['00:00:00','22:00:00']   close ['21:00:00','23:59:59']
+  #               -> 00:00-21:00 and 22:00-24:00, i.e. a real one-hour break at 21:00-22:00
+  #     Friday    open ['00:00:00']              close ['20:55:00']
+  #               -> ONE session; the venue publishes a single close, so the evening
+  #                  session does not happen on Friday
+  #     Sat/Sun   open ['--']                    -> shut
+  # The one-hour break is PRESERVED as a gap between windows (the loader merges adjacent
+  # windows but never ones with a gap), because filling it would report the break as an
+  # hour of lost data every single weekday.
+  weekday_windows:
+    0: [[0, 1260], [1320, 1440]]    # Mon  00:00-21:00, 22:00-24:00
+    1: [[0, 1260], [1320, 1440]]    # Tue
+    2: [[0, 1260], [1320, 1440]]    # Wed
+    3: [[0, 1260], [1320, 1440]]    # Thu
+    4: [[0, 1256]]                  # Fri  00:00-20:55, evening session absent
+  # NOTE: 4 and 5 (Sat, Sun) are deliberately ABSENT. A day missing from the map is SHUT,
+  # so omitting them is how the weekend is closed - it is not an oversight.
+  #
+  # The single weekly window below is retained only as documentation of the older, wrong
+  # shape; `weekday_windows` supersedes it in both `is_open` and `open_intervals`.
   open_weekday: 6
   open_minute: 1320     # 22:00 UTC
   close_weekday: 4
   close_minute: 1260    # 21:00 UTC
+  # Venue-derived, and NOT shared with the forex class above: Good Friday closes METALS while
+  # FX trades it, and the three 16:30 closes are metals-only. A single global holiday list
+  # would be wrong for one class or the other, which is the whole reason these are per-class.
+  holidays: ["2026-12-25", "2027-01-01", "2027-03-26"]
+  # minute-of-day, UTC: 990 = 16:30. A RESTRICTION only - it can close the day earlier, never
+  # open it later. Whether the 22:00-23:59 metals session also disappears on these dates is
+  # NOT published per-date, so it is NOT modelled here; recorded as an open question rather
+  # than guessed, because guessing manufactures phantom gaps.
+  early_closes:
+    "2026-11-26": 990
+    "2027-01-18": 990
+    "2027-02-15": 990
   price_dp: 2
   tick_size: "0.01"
   min_qty: "0.01"

@@ -47,6 +47,62 @@ services:
       timeout: 3s
       retries: 5
 
+  # ------------------------------------------------------------------ monitor
+  # WHY A CONTAINER INSTEAD OF A WINDOWS SCHEDULED TASK.
+  # MEASURED 2026-09-30 on this machine: a scheduled task registers cleanly, the principal
+  # resolves to a real SID, the logon type reads back as S4U, and the Task Scheduler event
+  # log shows
+  #     id=110  Task Scheduler launched "{...}" instance of task "\QuantTrader Data Monitor"
+  #     id=325  Task Scheduler queued instance "{...}"  <- "will launch immediately"
+  # and then nothing. Never 140 (started), never 141 (action started). An isolation test
+  # with three deliberately trivial tasks - including a bare `cmd /c echo` - reproduced it
+  # on ALL of them, and even `schtasks /delete` was denied. So the engine accepts instances
+  # and cannot execute any of them; this is a property of the host, not of our
+  # configuration, and no amount of reconfiguring the task fixes it. Microsoft's own
+  # guidance for this class of fault ("run whether user is logged on or not" silently
+  # ceasing to work) leads back to the same scheduler.
+  #
+  # A container with `restart: unless-stopped` depends on none of that. Docker Desktop is
+  # already running the database, so this rides on infrastructure that is already known to
+  # work here: it starts with the Docker engine, comes back after a reboot with no user
+  # logged in, needs no password and no logon right, and cannot leave a task that reports
+  # Ready while silently doing nothing.
+  #
+  # The loop inside is scripts/run_monitor_loop.py: it probes the venue and the database
+  # before doing work, skips cheaply when there is nothing new, auto-repairs gaps the venue
+  # has and we do not, and keeps a rolling verdict in logs/monitor/verdicts.jsonl.
+  monitor:
+    build:
+      context: ..
+      dockerfile: infra/monitor.Dockerfile
+    container_name: quantrader-monitor
+    restart: unless-stopped
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      # The database is reached over the compose network by service name, NOT
+      # host.docker.internal: the scripts read the host from TIMESCALE_HOST.
+      TIMESCALE_HOST: timescaledb
+      TIMESCALE_PORT: "5432"
+      QUANTRADER_INTERVAL_MINUTES: "30"
+    volumes:
+      # Read-only source: the monitor never writes code, only data into Timescale and logs.
+      - ../:/app:ro
+      # Logs must be writable, and they are the whole point - a monitor whose verdicts you
+      # cannot read is a monitor you will assume is working.
+      - monitor-logs:/app/logs
+    command:
+      - python
+      - scripts/run_monitor_loop.py
+      - --interval-minutes
+      - "30"
+      - --offline-poll-minutes
+      - "2"
+      - --retry-minutes
+      - "10"
+
 volumes:
   valkey-data:
   timescale-data:
+  monitor-logs:

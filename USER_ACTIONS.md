@@ -3,6 +3,171 @@
 
 ## CURRENT STATUS (UPDATED 2026-09-26)
 # GATE: G0 ENTRY
+# **ACTION 78c - 2026-09-29: "lgtmlgtm" = BOTH GATES GRANTED. Step 1+2 CLOSED.
+#   Step 3 AMENDED with your two REQUIRED invariants. Step 4 is now the only open gate.**
+#   READ AS: two approvals, matching the two numbered items I had put in front of you.
+#     (1) unconditional LGTM on spec REV1
+#     (2) 5 SIGN-OFF on `Candle` 1.x -> 2.0.0 (drop tick_count + add `version`)
+#   Recorded verbatim and scoped explicitly, because a MAJOR contract approval that is
+#   later read as covering MORE than it did is how a 2-team change gets merged by one
+#   person. **It authorises exactly: removing `Candle.tick_count`; adding
+#   `Candle.version`; the listed DDL + tick_rate removal + the 8 test files. Nothing else.**
+#   §5 also notes MAJOR needs "2-team sign-off"; this is a one-person repo, so you are
+#   both teams. Say the word if you want that recorded differently.
+#   **NOT DONE, DELIBERATELY: no implementation.** AGENTS.md 2 Step 4 still blocks Step 5,
+#   and your instruction was "not to proceed to tests or implementation" until the spec
+#   points were settled - they now are, so tests were amended, but the review of THOSE
+#   amendments is your Step 4, not mine.
+#   **THE TWO TESTS I ADDED - these are the ones worth your attention:**
+#     `test_i1_live_and_history_ohlc_are_exactly_equal_after_decimal_normalisation`
+#       Same broker candle via the LIVE feed (JSON strings, trailing zeros:
+#       open "83589.100", low "83589.140") vs the HISTORY endpoint (JSON numbers, no
+#       trailing zeros) -> Decimal-normalised -> EXACT equality on all four fields.
+#       The negative control reads the two payloads back and asserts they really do
+#       differ AS TEXT first, so this cannot pass against a string-comparing
+#       implementation. Pinned values, so an impl returning the same wrong thing on
+#       both paths (None == None) cannot satisfy it either.
+#     `test_i2_repeated_forming_frames_emit_exactly_one_candle`
+#       Frames T, T (different closes), T+60 -> EXACTLY ONE emitted candle
+#       (`== 1`, not `>= 1`), interval_start == open_time == T, the LAST forming value
+#       wins, then close() emits T+60 and a second close() emits None. Also asserts
+#       `late_frame_count == 0`, because a repeat inside a still-open minute is NOT a
+#       late frame - counting them would report ~60 false lates per minute.
+#   **FOUR REAL DEFECTS FOUND AND FIXED IN THE TEST FILE WHILE DOING THIS** (ruff was
+#   red on it at 12 errors; it is now 0, and none of the fixes weakened an assertion):
+#     (a) `pytest.raises(Exception)` - a BLIND exception, which AGENTS.md 3.5 forbids.
+#         Now asserts `pydantic.ValidationError` with error type `frozen_instance`, so
+#         it cannot pass on an unrelated crash during attribute assignment. Also added
+#         the missing `extra="forbid"` half of that test, which asserted only frozen.
+#     (b) Two negative controls were bare literal pairs; ruff reads differing constants
+#         as a tautology and would "simplify" the guard away. Both now read the values
+#         BACK OUT of the payloads, so the premise is about this test's own data.
+#     (c) Unused `timedelta` import removed.
+#     (d) **I DID NOT APPLY ruff's FURB157 autofix blindly, and this matters.** Ruff
+#         wanted `Decimal("0")` -> `Decimal(0)`, `Decimal("1")` -> `Decimal(1)` etc.
+#         I applied it to the INTEGER literals ONLY, where int->Decimal is exact and
+#         there is no float step. Every NON-INTEGER price literal stays
+#         `Decimal("...")` built from a STRING, per AGENTS.md 3.1. Applying that
+#         autofix wholesale would have walked the money path toward the weaker form.
+#         The two cases are now documented in the file's own docstring so the next
+#         person (or the next `ruff --fix`) does not undo the distinction.
+#   **STATE:** 45 tests (38 fns, 2 parametrised -> 9 cases), `ruff` 0, single honest RED
+#   cause = `ModuleNotFoundError modules.m2_market_data.broker_candles`, EXIT 2,
+#   registered with review_by 2026-10-06. Suite 1538 passed / 4 failed (the 4 are the
+#   pre-existing ACCOUNT_MODE `.env` leak, untouched by this work). Guards: collection 0,
+#   pit 0, retention 0, build_order 0, naming 1 (pre-existing verify_universe_data.py).
+#   **ONLY THING I NEED NOW: Step 4 LGTM on the 45 tests - I-1 and I-2 above are the
+#   part I would read twice.** After that the phase order is: apply the signed 2.0.0
+#   migration as its own phase -> Step 5 implementation -> Step 7 live verify ->
+#   Step 8 your review -> then the 250-day backfill, which is the G0 blocker.
+# **ACTION 78b - 2026-09-29: SPEC REV1 WRITTEN, ALL 4 CONDITIONS DISCHARGED.
+#   YOU GAVE A CONDITIONAL LGTM (specification review, not impl approval). I revised
+#   the spec ONLY - no test edits, no code, per your "not to proceed to tests or
+#   implementation until those points are settled".
+#   **CONDITION 1 - M2.13 must produce the canonical candle and NOT own storage
+#     policy.** DISCHARGED: new `## Architectural boundary` section. ASCII diagram
+#     (Broker -> M2.13 -> 3 peer sinks: Valkey hot / Timescale durable / future).
+#     Five HARD PROHIBITIONS: no storage policy; no direct Valkey/asyncpg/LakeWriter
+#     (M2.13 is `def`, not `async def`, because it does no I/O); no read-back or
+#     repair; no storage knob leaking in as a "tunable"; independence is testable.
+#     WHY IT IS NOT ACADEMIC: the M2.9->M2.10 flush-path dispute (A52 "on eviction
+#     (4h later)" vs m2.11's frozen flush-on-close) is OPEN in this file. If M2.13
+#     owned storage it would have to take a side on a question that is not about
+#     candle correctness. Because it emits and forgets, that dispute stays where it
+#     is and NEITHER answer breaks this slice.
+#   **CONDITION 2 - "write only on finality" was ambiguous and could be read as
+#     "the app may not update the hot cache until finality".** DISCHARGED: REV0's
+#     single invariant is replaced by Invariants 3 / 3a / 3b plus a new
+#     `## Finality is three states, not one` table:
+#       1 FORMING   -> hot state (Valkey) MAY advance every frame; M2.13 emits NOTHING
+#       2 CANONICAL -> Timescale only, once, on a later open_time or close()
+#       3 ALREADY FINAL -> nobody writes; a contradicting frame is counted and dropped
+#     "Hot state is not a record" (never promoted to durable except via M2.13's own
+#     emission) + "durable is final-only, always" + "no third path". Real-time
+#     visibility is SEPARATED from historical correctness instead of traded against
+#     it - same split the project already uses for ticks_live vs candles_1m (A42).
+#   **CONDITION 3 - the Candle 2.0.0 migration stays a SEPARATE EXPLICIT GATE;
+#     the missing `version` field is part of 2.0, not an incidental detail.**
+#     DISCHARGED: `## 5 Contract Change Proposal - SEPARATE EXPLICIT GATE, UNSIGNED`
+#     is now a hard precondition with 3 numbered rules - M2.13 may not touch the 6
+#     modules / capabilities.yaml / 8 test files until FORMALLY approved;
+#     `test_candle_carries_no_tick_count_after_the_2_0_0_bump` is EXPECTED TO FAIL
+#     until the bump lands (that is the migration's reminder, not a bug to dodge);
+#     `version` moved INSIDE the proposal text; and TWO approvals are needed -
+#     unconditional spec LGTM **and** explicit 5 sign-off. Approving the spec does
+#     NOT approve the migration. The `numeric` migration and the A65 provider-port
+#     work are explicitly NOT bundled - bundling a 3rd change is how a reviewable
+#     diff becomes unreviewable.
+#   **CONDITION 4 - two REQUIRED tests.** DISCHARGED as spec requirements
+#     (`## Required invariants I-1 / I-2`), each naming the test it forces:
+#     I-1  one broker candle, TWO transports (live JSON strings vs history JSON
+#          numbers) -> Decimal-normalised -> EXACT equality on every O/H/L/C, no
+#          approx, no string compare, WITH the negative control that the raw
+#          strings are unequal. This is the invariant that justifies the whole
+#          slice: if it fails, the migration only replaced one divergence with
+#          another and G0 would validate a market we do not trade.
+#     I-2  frames T, T, T+60 -> EXACTLY ONE durable candle at open_time=T; then
+#          close() emits T+60; a second close() emits nothing; and
+#          late_frame_count must NOT increment (a repeat inside a still-open minute
+#          is not a late frame). Without the collapse a forming feed writes 60
+#          duplicate rows/min and `ON CONFLICT DO NOTHING` hides them, so the store
+#          looks right while nothing was ever finalised.
+#     **NOT YET IN THE TEST FILE.** Adding them is a Step 3 amendment, deliberately
+#     NOT made in this revision because you said not to proceed to tests.
+#   **ONE WORD CORRECTED, NOT SILENTLY:** the review said "Vake"; the project spells
+#   it **Valkey** (M2.9 HOT cache). Used consistently, noted in the spec.
+#   NOTHING ELSE CHANGED: no edge removed, no test weakened, no number altered.
+#   Spec 218 -> 365 lines, all 20 headings intact, `check_naming` clean for the
+#   m2.13 spec + test files (its exit 1 is the pre-existing verify_universe_data.py).
+#   **STILL NEEDED FROM YOU, IN ORDER:**
+#     (1) **unconditional LGTM on spec REV1** (or more conditions)
+#     (2) **5 SIGN-OFF on Candle 1.x -> 2.0.0** - separate gate, can be given in
+#         parallel, but it is NOT implied by (1)
+#     (3) only then do I amend the 43 tests with I-1/I-2 and bring them back for
+#         Step 4 LGTM
+# **ACTION 78 - OPEN (2026-09-29): M2.13 BROKER 1-MIN CANDLE INGEST - spec + tests
+#   written, waiting on THREE gates from you.** Resumed session ses_f144.
+#   WHAT THIS SLICE IS: take OHLC for 1-minute bars FROM THE BROKER instead of
+#   digesting ticks ourselves. Human directive 2026-09-29: "lets forget about
+#   building candles for now and use the brokers provided 1 min candle".
+#   WHY IT IS NOT COSMETIC - measured, not asserted: our live tick->1m digestion
+#   disagreed with the broker's own candle on **3 of 202** live-built bars.
+#   * 2026-09-26 01:05  our low 83909.12 vs broker 83869.368  (40 pts too high)
+#   * 2026-09-26 01:06  our close 83915.49 vs broker 83923.994
+#   * 10:07  a bar with tick_count=0 but full OHLC, STILL labelled `COMPLETE`
+#   Both producers write the SAME candles_1m table with ON CONFLICT DO NOTHING, so
+#   a backtest trains on Deriv's series while live trades on ours and nothing
+#   reconciles them. The broker DOES stream its own 1m live (`style:"candles"` +
+#   `subscribe:1` -> `msg_type:"ohlc"`, measured, 60 frames/min).
+#   DONE: spec docs/specs/m2.13_broker_candle_ingest.spec.md (218 lines, DRAFT);
+#   43 tests in tests/m2_market_data/test_m2.13_spec.py, WRITTEN BEFORE ANY CODE,
+#   honest RED captured (ModuleNotFoundError modules.m2_market_data.broker_candles,
+#   EXIT 2) and registered in config/known_collection_blockers.yaml with
+#   review_by 2026-10-06, so check_collection.py exits 0 and names BOTH blockers
+#   loudly instead of the suite silently going uncollectable.
+#   **THREE GATES, ALL YOURS - I will not pass them myself:**
+#   (1) **LGTM on the SPEC.**
+#   (2) **LGTM on the 43 TESTS** (AGENTS.md 2 Step 4 - blocks Step 5).
+#   (3) **5 SIGN-OFF on the Candle 1.x -> 2.0.0 MAJOR bump** (drop
+#       `Candle.tick_count`, add the missing `version` field). Consumer table with
+#       exact line numbers is in the spec. 6 production modules (warm, pipeline,
+#       history, backfill, candles, tick_rate) + capabilities.yaml + 8 test files.
+#       `tick_count` is being removed because the broker sends no such field and we
+#       FABRICATED `=1` on 103,867 of 104,069 stored rows, which made `tick_rate`
+#       return a constant 1.0 over all of them. Human directive: "lets sacrifice it
+#       for the accuracy of backfilling".
+#   **SPREAD SIGN IS RESOLVED** - you answered "i meant the literal", so
+#   `spread = bid - ask`, NEGATIVE on a normal market. Three consequences are
+#   written into the spec so nobody "corrects" it later: min_spread is the WIDEST
+#   quote, max_spread the NARROWEST, and a crossed quote (bid>ask) now yields a
+#   POSITIVE value so the validity test must be `bid >= ask` -> drop.
+#   ALSO FOUND AND REPORTED, NOT FIXED (different sub-module): **4 pre-existing
+#   test failures in the M1.3 account-mode area** read the real repo-root `.env`,
+#   which sets `ACCOUNT_MODE=demo`; that env var WINS over the tmp accounts.yaml
+#   the tests write, so they assert demo and fail. Suite is 1538 passed / 4 failed.
+#   Detail in BUILD_STATUS.md Known Bugs. This qualifies every test count from
+#   this machine until it is fixed.
+# **ACTION 74 IS STILL OPEN: LGTM on the 31 M2.1 ingest-error tests (Step 4).**
 # **ACTION 77 - DONE 2026-09-29 (human "lgtm" = Step 8 review).** M2.7 BACKFILL DRIVER
 #   IS NOW `complete` (all 9 AGENTS 0 points recorded in BUILD_STATUS.md:36).
 #   Store GREW 543 bars/9.03h -> 6,116 bars / 2 instruments / 5 days, live from Deriv.
@@ -1316,3 +1481,7 @@ DO NOT
 # DO NOT TELL AI TO "SKIP GUARDRAILS" OR "MOVE FAST" ON
 # RISK / EXECUTION / LEDGER — AI MUST REFUSE PER AGENTS.MD §10
 # DO NOT MARK BUILD_STATUS "complete" WITHOUT LOG + HAND-CALC + LGTM
+
+
+ opencode -s ses_f0e94c87bffeqAdSB5tjwboCk4 for MIMO 
+ opencode -s ses_f0eda426bffeIPjJMj8dyHDga6 for SPACEBUNNY

@@ -206,7 +206,9 @@ viewport. At least one asset always stays selected. Selecting several assets dra
 **one bright line per asset** on the same panel, coloured from a twelve-entry
 `SERIES_COLORS`, with a `.series-legend` naming each line. Alongside it: a
 **timeframe dropdown** (`aria-label="Select timeframe"`, `MOCK_TIMEFRAMES`:
-1m/5m/15m/1H/4H/1D) that changes the visible window via `TIMEFRAME_WINDOW`, a
+1m/5m/15m/30m/40m/1h/2h/4h/24h — all nine, parity-locked to
+`financial_analyst_app/shared/timeframes.py` since m10.4.10; the old
+1H/4H/1D were not backend-legal) that changes the visible window via `TIMEFRAME_WINDOW`, a
 **session clock** showing `as_of` in UTC, and provenance notes (`as_of`, window
 size, `indexed to 100 at window start`, `quality`, `reference_snapshot_id`).
 
@@ -251,6 +253,10 @@ Primary navigation is a **static, collapsible vertical sidebar**:
   every link also carries `title`, so no menu item is ever lost;
 - **outside click or Escape** collapses to the glyph rail - it no longer removes the
   rail from the page;
+- **≤900px (M10.4.12, human 2026-09-30: "the small screen should follow suit")** —
+  collapsed means **hidden**: the menu starts closed and appears only after the header
+  toggle; a nav tap, outside click or Escape closes it again, and crossing the 900px
+  breakpoint mirrors the state so the menu can never be left open on a shrunken screen;
 - a `@media (max-height: 700px)` pass compacts padding, font size and gap so the
   tallest role (Admin, 9 items ~361px) fits a short window without clipping;
 - the header toggle keeps `aria-expanded` and the `Toggle navigation` label, with the

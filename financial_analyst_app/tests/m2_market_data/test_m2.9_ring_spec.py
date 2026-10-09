@@ -31,7 +31,6 @@ def _c(minute: int, **over: object) -> Candle:
         "high": 84010.0,
         "low": 83990.0,
         "close": 84005.0,
-        "tick_count": 5,
         "interval": "1m",
         "interval_start": start,
         "interval_end": start + timedelta(minutes=1),

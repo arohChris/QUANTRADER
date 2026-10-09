@@ -1,23 +1,23 @@
 """
-P17 / M3.2 Analytics compute files — Spec tests (WRITTEN BEFORE CODE).
-WHY: AGENTS.md §2 Step 3 — tests first against docs/specs/m3.2_analytics.spec.md
+P17 / M3.2 Analytics compute files â€” Spec tests (WRITTEN BEFORE CODE).
+WHY: AGENTS.md Â§2 Step 3 â€” tests first against docs/specs/m3.2_analytics.spec.md
 (spec LGTM'd by human 2026-09-25: "lgtm to put the respective now"; pins REV4).
 
-Direct impl import ONLY — no importorskip. Collection RED until Step 5
+Direct impl import ONLY â€” no importorskip. Collection RED until Step 5
 (honest "not implemented"; house style per test_m3.0/m3.1); after impl,
-100% pass, 0 skips (§2 Step 6).
+100% pass, 0 skips (Â§2 Step 6).
 
-Covers §Test plan items 1-24: RSI Wilder goldens/branches/boundaries, EMA
+Covers Â§Test plan items 1-24: RSI Wilder goldens/branches/boundaries, EMA
 first-value seed goldens, tick_rate exact means, REQUIREMENTS pins, Isolation
 Law signature, P17 discovery batch lock, engine e2e on real forex profile.
-Adversarial (§Adversarial): inf/nan period, period -5, params=None, +inf close,
+Adversarial (Â§Adversarial): inf/nan period, period -5, params=None, +inf close,
 hostile unknown keys.
-Money: none (indicator floats, not settlement) — hand-calc comments on golden
-tests per §2 Step 3; exact == on dyadic/branch values, approx only where binary
+Money: none (indicator floats, not settlement) â€” hand-calc comments on golden
+tests per Â§2 Step 3; exact == on dyadic/branch values, approx only where binary
 representation demands it (100 - 100/7).
 
-Declares the m3.1 spec §Amendment: test_m3.1_spec.py:289 now proves the empty
-package via a SYNTHETIC monkeypatched scan (fix (a) — zero prod change).
+Declares the m3.1 spec Â§Amendment: test_m3.1_spec.py:289 now proves the empty
+package via a SYNTHETIC monkeypatched scan (fix (a) â€” zero prod change).
 """
 from __future__ import annotations
 
@@ -29,8 +29,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-# Direct impl import — fails collection until Step 5 (honest RED).
-from modules.m3_analytics.analytics import ema_20, rsi_14, tick_rate
+# Direct impl import â€” fails collection until Step 5 (honest RED).
+from modules.m3_analytics.analytics import ema_20, rsi_14
 from modules.m3_analytics.capability.capability_registry import CapabilityRegistry
 from modules.m3_analytics.engine.analytics_registry import (
     AnalyticsRegistry,
@@ -54,11 +54,10 @@ _ASCENDING_15 = [10.0 + i for i in range(15)]  # every change a gain -> avg_loss
 def _series(
     closes: list[float],
     *,
-    tick_counts: list[int] | None = None,
     interval: str = "5m",
     end: datetime = _T0,
 ) -> list[Candle]:
-    """Candle list with given closes (+optional tick_counts), newest ending at `end`."""
+    """Candle list with given closes, newest ending at `end`."""
     n = len(closes)
     out = []
     for i, close in enumerate(closes):
@@ -69,7 +68,6 @@ def _series(
                 high=close,
                 low=close,
                 close=close,
-                tick_count=tick_counts[i] if tick_counts is not None else 1,
                 interval=interval,
                 interval_start=start,
                 interval_end=start + timedelta(minutes=5),
@@ -79,7 +77,7 @@ def _series(
 
 
 class _StaticProvider:
-    """§6a.4-shaped provider returning a fixed series (e2e fixture)."""
+    """Â§6a.4-shaped provider returning a fixed series (e2e fixture)."""
 
     def __init__(self, candles: list[Candle]) -> None:
         self._candles = candles
@@ -123,7 +121,7 @@ def _request(features: tuple[str, ...]) -> FeatureRequest:
 
 
 def test_rsi_golden_wilder_recursive_last_value():
-    # Hand calc (spec §Test plan 1), p=2, changes +1, -0.5, 0, +0.5:
+    # Hand calc (spec Â§Test plan 1), p=2, changes +1, -0.5, 0, +0.5:
     # seed: avg_gain=(1+0)/2=0.5, avg_loss=(0+0.5)/2=0.25 -> RS=2 -> 66.66...
     # step3: g=(0.5*1+0)/2=0.25, l=(0.25*1+0)/2=0.125 -> RS=2
     # step4: g=(0.25*1+0.5)/2=0.375, l=(0.125*1+0)/2=0.0625 -> RS=6
@@ -165,7 +163,7 @@ def test_rsi_seed_boundary_n_equals_period_is_nan_n_plus_one_computes():
 def test_rsi_dynamic_period_100_on_15_bars_is_nan():
     # param_overrides period=100 > static minimum_history 15 reaches compute with a
     # series smaller than the period -> nan -> engine invalid:<f>, never a partial
-    # number (§Open flag: planner uses static REQUIREMENTS; compute refuses honestly)
+    # number (Â§Open flag: planner uses static REQUIREMENTS; compute refuses honestly)
     value = rsi_14.compute(_series(_ASCENDING_15), {"period": 100.0})
     assert math.isnan(value)
 
@@ -181,7 +179,7 @@ def test_rsi_period_below_2_valueerror():
 
 
 def test_rsi_non_integral_or_nonfinite_period_valueerror():
-    # adversarial: inf must NOT reach int(inf) (OverflowError class) — isfinite first
+    # adversarial: inf must NOT reach int(inf) (OverflowError class) â€” isfinite first
     series = _series(_ASCENDING_15)
     for bad in (14.5, float("inf"), float("nan")):
         with pytest.raises(ValueError):
@@ -241,23 +239,13 @@ def test_ema_nonfinite_close_returns_nan():
     assert math.isnan(ema_20.compute(series, {"period": 3.0}))
 
 
-# --- 16-18: tick_rate exact means ---
-
-
-def test_tick_rate_mean_exact():
-    # Hand calc: (8 + 4 + 12) / 3 = 24/3 = 8.0
-    candles = _series([1.0, 1.0, 1.0], tick_counts=[8, 4, 12])
-    assert tick_rate.compute(candles, {}) == 8.0
-
-
-def test_tick_rate_zero_ticks_returns_zero():
-    candles = _series([1.0, 1.0, 1.0], tick_counts=[0, 0, 0])
-    assert tick_rate.compute(candles, {}) == 0.0
-
-
-def test_tick_rate_empty_candles_valueerror():
-    with pytest.raises(ValueError):
-        tick_rate.compute([], {})
+# --- 16-18: tick_rate REMOVED 2026-09-29 (Candle 2.0.0, human Â§5) ---------------
+# `tick_rate` was mean(Candle.tick_count). The venue sends no tick count â€” the broker
+# candle schema is additionalProperties:false â€” so backfill fabricated `tick_count=1`
+# and this returned a constant 1.0 over 103,867 of 104,069 stored rows while
+# advertising PROXY_LIMITED, which reads as a real measurement. The analytic and its
+# three exact-mean tests are gone with the field. COVERAGE REMOVED, deliberately:
+# 1 test (mean), 1 test (all-zero), 1 test (empty -> ValueError).
 
 
 # --- 19, 24: params contract ---
@@ -284,9 +272,8 @@ def test_requirements_pinned_per_spec():
     expected = {
         "rsi_14": (("price",), 15, 0, {"period": 14.0}),
         "ema_20": (("price",), 20, 5, {"period": 20.0}),
-        "tick_rate": (("tick_count",), 1, 0, {}),
     }
-    for module in (rsi_14, ema_20, tick_rate):
+    for module in (rsi_14, ema_20):
         req = module.REQUIREMENTS
         assert isinstance(req, DataRequirement)
         needs, minimum, warmup, defaults = expected[module.NAME]
@@ -309,23 +296,34 @@ def test_requirements_pinned_per_spec():
 
 def test_compute_signature_isolation_contract():
     registry = AnalyticsRegistry()
-    for module in (rsi_14, ema_20, tick_rate):
+    for module in (rsi_14, ema_20):
         registry.register(module)  # raises ValueError if any contract leg breaks
         assert list(inspect.signature(module.compute).parameters) == ["candles", "params"]
         for smuggled in ("provider", "clock", "as_of"):
             assert not hasattr(module, smuggled)
-    assert sorted(registry.names()) == ["ema_20", "rsi_14", "tick_rate"]
+    assert sorted(registry.names()) == ["ema_20", "rsi_14"]
 
 
 def test_from_package_discovers_p17_batch():
     # positive half of the m3.1 :289 amendment (its synthetic-empty half lives there);
-    # P17+P18 batch lock — declared amendment #1 in m3.2_p18 spec (3 -> 15 names).
+    # P17+P18 batch lock -> declared amendment #1 in m3.2_p18 spec (3 -> 15 names).
+    # 2026-09-29: 15 -> 14, `tick_rate` removed with the Candle 2.0.0 field.
+    # 2026-09-30: 14 -> 24, Book Feature Library batch 1 — declared §7 amendment,
+    # m3.2_book_feature_library spec (tests LGTM'd before this edit).
+    # 2026-10-02: 24 -> 34, m4.7 Tier-1 analytics batch — declared amendment 2,
+    # m4.7_playbook_tier1 spec (tests LGTM'd before this edit).
     names = AnalyticsRegistry.from_package().names()
     assert sorted(names) == [
-        "adx_14", "atr_14", "bb_percent", "choppiness", "donchian_20", "ema_20",
-        "hurst", "macd", "returns", "rsi_14", "sma_20", "std_20", "tick_rate",
+        "adx_14", "anchored_twap", "atr_14", "atr_percentile_rank", "bar_low",
+        "bb_percent", "bollinger_bandwidth", "bollinger_bandwidth_percentile",
+        "choppiness", "close_change", "close_position", "donchian_20",
+        "efficiency_ratio", "ema_20", "ema_21", "ema_55", "ema_8", "hurst",
+        "last_close", "macd", "market_state", "ols_r_squared", "rejection_bar",
+        "returns", "rsi_14", "sma_20", "std_20", "supertrend_flip",
+        "sweep_reversal", "swing_high", "swing_low", "variance_ratio",
         "vol_regime", "zscore_20",
     ]
+    assert "tick_rate" not in names, "the analytic is deleted, not merely unregistered"
 
 
 # --- 23: engine end-to-end (default registry + real forex profile) ---
@@ -333,11 +331,14 @@ def test_from_package_discovers_p17_batch():
 
 async def test_engine_end_to_end_real_files_real_profile():
     closes = [10.0 + i for i in range(15)]  # ascending -> every change a gain
-    candles = _series(closes, tick_counts=[10] * 15)
+    candles = _series(closes)
     engine = _engine(_StaticProvider(candles))  # registry=None -> D4 discovery
-    result = await engine.get_features(_request(("rsi_14", "tick_rate")))
+    result = await engine.get_features(_request(("rsi_14",)))
     assert result.features["rsi_14"] == 100.0  # avg_loss==0 branch, exact
-    assert result.features["tick_rate"] == 10.0  # mean of fifteen 10s
-    assert result.capability_status is CapabilityStatus.PROXY_LIMITED
-    assert result.capability_warning is not None
-    assert "tick_count \u2260 volume" in result.capability_warning
+    # The point of the Candle 2.0.0 migration, ASSERTED rather than assumed: this feature
+    # set used to return capability_status=PROXY_LIMITED plus a "tick_count != volume"
+    # warning, because tick_rate was in the request and was a fabricated constant 1.0.
+    # With tick_rate deleted, rsi_14 is FULLY_SUPPORTED and carries NO warning. If this
+    # regresses to PROXY_LIMITED, something is advertising a proxy it does not have.
+    assert result.capability_status is CapabilityStatus.FULLY_SUPPORTED
+    assert result.capability_warning is None

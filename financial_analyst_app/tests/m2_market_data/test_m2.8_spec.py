@@ -71,7 +71,6 @@ def _candle_md(interval: str = "1m", *, exchange: datetime | None = None) -> Mar
         high=1.10100,
         low=1.09900,
         close=1.10050,
-        tick_count=10,
         interval=interval,
         interval_start=start,
         interval_end=start,

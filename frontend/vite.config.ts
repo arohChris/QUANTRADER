@@ -1,6 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+// WHY declared rather than `npm i -D @types/node`: this file runs in Node, so `process`
+// exists at runtime - only its TYPE is absent, and `@types/node` is a whole dependency tree
+// pulled in for one value. A local declaration keeps the override configurable without it.
+declare const process: { env: Record<string, string | undefined> };
+
 // WHY: Vite builds ONLY the M10.4 shell — backend never serves these files (JSON-only API
 // under financial_analyst_app/app/), keeping frontend/backend fully decoupled (§0.1 lock).
 //
@@ -17,6 +22,22 @@ import react from "@vitejs/plugin-react";
 // and genuinely independent.
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // WHY a dev proxy and not an absolute backend URL in the client: the browser would then
+    // treat the API as cross-origin, so every request needs CORS preflight AND the app
+    // hardcodes an environment-specific host. Proxying keeps the browser on one origin in
+    // dev and the build fully environment-agnostic - the built bundle calls a RELATIVE
+    // /api/v1/... path and works unchanged behind whatever serves it.
+    //
+    // WHY configurable: the monitor compose stack runs the API on a different port, and a
+    // hardcoded target would make the frontend unusable there.
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_TARGET ?? "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     rollupOptions: {
       output: {

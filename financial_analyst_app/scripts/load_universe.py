@@ -30,6 +30,8 @@ from modules.m2_market_data.coverage import GapLedger
 from modules.m2_market_data.history import DerivHistoryFetcher, WebSocketTransport
 from modules.m2_market_data.warm import build_ddl_statements
 from modules.reference import calendar as cal
+from modules.reference.reference import current_snapshot_id
+from scripts.verify_universe_data import dsn
 
 MIN = timedelta(minutes=1)
 DERIV = "deriv"
@@ -80,23 +82,59 @@ class PgCursor:
 
 
 class PgWriter:
-    def __init__(self, pool: object, dry: bool) -> None:
+    """Bulk-insert venue bars into `candles_1m`.
+
+    LINEAGE IS MANDATORY AND FAIL-CLOSED. Measured 2026-09-30: this writer left
+    `reference_snapshot_id` NULL on 796,331 of 796,333 rows, because the INSERT simply did
+    not name the column. Every other writer in the system stamps lineage - `normalize.py:98`
+    DROPS a tick whose `reference_snapshot_id` is empty ("lineage mandatory"), and the WARM
+    path carries it through `pipeline.py` - so the bulk path was the single writer silently
+    producing rows that cannot be attributed to an instrument spec. `AGENTS.md` 3.4 requires
+    the snapshot id on venue data for reproducibility and 4.4 requires it on every row for
+    replay; without it, a change to `config/assets/*.yaml` makes a replay of this history
+    unreproducible, and this project has already been bitten by a live `tick_size`
+    0.01-vs-0.001 defect that truncated prices to 2dp.
+
+    So a missing snapshot is REFUSED here too, rather than written as NULL. A 796k-row table
+    with no lineage is a far worse artefact than a load that stops and says why.
+    """
+
+    def __init__(self, pool: object, dry: bool, reference_snapshot_id: str | None) -> None:
         self._pool, self._dry = pool, dry
+        self._ref = reference_snapshot_id
+        if not dry and not reference_snapshot_id:
+            raise RuntimeError(
+                "reference_snapshot_id is mandatory: current_snapshot_id() returned "
+                f"{reference_snapshot_id!r}. Refusing to write bars with no lineage. Check "
+                "config/reference/snapshot.yaml (snapshot_id must match REF-YYYY-MM-DD-NNN)."
+            )
 
     async def __call__(self, bars: object) -> None:
         if self._dry:
             return
         await self._pool.executemany(  # type: ignore[attr-defined]
+            # WHY this INSERT no longer names `tick_count` (Candle 2.0.0, human §5 2026-09-29):
+            # THIS RAW SQL WAS THE ACTUAL SOURCE of the fabricated value. It bypassed the
+            # frozen `Candle` contract and `warm.encode_candle_row` entirely, so changing the
+            # contract alone would NOT have fixed a single stored row - 103,867 of the 104,069
+            # rows then carried a `tick_count` of 1 that this statement invented from a
+            # HistoryBar default. The venue sends no such field, so it is not written here.
+            # Second writer, same lesson, and this is the fix for it: a store fed by a
+            # hand-written INSERT has no schema gate, so "the contract forbids it" is not the
+            # same as "nothing writes it" - which is how both the fabricated tick_count AND
+            # the missing lineage got in. Hence the lineage column below, and the fail-closed
+            # constructor above rather than a best-effort NULL.
             "INSERT INTO candles_1m (provider, instrument_id, interval_start, "
-            "interval_end, open, high, low, close, tick_count, expected_duration_ms, "
-            "quality_status, aggregation_version) "
+            "interval_end, open, high, low, close, expected_duration_ms, "
+            "quality_status, aggregation_version, reference_snapshot_id) "
             "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) "
             "ON CONFLICT (provider, instrument_id, interval_start) DO NOTHING",
             [
                 (
                     DERIV, b.instrument_id, b.interval_start, b.interval_end,
                     float(b.open), float(b.high), float(b.low), float(b.close),
-                    b.tick_count, int(MIN.total_seconds() * 1000), "backfill", "backfill-v1",
+                    int(MIN.total_seconds() * 1000), "backfill", "backfill-v1",
+                    self._ref,
                 )
                 for b in bars  # type: ignore[union-attr]
             ],
@@ -121,18 +159,21 @@ async def main() -> int:
         (ROOT / "config" / "reference" / "universe_screen.json").read_text(encoding="utf-8")
     )
     chosen = selection["selected"][: args.top]
+    # Lineage for every bar this run writes. Read ONCE here rather than per chunk so a
+    # snapshot rotation mid-run cannot split one load across two reference ids.
+    snapshot_id = current_snapshot_id()
     print("=" * 78)
     print(f"UNIVERSE LOAD - {len(chosen)} instruments x {args.hours}h")
+    print(f"lineage        {snapshot_id or 'MISSING - PgWriter will refuse to write'}")
     print(f"screened_at {selection['screened_at']} (criterion: {selection['criterion']})")
     print("=" * 78)
     if args.dry_run:
         print("DRY RUN: nothing written.\n")
 
     end = (datetime.now(UTC) - MIN).replace(second=0, microsecond=0)
-    start = end - timedelta(hours=args.hours)
 
     pool = await asyncpg.create_pool(
-        f"postgresql://quantrader:{_password()}@127.0.0.1:5432/quantrader", timeout=20
+        dsn(), timeout=20
     )
     failures: list[str] = []
     totals = {"requests": 0, "bars": 0, "discrepancies": 0, "unresolved": 0}
@@ -141,6 +182,35 @@ async def main() -> int:
             await pool.execute(stmt)
         cursor = PgCursor(pool, args.dry_run)
         await cursor.setup()
+
+        # WHY THE WINDOW MUST HONOUR THE CURSOR (measured defect, 2026-10-07).
+        #
+        # The window used to be `now - hours`, and the driver then applied
+        # `start = max(start, cursor)` (backfill_driver.py:427). `max` keeps the LATER
+        # bound, so any cursor rewound further back than `now - hours` was SILENTLY
+        # DISCARDED. Measured consequence: a 1039-minute hole on 2026-10-02 (identical
+        # across all 25 instruments) survived every repair attempt while each run reported
+        # `discrepancies=0 unresolved=0` - because the window that contained the hole was
+        # never requested. `rewind_backfill_cursor.py` was therefore a no-op for any hole
+        # older than `--hours`, which is precisely the case you care about.
+        #
+        # `min` is the correct operator: the window must begin at WHICHEVER is earlier, the
+        # recent horizon or the stored cursor. A normal run is unaffected (the cursor trails
+        # `now - hours`, so `min` yields `now - hours`); a rewound cursor now actually pulls
+        # the window back to it. Taking the GLOBAL min over all instruments is deliberate:
+        # one instrument's rewind must not be skipped because the other 24 cursors are ahead.
+        oldest_cursor = await pool.fetchval(
+            "SELECT min(reached) FROM backfill_cursors WHERE broker = $1", DERIV
+        )
+        if oldest_cursor is None:
+            start = end - timedelta(hours=args.hours)
+        else:
+            start = min(end - timedelta(hours=args.hours), oldest_cursor)
+        if start < end:
+            print(
+                f"window        {start.isoformat()} .. {end.isoformat()}  "
+                f"(= min(now-{args.hours}h, oldest cursor {oldest_cursor.isoformat()}))"
+            )
 
         async with WebSocketTransport() as transport:
             fetcher = DerivHistoryFetcher(transport=transport)
@@ -167,7 +237,7 @@ async def main() -> int:
                     sleeper=lambda s: asyncio.sleep(s),
                     max_span=fetcher.max_span,
                     min_interval_ms=250.0,
-                    write_bars=PgWriter(pool, args.dry_run),
+                    write_bars=PgWriter(pool, args.dry_run, snapshot_id),
                 )
                 try:
                     rep = await driver.run(

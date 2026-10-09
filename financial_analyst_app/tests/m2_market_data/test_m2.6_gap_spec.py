@@ -32,9 +32,18 @@ from modules.reference.reference import UnknownInstrumentError
 # An earlier revision walked the week containing "now", so the sweep ran into the future and
 # failed on any day before Sunday 21:00. Windows here are all safely historical.
 MON = datetime(2026, 9, 14, 0, 0, tzinfo=UTC)          # Monday
-FRI_CLOSE = datetime(2026, 9, 18, 21, 0, tzinfo=UTC)   # Friday 21:00 UTC
+# CORRECTED 2026-09-29 to the venue`s published hours (trading_times): the week runs
+# Mon 00:00Z -> Fri 20:55Z and BOTH weekend days are shut. These used to be Fri 21:00 and
+# Sun 21:00, which the venue contradicts at both ends.
+#
+# FRI_CLOSE is 20:56, not 20:55, and the reason is measured: the venue publishes close
+# "20:55:00" as the last trade instant, but the store holds a 1m bar with interval_start
+# 20:55, so the minute 20:55-20:56 is tradable. 20:56 is the first minute that is SHUT,
+# which is what a "from here on everything is closed" window has to start at.
+FRI_CLOSE = datetime(2026, 9, 18, 20, 56, tzinfo=UTC)   # Friday 20:56 UTC, first shut minute
 SAT = datetime(2026, 9, 19, 12, 0, tzinfo=UTC)
-SUN_OPEN = datetime(2026, 9, 20, 21, 0, tzinfo=UTC)
+WEEK_OPEN = datetime(2026, 9, 21, 0, 0, tzinfo=UTC)    # Monday 00:00 UTC
+SUN = datetime(2026, 9, 20, 12, 0, tzinfo=UTC)         # Sunday midday - shut all day
 THU = datetime(2026, 9, 17, 12, 0, tzinfo=UTC)         # an ordinary Thursday
 
 FOREX, CRYPTO, METAL = "FX.EURUSD", "CRYPTO.BTCUSD", "COMMODITY.XAUUSD"
@@ -129,9 +138,12 @@ def test_weekend_window_on_forex_is_closed_not_a_gap() -> None:
     assert not _has(rows, GapState.FILLING), "a weekend is not lost data"
 
 
-def test_friday_close_to_sunday_open_emits_no_gap() -> None:
-    """The exact case that breaks a naive detector: 66 hours that is entirely shut."""
-    rows = classify_window(FOREX, DERIV, FRI_CLOSE, SUN_OPEN)
+def test_friday_close_to_monday_open_emits_no_gap() -> None:
+    """The exact case that breaks a naive detector: the whole weekend, entirely shut.
+
+    Renamed 2026-09-29 - it said "Sunday open" because the old calendar opened Sunday 21:00.
+    The venue opens Monday 00:00Z, so the shut run is Friday close -> Monday open."""
+    rows = classify_window(FOREX, DERIV, FRI_CLOSE, WEEK_OPEN)
     assert not _has(rows, GapState.FILLING)
 
 
@@ -143,7 +155,7 @@ def test_crypto_weekend_is_still_a_gap() -> None:
 def test_sunday_evening_is_open_for_forex() -> None:
     """Regression for a real defect found 2026-09-27: the session OPENS Sunday 21:00, and a
     single midday probe classified 21:00-24:00 as shut - hiding 3h of real trading."""
-    rows = classify_window(FOREX, DERIV, SUN_OPEN, SUN_OPEN + timedelta(hours=3))
+    rows = classify_window(FOREX, DERIV, WEEK_OPEN, WEEK_OPEN + timedelta(hours=3))
     assert _has(rows, GapState.FILLING), "forex IS open Sunday 21:00 UTC"
 
 
@@ -154,7 +166,7 @@ def test_contiguous_hole_is_one_run() -> None:
 
 
 def test_runs_never_span_a_closure() -> None:
-    rows = classify_window(FOREX, DERIV, FRI_CLOSE, SUN_OPEN + timedelta(hours=2))
+    rows = classify_window(FOREX, DERIV, FRI_CLOSE, WEEK_OPEN + timedelta(hours=2))
     for r in rows:
         if r.state is GapState.FILLING:
             assert (r.end - r.start) < timedelta(hours=30), f"run spans closure: {r}"
@@ -327,13 +339,21 @@ def test_property_a_gap_is_never_reported_while_the_market_is_shut() -> None:
       2. the number of gap hours equals the number of open hours in the window.
 
     (1) is exactly what a naive detector violates, and (2) catches a detector that silently
-    hides real trading. Measured open hours/week: FX 120, metals 143, BTC 168.
+    hides real trading.
+
+    CORRECTED 2026-09-29: the two sides used to be counted in DIFFERENT UNITS - gap HOURS on
+    one side, `open_minutes(...) // 60` on the other. That was safe only while the week
+    closed on an exact hour (21:00), which made the minute count a multiple of 60. The venue
+    actually closes Friday at 20:55, so 7015 open minutes floor to 116 while there are 117
+    hourly sample points inside them, and the property failed on a rounding artefact that
+    had nothing to do with gaps. Both sides are now MINUTES, and there is no rounding left
+    to disagree about.
     """
     cal = load_calendar()
     week_end = MON + timedelta(days=7)
     for inst in (FOREX, METAL, CRYPTO):
-        expected = cal.open_minutes(inst, MON, week_end) // 60
-        gap_hours, t = 0, MON
+        expected = cal.open_minutes(inst, MON, week_end)
+        gap_minutes, t = 0, MON
         while t < week_end:
             rows = classify_window(inst, DERIV, t, t + timedelta(minutes=1))
             if _has(rows, GapState.FILLING):
@@ -341,10 +361,19 @@ def test_property_a_gap_is_never_reported_while_the_market_is_shut() -> None:
                     f"{inst}: gap reported at {t.isoformat()} while the market is SHUT - "
                     "closure must never be recorded as data loss"
                 )
-                gap_hours += 1
+                # WHY count the open minutes INSIDE the hour rather than the hour itself:
+                # the week now shuts Friday 20:55, so the final sampled hour is only 55
+                # minutes of tradable time. Counting it as 60 overstates the gap side by 5
+                # and the property fails on arithmetic rather than on gaps. Hand check for
+                # FX: Mon-Thu 4*1440 = 5760, Fri 00:00-20:00 = 1200, Fri 20:00-20:55 = 55,
+                # total 7015 - which is exactly what open_minutes reports.
+                gap_minutes += sum(
+                    1 for k in range(60) if cal.is_open(inst, t + timedelta(minutes=k))
+                )
             t += timedelta(hours=1)
-        assert gap_hours == expected, (
-            f"{inst}: {gap_hours} gap hours but {expected} open hours in the window"
+        assert gap_minutes == expected, (
+            f"{inst}: {gap_minutes} open minutes reported as gaps but "
+            f"{expected} open minutes in the window"
         )
 
 

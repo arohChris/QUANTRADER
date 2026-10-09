@@ -54,7 +54,9 @@ export default function App() {
   const [role, setRole] = useState<AccessRole>(mockUser.role as AccessRole);
   const [market, setMarket] = useState<ExperimentMarket>(createExperimentMarket);
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>([MOCK_INSTRUMENTS[0].symbol]);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // M10.4.12: mobile starts hidden (the desktop icon rail makes no sense below
+  // 900px), desktop keeps its expanded default — the small screen follows suit.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.matchMedia("(max-width: 900px)").matches);
   const [tradeMode, setTradeMode] = useState<TradeMode>("manual");
   const [theme, setTheme] = useState<Theme>("dark");
   const sidebar = useRef<HTMLElement>(null);
@@ -85,6 +87,15 @@ export default function App() {
     // Body carries the palette so page background, scrollbars and the shell agree.
     document.body.classList.toggle("theme-light", theme === "light");
   }, [theme]);
+
+  useEffect(() => {
+    // Rotating or resizing across the breakpoint mirrors the sidebar state in both
+    // directions, so the menu can never be left visible on a shrunken screen.
+    const mobile = window.matchMedia("(max-width: 900px)");
+    const onChange = (event: MediaQueryListEvent) => setSidebarCollapsed(event.matches);
+    mobile.addEventListener("change", onChange);
+    return () => mobile.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     // The sidebar closes on any outside click or Escape, not only via its own button.
@@ -127,6 +138,14 @@ export default function App() {
 
   // Each selected asset is the same deterministic mock shape at its own price level.
   const markets = selectedSymbols.map((symbol) => withSymbol(market, symbol));
+
+  // A nav tap on mobile closes the menu it was made from; on desktop the rail
+  // keeps its own click-to-collapse behaviour and route changes leave it alone.
+  const closeOnMobile = () => {
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      setSidebarCollapsed(true);
+    }
+  };
 
   return (
     <main className={`app-shell ${THEME_CLASS[theme]} theme-${theme}`}>
@@ -189,6 +208,7 @@ export default function App() {
                       to={item.href}
                       title={item.label}
                       aria-current={active ? "page" : undefined}
+                      onClick={closeOnMobile}
                     >
                       <Icon size={17} />
                       <span className="nav-label">{item.label}</span>
@@ -245,7 +265,7 @@ export default function App() {
                 pane at /app/trading. */}
             <Route
               path="/admin/trading"
-              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminTradingSurface />}
+              element={role !== "Admin" ? <AccessPreview role={role} /> : <AdminTradingSurface role={role} />}
             />
             <Route
               path="/admin/risk"

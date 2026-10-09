@@ -1,0 +1,9 @@
+monitor loop: every 1m, catchup=48h, verdicts -> C:\Users\MY PC\Desktop\QUANTRADER2\financial_analyst_app\logs\monitor\verdicts.jsonl
+{"at": "2026-09-30T13:15:45Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+next run in 0m
+{"at": "2026-09-30T13:17:15Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+next run in 0m
+{"at": "2026-09-30T13:18:42Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+next run in 0m
+{"at": "2026-09-30T13:20:09Z", "exit": 0, "verdict": "GREEN - store matches the venue on every check that can fail", "trigger": "every 1m"}
+next run in 0m

@@ -44,7 +44,6 @@ def _candle(**over: object) -> Candle:
         "high": 1.08550,
         "low": 1.08450,
         "close": 1.08510,
-        "tick_count": 12,
         "interval": "5m",
         "interval_start": datetime(2026, 1, 2, 3, 0, tzinfo=UTC),
         "interval_end": datetime(2026, 1, 2, 3, 5, tzinfo=UTC),

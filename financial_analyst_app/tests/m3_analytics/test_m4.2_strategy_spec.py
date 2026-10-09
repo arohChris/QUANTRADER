@@ -55,19 +55,28 @@ def _load_manifest() -> dict:
 
 # --- contract: package shape, names, signature, defaults, slots, isolation ---
 
-def test_discovery_exactly_seven_strategy_modules():
+def test_discovery_exactly_twelve_strategy_modules():
+    # m4.7 spec DECLARED AMENDMENT 3 (2026-10-02): 7 legacy + 5 Tier-1 cards,
+    # same corrected sorted list as amendment 1 (trend_following sorts first of
+    # the trend_* names: 'f' 0x66 < 'p' 0x70).
     names = sorted(
         info.name for info in pkgutil.iter_modules(strategies_pkg.__path__) if not info.ispkg
     )
-    assert names == sorted(BY_NAME) == [
+    assert names == [
         "donchian_breakout",
+        "failed_breakout_sweep_reversal",
         "mean_reversion",
         "microstructure_flow",
+        "n_bar_donchian_breakout",
         "pullback",
         "regime_based",
         "rsi_overbought_oversold",
+        "supertrend_adx_filter",
         "trend_following",
+        "trend_pullback_ema_stack_rsi",
+        "trend_pullback_to_dynamic_support",
     ]
+    assert set(BY_NAME) <= set(names)  # legacy 7 all still discovered
 
 
 def test_contract_name_snake_case_and_capabilities_key():
@@ -306,7 +315,9 @@ def test_adversarial_valueerror_does_not_poison_next_call():
 
 def test_manifest_requires_match_slot_unions():
     manifest = _load_manifest()
-    assert sorted(manifest) == sorted(BY_NAME)
+    # m4.7 spec DECLARED AMENDMENT 3 (2026-10-02): manifest now holds 12 keys —
+    # legacy m4.2 names must be a SUBSET (union match per legacy module unchanged).
+    assert set(BY_NAME) <= set(manifest)
     for mod in MODULES:
         slot_union = {name for name, _ in mod.FEATURE_SLOTS.values()}
         assert set(manifest[mod.NAME]["requires_analytics"]) == slot_union

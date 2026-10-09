@@ -31,17 +31,29 @@ export const MOCK_INSTRUMENTS = [
   { symbol: "COMMODITY.WTIUSD", label: "WTI/USD", base: 78.24, decimals: 2 },
 ] as const;
 
-export const MOCK_TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "1D"] as const;
+// WHY parity-locked (m10.4.10): these nine values are copied verbatim from the backend
+// registry financial_analyst_app/shared/timeframes.py INTERVAL_MINUTES — the same keys
+// FeatureRequest validates and the Temporal Resolver accepts. The name MOCK_TIMEFRAMES is
+// kept because the list still drives the MOCK chart window; the lock (exact 9, both
+// directions) is enforced by frontend/tests/test_m10.4.10_timeframe_dropdown_spec.py.
+// Uppercase 1H/4H/1D were a vocabulary mismatch the backend hard-rejects and are gone;
+// calendar buckets (1w/1mo/1y) are deliberately absent — fixed-duration strings only.
+export const MOCK_TIMEFRAMES = ["1m", "5m", "15m", "30m", "40m", "1h", "2h", "4h", "24h"] as const;
 export type Timeframe = (typeof MOCK_TIMEFRAMES)[number];
 
 // How many mock points each timeframe shows; presentation window, not a calculation.
+// Every registry key must appear — Record<Timeframe, number> forces it in tsc (E3),
+// and the parity test asserts the key set independently at text level.
 export const TIMEFRAME_WINDOW: Record<Timeframe, number> = {
   "1m": 12,
   "5m": 24,
   "15m": 32,
-  "1H": 40,
-  "4H": 48,
-  "1D": 64,
+  "30m": 36,
+  "40m": 40,
+  "1h": 40,
+  "2h": 56,
+  "4h": 48,
+  "24h": 64,
 };
 
 const MAX_POINTS = 64;

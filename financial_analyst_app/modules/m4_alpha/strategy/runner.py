@@ -1,9 +1,10 @@
 """
 M4.1 — runner: the ONLY Signal constructor (gates -> I/O -> contract -> Signal).
-WHY this exact order (all tested): validate + lifecycle + capability fire BEFORE
-  any feature I/O so a blocked strategy never costs an engine call; evaluate
+WHY this exact order (all tested): validate + approval + lifecycle + capability fire
+  BEFORE any feature I/O so a blocked strategy never costs an engine call; evaluate
   output is contract-checked (never clamped); shadow applied last, fail-closed.
-Pure calc helpers stay sync; the single await is the FeatureEngine call (4.2).
+Pure calc helpers stay sync; the awaits are the approval-state read and the
+  FeatureEngine call (m4.8 gate, 4.2).
 """
 from __future__ import annotations
 
@@ -19,6 +20,7 @@ from shared.contracts.analytics import AnalyticsResult
 from shared.contracts.base import Provenance
 from shared.contracts.market_data import MarketData
 from shared.contracts.signal import Signal
+from shared.core.strategy_approval_store import ApprovalStoreError
 
 from .lifecycle import Lifecycle
 from .parameter_registry import ParameterRegistry
@@ -29,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 _ASSET_CLASSES = frozenset({"forex", "crypto", "commodity"})
 _ENVS = frozenset({"prod", "paper"})  # live goes through M5/M6, never here
+# REV1 vocabulary: only trader and admin exist (m4.8); anything else is a loud
+# ValueError in _validate, never a permissive default.
+_AUDIENCES = frozenset({"admin", "trader"})
 _WINDOW_MIN, _WINDOW_MAX, _WINDOW_DEFAULT = 1, 3600, 60
 
 Slots = dict[str, tuple[str, dict[str, float]]]
@@ -40,25 +45,55 @@ class FeatureSource(Protocol):
     async def get_features(self, request: FeatureRequest) -> AnalyticsResult: ...
 
 
+class ApprovalGate(Protocol):
+    """Structural approval port (m4.8) — StrategyApprovalStore satisfies it; tests
+    inject fakes. state() is a FRESH PK read per run (no cache: a revocation must
+    take effect on the very next run — a cached state would be fail-open)."""
+
+    async def state(self, strategy_id: str, version: str) -> str: ...
+
+
 class StrategyRunner:
     def __init__(self, *, registry: StrategyRegistry, params: ParameterRegistry,
                  lifecycle: Lifecycle, capability: CapabilityRegistry,
-                 engine: FeatureSource, allowlist: frozenset[str] = frozenset()) -> None:
+                 engine: FeatureSource, allowlist: frozenset[str] = frozenset(),
+                 approvals: ApprovalGate | None = None) -> None:
         self.registry = registry
         self.params = params
         self.lifecycle = lifecycle
         self.capability = capability
         self.engine = engine
         self.allowlist = frozenset(allowlist)
+        # None = gate absent -> byte-identical legacy behavior (m4.8 default-off law;
+        # the 5 existing construction sites stay untouched until the wiring slice).
+        self.approvals = approvals
 
     async def run(self, name: str, *, market: MarketData, instrument_id: str,
                   broker: str, timeframe: str,
                   asset_class: Literal["forex", "crypto", "commodity"],
                   as_of: datetime, now: datetime, env: str,
+                  audience: Literal["admin", "trader"] = "trader",
                   user_id: str | None = None,
                   strategy_params: dict[str, float] | None = None) -> Signal | None:
         entry = self.registry.get(name)  # typed UnknownStrategyError
-        _validate(instrument_id, broker, timeframe, asset_class, as_of, now, env)
+        _validate(instrument_id, broker, timeframe, asset_class, as_of, now, env, audience)
+        # m4.8 approval gate: state x environment x authorization (REV1/REV2), BEFORE
+        # lifecycle/capability so a blocked strategy never costs any downstream work.
+        if self.approvals is not None:
+            sid = self.params.strategy_id(name)
+            ver = self.params.version(name)
+            try:
+                state = await self.approvals.state(sid, ver)
+            except ApprovalStoreError as exc:
+                # fail-closed §3.3: a store we cannot read is a store that says NO
+                # (UNKNOWN -> REJECT) — never run on a guessed state.
+                logger.error("approval store unreadable strategy=%s version=%s err=%s",
+                             sid, ver, exc)
+                return None
+            if not _runnable(state, env, audience):
+                logger.info("approval blocked strategy=%s version=%s state=%s "
+                            "env=%s audience=%s", sid, ver, state, env, audience)
+                return None
         if not self.lifecycle.is_enabled(name, user_id=user_id):
             logger.info("lifecycle blocked strategy=%s user_id=%s", name, user_id)
             return None
@@ -120,7 +155,7 @@ class StrategyRunner:
 
 
 def _validate(instrument_id: str, broker: str, timeframe: str, asset_class: str,
-              as_of: datetime, now: datetime, env: str) -> None:
+              as_of: datetime, now: datetime, env: str, audience: str) -> None:
     """Every input gate BEFORE any I/O (tested via engine.requests == [])."""
     for field, value in (("instrument_id", instrument_id), ("broker", broker),
                          ("timeframe", timeframe)):
@@ -131,8 +166,31 @@ def _validate(instrument_id: str, broker: str, timeframe: str, asset_class: str,
             f"asset_class must be one of {sorted(_ASSET_CLASSES)}, got {asset_class!r}")
     if env not in _ENVS:
         raise ValueError(f"env must be one of {sorted(_ENVS)}, got {env!r}")
+    if audience not in _AUDIENCES:
+        # Loud, never permissive: an unknown audience must not silently become the
+        # strictest or the loosest role — the caller has to say which one it meant.
+        raise ValueError(
+            f"audience must be one of {sorted(_AUDIENCES)}, got {audience!r}")
     _require_utc(as_of, "as_of")
     _require_utc(now, "now")
+
+
+_STATES_RUNNABLE = frozenset({"testing", "approved", "rejected", "discontinued"})
+
+
+def _runnable(state: str, env: str, audience: str) -> bool:
+    """spec m4.8 runnability = state x environment x audience (REV2 table).
+    WHY the `state not in _STATES_RUNNABLE` guard first: the spec table only defines
+    the five legal states — 'draft' (not fully built) and any unknown/garbage state
+    must BLOCK everywhere (fail-closed §3.3), never fall through to the paper/admin
+    cell as if absence of a rule meant permission."""
+    if state not in _STATES_RUNNABLE:
+        return False  # draft runs for NOBODY (REV2); unknown states block too
+    if env == "prod":
+        return state == "approved"  # approved is the only prod state
+    if audience == "admin":
+        return True  # paper: admin may test testing/approved/rejected/discontinued
+    return state == "approved"  # trader contexts run approved only (paper and prod)
 
 
 def _require_utc(value: datetime, field: str) -> None:

@@ -1,9 +1,11 @@
-"""WHY: M3.2 Step 7 — real-data verification of the first three D4 compute files
-(spec docs/specs/m3.2_analytics.spec.md §Verify). NOT unit tests: proves D4
-discovery finds the P17 batch, the golden values hold outside pytest, TWO
-independent RSI implementations agree on a deterministic walk seeded from a REAL
-sample close, the engine honestly refuses thin real data (INSUFFICIENT), and an
-end-to-end run over realistic bars prints all three features + the proxy warning.
+"""WHY: M3.2 Step 7 — real-data verification of the P17 D4 compute files
+(rsi_14, ema_20; spec docs/specs/m3.2_analytics.spec.md §Verify). NOT unit
+tests: proves D4 discovery finds all 34 (P17+P18+Book batch 1 + m4.7 batch —
+§7 declared amendments; also strips the deleted `tick_rate` import/golden/e2e left since
+the Candle 2.0.0 migration), the golden values hold outside pytest, TWO
+independent RSI implementations agree on a deterministic walk seeded from a
+REAL sample close, the engine honestly refuses thin real data (INSUFFICIENT),
+and an end-to-end run over realistic bars prints both features.
 
 Usage: python scripts/verify_m3.2_analytics.py [--input data/sample_ticks_realistic.jsonl]
 Exit: 0 = all checks OK · 1 = any check failed. Latency line is ADVISORY only
@@ -28,7 +30,7 @@ from modules.m2_market_data.ingest.ingest import TickIngestor
 from modules.m2_market_data.normalize import Normalizer
 from modules.m2_market_data.validate import validate
 from modules.m2_market_data.watermark import WatermarkRegistry
-from modules.m3_analytics.analytics import ema_20, rsi_14, tick_rate
+from modules.m3_analytics.analytics import ema_20, rsi_14
 from modules.m3_analytics.capability.capability_registry import (
     CapabilityRegistry,
 )
@@ -114,8 +116,10 @@ def _build_candles(input_path: Path) -> list[Candle]:
     return candles
 
 
-def _mk_candles(closes: list[float], *, ticks: int = 5, end: datetime | None = None) -> list[Candle]:
-    """Minimal 1m candles with given closes (fixture series for computes)."""
+def _mk_candles(closes: list[float], end: datetime | None = None) -> list[Candle]:
+    """Minimal 1m candles with given closes (fixture series for computes).
+    WHY no tick_count: Candle 2.0.0 removed the field (extra=forbid) — the old
+    `tick_count=ticks` arg raised ValidationError after the contract migration."""
     end = end or datetime(2026, 6, 1, 12, 0, tzinfo=UTC)  # tz-aware: as_of validator
     out = []
     for i, close in enumerate(closes):
@@ -126,7 +130,6 @@ def _mk_candles(closes: list[float], *, ticks: int = 5, end: datetime | None = N
                 high=close,
                 low=close,
                 close=close,
-                tick_count=ticks,
                 interval="1m",
                 interval_start=start,
                 interval_end=start + timedelta(minutes=1),
@@ -165,7 +168,7 @@ def _walk_candles(count: int) -> list[Candle]:
     for _ in range(count):
         price += rng.uniform(-0.0004, 0.0004)
         closes.append(round(price, 5))
-    return _mk_candles(closes, ticks=rng.randint(1, 20))
+    return _mk_candles(closes)
 
 
 def _request(as_of: datetime, features: tuple[str, ...]) -> FeatureRequest:
@@ -189,21 +192,40 @@ async def main() -> int:
     names = sorted(AnalyticsRegistry.from_package().names())
     print(f"discovery: {names}")
     _check(
-        "D4 discovery finds exactly P17 + P18 batches (15)",
+        "D4 discovery finds exactly P17 + P18 + Book batch 1 + m4.7 (34)",
         names == [
             "adx_14",
+            "anchored_twap",
             "atr_14",
+            "atr_percentile_rank",
+            "bar_low",
             "bb_percent",
+            "bollinger_bandwidth",
+            "bollinger_bandwidth_percentile",
             "choppiness",
+            "close_change",
+            "close_position",
             "donchian_20",
+            "efficiency_ratio",
             "ema_20",
+            "ema_21",
+            "ema_55",
+            "ema_8",
             "hurst",
+            "last_close",
             "macd",
+            "market_state",
+            "ols_r_squared",
+            "rejection_bar",
             "returns",
             "rsi_14",
             "sma_20",
             "std_20",
-            "tick_rate",
+            "supertrend_flip",
+            "sweep_reversal",
+            "swing_high",
+            "swing_low",
+            "variance_ratio",
             "vol_regime",
             "zscore_20",
         ],
@@ -213,13 +235,10 @@ async def main() -> int:
     flat = rsi_14.compute(_mk_candles([5.0] * 4), {"period": 2.0})
     losses = rsi_14.compute(_mk_candles([10.0, 9.0, 8.0]), {"period": 2.0})
     ema_golden = ema_20.compute(_mk_candles([2.0, 4.0, 6.0, 8.0]), {"period": 3.0})
-    rate_golden = tick_rate.compute(_mk_candles([1.0, 1.0, 1.0], ticks=4), {})
-    print(f"goldens: flat={flat} loss={losses} ema={ema_golden} tick_rate={rate_golden}")
+    print(f"goldens: flat={flat} loss={losses} ema={ema_golden}")
     _check("golden: RSI flat -> 50.0 exactly (REV5/A48 neutral)", flat == 50.0)
     _check("golden: RSI all-loss -> 0.0 exactly", losses == 0.0)
     _check("golden: EMA [2,4,6,8] p3 -> 6.25 exactly", ema_golden == 6.25)
-    # hand calc for tick_rate: (4+4+4)/3 = 12/3 = 4.0
-    _check("golden: tick_rate mean -> 4.0 exactly", rate_golden == 4.0)
 
     # --- 3. two independent RSI implementations on the walk --------------------
     walk = _walk_candles(60)
@@ -280,22 +299,22 @@ async def main() -> int:
         profiles=profiles,
     )
     res = await walk_engine.get_features(
-        _request(walk_as_of, ("rsi_14", "ema_20", "tick_rate"))
+        _request(walk_as_of, ("rsi_14", "ema_20"))
     )
     print(
         f"e2e: rsi_14={res.features.get('rsi_14')!r} ema_20={res.features.get('ema_20')!r} "
-        f"tick_rate={res.features.get('tick_rate')!r} status={res.capability_status.value} "
+        f"status={res.capability_status.value} "
         f"warn={res.capability_warning!r}"
     )
     _check(
-        "e2e: all three features present on 60 pristine bars",
-        set(res.features) == {"rsi_14", "ema_20", "tick_rate"},
+        "e2e: both features present on 60 pristine bars",
+        set(res.features) == {"rsi_14", "ema_20"},
         f"features={sorted(res.features)}",
     )
     _check(
-        "e2e: tick_rate stamps PROXY_LIMITED + 'tick_count != volume' warning",
-        res.capability_status is CapabilityStatus.PROXY_LIMITED
-        and "tick_count \u2260 volume" in (res.capability_warning or ""),
+        "e2e: FULLY_SUPPORTED, no proxy warning (price-only P17 batch)",
+        res.capability_status is CapabilityStatus.FULLY_SUPPORTED
+        and res.capability_warning is None,
         f"status={res.capability_status.value}",
     )
 

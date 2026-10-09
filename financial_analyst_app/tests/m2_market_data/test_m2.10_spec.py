@@ -24,6 +24,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from modules.m2_market_data import warm  # RED until Step 5 (impl)
 from shared.contracts.market_data import Candle
@@ -41,7 +42,6 @@ def _bar(minute: int, *, close: float = 1.08510) -> Candle:
         high=1.08550,
         low=1.08450,
         close=close,
-        tick_count=12,
         interval="1m",
         interval_start=start,
         interval_end=start + timedelta(minutes=1),
@@ -58,7 +58,6 @@ def _row(c: Candle) -> dict[str, object]:
         "high": c.high,
         "low": c.low,
         "close": c.close,
-        "tick_count": c.tick_count,
         "average_spread": c.average_spread,
         "min_spread": c.min_spread,
         "max_spread": c.max_spread,
@@ -192,12 +191,25 @@ def test_ddl_candles_1m_create_idempotent_with_full_columns() -> None:
     # §1 column list, verbatim
     for col in (
         "provider", "instrument_id", "interval_start", "interval_end", "open", "high",
-        "low", "close", "tick_count", "average_spread", "min_spread", "max_spread",
+        "low", "close", "average_spread", "min_spread", "max_spread",
         "expected_duration_ms", "quality_status", "aggregation_version",
         "reference_snapshot_id", "created_at",
     ):
         assert re.search(rf"\b{col}\b", create), f"missing column {col}"
     assert "double precision" in create  # float8 exact roundtrip (spec §1 prices)
+    # Candle 2.0.0 (human §5 2026-09-29): a FRESH database must not be born with the column.
+    assert not re.search(r"\btick_count\b", create), (
+        "tick_count must be absent from the CREATE TABLE - the venue never sent it"
+    )
+    # ...and an EXISTING database must be demoted, never destroyed. DROP COLUMN is
+    # irreversible (reverting the commit cannot bring the values back, AGENTS.md 12 Q6),
+    # so the migration only relaxes NOT NULL - and only if the column is there at all.
+    migration = [s for s in warm.build_ddl_statements() if "DROP NOT NULL" in s]
+    assert len(migration) == 1, "exactly one reversible demotion statement"
+    assert "DROP COLUMN" not in migration[0]
+    assert "information_schema.columns" in migration[0], (
+        "must be conditional: a fresh DB never had the column and a bare ALTER aborts startup"
+    )
     assert "CREATE TABLE IF NOT EXISTS candles_1m" in ddl
 
 
@@ -249,12 +261,27 @@ def test_ddl_flush_cursors_table_persists_watermark() -> None:
 
 
 def test_ddl_never_destroys_data() -> None:
-    # Adversarial: DDL path must be structurally incapable of data loss
+    """Adversarial: the DDL path must be structurally incapable of data loss.
+
+    REFINED 2026-09-29, not relaxed. The original test banned the word `DROP` outright,
+    which the Candle 2.0.0 migration tripped: PostgreSQL has no "make nullable" spelling
+    other than `ALTER COLUMN ... DROP NOT NULL`. Rather than delete a data-safety guard to
+    let a migration through, the guard now names the DESTRUCTIVE forms explicitly and then
+    requires the single permitted `DROP` to be exactly a NOT NULL relaxation. That is
+    STRICTER than a blanket ban, because it no longer passes if anyone adds an unrelated
+    `DROP <something>` later - it fails unless every DROP in the DDL is the safe one.
+    """
     ddl = _ddl()
-    assert not re.search(r"\bDROP\b", ddl, re.IGNORECASE)
-    assert not re.search(r"\bTRUNCATE\b", ddl, re.IGNORECASE)
-    assert not re.search(r"\bDELETE\b", ddl, re.IGNORECASE)
-    assert not re.search(r"\bUPDATE\b", ddl, re.IGNORECASE)  # finalized rows immutable at DDL level
+    for destructive in (r"\bDROP\s+TABLE\b", r"\bDROP\s+COLUMN\b", r"\bTRUNCATE\b",
+                        r"\bDELETE\b", r"\bUPDATE\b"):
+        assert not re.search(destructive, ddl, re.IGNORECASE), (
+            f"destructive DDL present: {destructive}  # finalized rows are immutable"
+        )
+    every_drop = re.findall(r"\bDROP\b[^;]*", ddl, re.IGNORECASE)
+    assert len(every_drop) == 1, f"exactly one DROP allowed, found {len(every_drop)}: {every_drop}"
+    assert re.fullmatch(r"DROP\s+NOT\s+NULL", every_drop[0].strip(), re.IGNORECASE), (
+        f"the one permitted DROP must be a NOT NULL relaxation, got: {every_drop[0]!r}"
+    )
 
 
 async def test_apply_ddl_twice_every_statement_guarded() -> None:
@@ -276,10 +303,26 @@ async def test_apply_ddl_twice_every_statement_guarded() -> None:
 # ---- validation: store never persists garbage (adversarial) ----------------------
 
 @pytest.mark.parametrize("bad_count", [-1, -100])
-def test_encode_rejects_negative_tick_count(bad_count: int) -> None:
-    bad = _bar(0).model_copy(update={"tick_count": bad_count})
-    with pytest.raises(warm.StoreValidationError):
-        warm.encode_candle_row("deriv", "CRYPTO.BTCUSD", bad, "REF-1")
+def test_contract_now_refuses_tick_count_entirely(bad_count: int) -> None:
+    """Candle 2.0.0 removed the field, so the adversarial question changed shape.
+
+    It used to ask "is a negative tick_count rejected?" Now there is no tick_count to be
+    negative: `extra="forbid"` refuses the key outright, whatever its value. Asserting the
+    refusal is stronger than the old bound check, because a writer that still tries to pass
+    the field now FAILS LOUDLY instead of quietly storing a fabricated number.
+    """
+    # WHY `Candle(**...)` and not `model_copy(update=...)`: pydantic v2's model_copy SKIPS
+    # validation, so model_copy would happily attach a field extra="forbid" is meant to
+    # reject, and this test would pass without anything being refused.
+    payload = _bar(0).model_dump()
+    payload["tick_count"] = bad_count
+    with pytest.raises(ValidationError) as excinfo:
+        Candle(**payload)  # type: ignore[arg-type]
+    assert excinfo.value.errors()[0]["type"] == "extra_forbidden"
+    assert "tick_count" not in Candle.model_fields
+    assert Candle.model_fields["version"].default == "2.0.0", (
+        "2.0.0 also ADDED the version field the contract never had (AGENTS.md 5)"
+    )
 
 
 def test_encode_rejects_interval_start_after_interval_end() -> None:
@@ -332,7 +375,7 @@ def test_encode_row_column_keys_golden() -> None:
     row = warm.encode_candle_row("deriv", "CRYPTO.BTCUSD", _bar(0), "REF-2026-09-25-001")
     assert set(row.keys()) == {
         "provider", "instrument_id", "interval_start", "interval_end",
-        "open", "high", "low", "close", "tick_count", "average_spread",
+        "open", "high", "low", "close", "average_spread",
         "min_spread", "max_spread", "expected_duration_ms", "quality_status",
         "aggregation_version", "reference_snapshot_id",
     }  # created_at is DB-default (spec §1); observed_duration_ms not persisted (not a column)
@@ -598,7 +641,9 @@ async def test_flush_junk_rejected_before_any_query() -> None:
     # validation happens before first I/O — encode-all-first, garbage never touches the store
     conn = FakeConn(fetchval_results=[None])
     store, _ = _store(conn)
-    good, junk = _bar(0), _bar(1).model_copy(update={"tick_count": -5})
+    good, junk = _bar(0), _bar(1).model_copy(
+        update={"interval_start": _T0 + timedelta(minutes=5), "interval_end": _T0}
+    )
     with pytest.raises(warm.StoreValidationError):
         await store.flush_batch("deriv", "CRYPTO.BTCUSD", [good, junk])
     assert _executed(conn, "INSERT INTO candles_1m") == []

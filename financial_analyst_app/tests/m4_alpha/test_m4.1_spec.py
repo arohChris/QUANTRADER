@@ -144,12 +144,25 @@ def _module(name: str = "demo", slots: str = '{"a": ("analytic_x", {})}',
 
 # ---- E1/E2/E3/E4: discovery + contract validation (P22 gate) --------------------
 
-def test_load_discovers_exactly_seven_names_sorted() -> None:
+def test_load_discovers_exactly_twelve_names_sorted() -> None:
+    # m4.7 spec DECLARED AMENDMENT 1 (2026-10-02): 7 legacy + 5 Tier-1 playbook
+    # cards, sorted ASCII (STEP-3 CORRECTION: trend_following < trend_pullback_*
+    # since 'f' 0x66 < 'p' 0x70 — verified with sorted()).
     registry = StrategyRegistry()
     registry.load()
     assert registry.names() == (
-        "donchian_breakout", "mean_reversion", "microstructure_flow",
-        "pullback", "regime_based", "rsi_overbought_oversold", "trend_following",
+        "donchian_breakout",
+        "failed_breakout_sweep_reversal",
+        "mean_reversion",
+        "microstructure_flow",
+        "n_bar_donchian_breakout",
+        "pullback",
+        "regime_based",
+        "rsi_overbought_oversold",
+        "supertrend_adx_filter",
+        "trend_following",
+        "trend_pullback_ema_stack_rsi",
+        "trend_pullback_to_dynamic_support",
     )
 
 
